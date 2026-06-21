@@ -80,11 +80,20 @@ async function deleteDocumentObject(storagePath) {
   });
 }
 
+async function createSignedUploadUrl(storagePath) {
+  const config = getConfig();
+  return supabaseRequest(`/storage/v1/object/sign/upload/${config.documentsBucket}/${storagePath}`, {
+    method: "POST",
+    body: {}
+  });
+}
+
 module.exports = {
   getConfig,
   isConfigured,
   supabaseRequest,
   uploadDocumentObject,
   createSignedDocumentUrl,
+  createSignedUploadUrl,
   deleteDocumentObject
 };

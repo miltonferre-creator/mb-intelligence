@@ -8,6 +8,7 @@ const {
   supabaseRequest,
   uploadDocumentObject,
   createSignedDocumentUrl,
+  createSignedUploadUrl,
   deleteDocumentObject
 } = require("./lib/supabase-client");
 const { corsHeaders, ok, created, noContent, error, readBody, parseUrl } = require("./lib/http");
@@ -27,7 +28,7 @@ const staticTypes = {
   ".svg": "image/svg+xml",
   ".ico": "image/x-icon"
 };
-const loginAttempts = new Map();
+const loginAttemptsLocal = new Map(); // fallback quando Supabase não está disponível
 const LOGIN_LIMIT = 5;
 const LOGIN_WINDOW_MS = 60_000;
 
@@ -40,24 +41,67 @@ function clientIp(req) {
   return String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "local").split(",")[0].trim();
 }
 
-function checkLoginRateLimit(req, res, email) {
+async function checkLoginRateLimit(req, res, email) {
   const key = `${clientIp(req)}:${String(email || "").toLowerCase()}`;
   const now = Date.now();
-  const current = loginAttempts.get(key) || { count: 0, resetAt: now + LOGIN_WINDOW_MS };
-  if (now > current.resetAt) {
-    current.count = 0;
-    current.resetAt = now + LOGIN_WINDOW_MS;
+  const resetAt = new Date(now + LOGIN_WINDOW_MS).toISOString();
+
+  try {
+    const { supabaseRequest: sbReq } = require("./lib/supabase-client");
+    const config = getConfig();
+    if (!config.url || !config.serviceRoleKey) throw new Error("not-configured");
+
+    // upsert atômico: incrementa contador ou cria novo registro
+    const response = await fetch(`${config.url}/rest/v1/login_rate_limits`, {
+      method: "POST",
+      headers: {
+        apikey: config.serviceRoleKey,
+        Authorization: `Bearer ${config.serviceRoleKey}`,
+        "Content-Type": "application/json",
+        Prefer: "return=representation,resolution=merge-duplicates"
+      },
+      body: JSON.stringify({
+        key,
+        count: 1,
+        reset_at: resetAt,
+        updated_at: new Date().toISOString()
+      })
+    });
+    const rows = await response.json().catch(() => []);
+    const row = Array.isArray(rows) ? rows[0] : rows;
+
+    // se o reset_at já passou, o registro é antigo — ignorar contagem
+    const rowResetAt = row?.reset_at ? new Date(row.reset_at).getTime() : 0;
+    const effectiveCount = rowResetAt > now ? (row?.count || 1) : 1;
+
+    if (effectiveCount <= LOGIN_LIMIT) return true;
+    const waitSeconds = Math.ceil((rowResetAt - now) / 1000);
+    error(res, 429, `Muitas tentativas de login. Aguarde ${waitSeconds} segundos e tente novamente.`);
+    return false;
+  } catch (_) {
+    // fallback in-memory quando tabela não existe ainda (antes de rodar migrations)
+    const current = loginAttemptsLocal.get(key) || { count: 0, resetAt: now + LOGIN_WINDOW_MS };
+    if (now > current.resetAt) { current.count = 0; current.resetAt = now + LOGIN_WINDOW_MS; }
+    current.count += 1;
+    loginAttemptsLocal.set(key, current);
+    if (current.count <= LOGIN_LIMIT) return true;
+    const waitSeconds = Math.ceil((current.resetAt - now) / 1000);
+    error(res, 429, `Muitas tentativas de login. Aguarde ${waitSeconds} segundos e tente novamente.`);
+    return false;
   }
-  current.count += 1;
-  loginAttempts.set(key, current);
-  if (current.count <= LOGIN_LIMIT) return true;
-  const waitSeconds = Math.ceil((current.resetAt - now) / 1000);
-  error(res, 429, `Muitas tentativas de login. Aguarde ${waitSeconds} segundos e tente novamente.`);
-  return false;
 }
 
-function clearLoginRateLimit(req, email) {
-  loginAttempts.delete(`${clientIp(req)}:${String(email || "").toLowerCase()}`);
+async function clearLoginRateLimit(req, email) {
+  const key = `${clientIp(req)}:${String(email || "").toLowerCase()}`;
+  loginAttemptsLocal.delete(key);
+  try {
+    const config = getConfig();
+    if (!config.url || !config.serviceRoleKey) return;
+    await fetch(`${config.url}/rest/v1/login_rate_limits?key=eq.${encodeURIComponent(key)}`, {
+      method: "DELETE",
+      headers: { apikey: config.serviceRoleKey, Authorization: `Bearer ${config.serviceRoleKey}` }
+    });
+  } catch (_) {}
 }
 
 function sessionFromTokenData(tokenData, profile, clientId) {
@@ -627,7 +671,7 @@ async function handleAuth(req, res, segments) {
 
   if (req.method === "POST" && segments[1] === "login") {
     const body = await readBody(req);
-    if (!checkLoginRateLimit(req, res, body.email)) return;
+    if (!await checkLoginRateLimit(req, res, body.email)) return;
     const response = await fetch(`${config.url}/auth/v1/token?grant_type=password`, {
       method: "POST",
       headers: {
@@ -643,7 +687,7 @@ async function handleAuth(req, res, segments) {
     if (!profile) return error(res, 403, "Perfil não encontrado.");
     if (profile.status !== "Ativo") return error(res, 403, "Usuário desativado. Fale com a administração MB.");
     const session = sessionFromTokenData(data, profile, body.clientId);
-    clearLoginRateLimit(req, body.email);
+    await clearLoginRateLimit(req, body.email);
     if (profile.type === "client" && profile.client_id) {
       await rest(`/clients?id=eq.${profile.client_id}`, { method: "PATCH", body: { last_access_at: new Date().toISOString() } });
     }
@@ -860,6 +904,21 @@ async function listClientScoped(req, res, table, mapper, select = "*") {
 }
 
 async function handleDocuments(req, res, segments) {
+  // Endpoint para upload direto ao Storage — contorna limite 4.5MB do Vercel serverless
+  if (req.method === "POST" && segments[1] === "upload-url") {
+    const ctx = await requireMb(req, res);
+    if (!ctx) return;
+    const body = await readBody(req);
+    if (!body.clientId || !body.fileName) return error(res, 400, "clientId e fileName sao obrigatorios.");
+    const competence = dateToCompetence(body.competence || new Date().toISOString());
+    const category = body.category || "Financeiro";
+    const storagePath = `client/${body.clientId}/documents/${competenceFolder(competence)}/${safeFileName(category)}/${crypto.randomUUID()}-${safeFileName(body.fileName)}`;
+    const result = await createSignedUploadUrl(storagePath);
+    const signedUrl = result?.url || result?.signedURL || result?.signed_url;
+    if (!signedUrl) return error(res, 500, "Nao foi possivel gerar URL de upload.");
+    return ok(res, { uploadUrl: signedUrl, storagePath, token: result?.token });
+  }
+
   if (req.method === "GET" && segments[1] && segments[2] === "download") {
     const ctx = await authContext(req, res);
     if (!ctx) return;
@@ -931,7 +990,7 @@ async function handleDocuments(req, res, segments) {
       file_name: originalFileName,
       file_extension: extensionOf(originalFileName),
       mime_type: file?.mimeType || body.mimeType || "application/octet-stream",
-      file_size: file?.buffer?.length || 0,
+      file_size: file?.buffer?.length || Number(body.fileSize || 0),
       competence,
       status: body.status || "Disponivel",
       visibility: body.visibility || "Cliente",

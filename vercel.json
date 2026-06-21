@@ -6,6 +6,7 @@
     { "source": "/auth/:path*",        "destination": "/api/handler" },
     { "source": "/plans/:path*",       "destination": "/api/handler" },
     { "source": "/clients/:path*",     "destination": "/api/handler" },
+    { "source": "/documents/upload-url","destination": "/api/handler" },
     { "source": "/documents/:path*",   "destination": "/api/handler" },
     { "source": "/imports/:path*",     "destination": "/api/handler" },
     { "source": "/finance/:path*",     "destination": "/api/handler" },

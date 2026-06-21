@@ -519,9 +519,34 @@
       }
 
       if (form.dataset.form === "publish-document") {
-        const uploadData = new FormData(form);
+        const fileInput = form.querySelector("input[type='file'][name='file']");
+        const file = fileInput?.files?.[0];
+        const DIRECT_UPLOAD_THRESHOLD = 2 * 1024 * 1024; // 2MB — acima disso vai direto ao Storage
         await remoteOrLocal(
-          async () => MBI.api.request("/documents", { method: "POST", body: uploadData }),
+          async () => {
+            if (file && file.size > DIRECT_UPLOAD_THRESHOLD) {
+              // 1. Pede URL assinada para upload direto
+              const urlRes = await MBI.api.request("/documents/upload-url", {
+                method: "POST",
+                body: { clientId: data.clientId, fileName: file.name, category: data.category, competence: data.competence }
+              });
+              // 2. Upload direto ao Supabase Storage (sem passar pelo Vercel)
+              const uploadResponse = await fetch(urlRes.uploadUrl, {
+                method: "PUT",
+                headers: { "Content-Type": file.type || "application/octet-stream" },
+                body: file
+              });
+              if (!uploadResponse.ok) throw new Error("Falha no upload direto ao Storage.");
+              // 3. Registra metadados sem o arquivo (já está no Storage)
+              await MBI.api.request("/documents", {
+                method: "POST",
+                body: { ...data, storagePath: urlRes.storagePath, fileName: file.name, mimeType: file.type, fileSize: file.size }
+              });
+            } else {
+              // Arquivo pequeno: fluxo normal via API
+              await MBI.api.request("/documents", { method: "POST", body: new FormData(form) });
+            }
+          },
           () => publishDocumentLocal(form, data)
         );
         showToast("Documento publicado no portal do cliente.");
