@@ -44,7 +44,7 @@
     const plan = MBI.services.plans.get(client.planId);
     return MBI.ui.shell({
       title: routeTitles[route] || "Portal do Cliente",
-      subtitle: `${client.name} · ${plan.name} · Confiança ${client.confidence}`,
+      subtitle: `${MBI.ui.escape(client.name)} · ${MBI.ui.escape(plan.name)} · Confiança ${MBI.ui.escape(client.confidence)}`,
       menu: menu(route),
       content,
       sessionLabel: plan.name,
@@ -96,9 +96,9 @@
 
   function liveFeed(client, data) {
     const db = MBI.storage.getDatabase();
-    const docs = MBI.services.documents.listByClient(client.id).slice(-2).map((doc) => ["Documento", doc.name || doc.fileName, doc.competence || doc.due || "Publicado"]);
-    const messages = (db.messages || []).filter((message) => message.clientId === client.id).slice(-2).map((message) => ["Mensagem", message.text, message.at || "Agora"]);
-    const tasks = (db.tasks || []).filter((task) => task.clientId === client.id).slice(-2).map((task) => ["Acao", task.title, task.status || task.due || "Em acompanhamento"]);
+    const docs = MBI.services.documents.listByClient(client.id).slice(-2).map((doc) => ["Documento", MBI.ui.escape(doc.name || doc.fileName), MBI.ui.escape(doc.competence || doc.due || "Publicado")]);
+    const messages = (db.messages || []).filter((message) => message.clientId === client.id).slice(-2).map((message) => ["Mensagem", MBI.ui.escape(message.text), MBI.ui.escape(message.at || "Agora")]);
+    const tasks = (db.tasks || []).filter((task) => task.clientId === client.id).slice(-2).map((task) => ["Acao", MBI.ui.escape(task.title), MBI.ui.escape(task.status || task.due || "Em acompanhamento")]);
     const rows = [...tasks, ...docs, ...messages].slice(-5);
     if (!rows.length) rows.push(["Sistema", "Aguardando primeira atualizacao operacional da MB.", data.competenceLabel || "Competencia atual"]);
     return `<div class="timeline">${rows.map(([type, text, meta]) => `<div class="timeline-item"><time>${type}</time><span><strong>${text}</strong><br>${meta}</span></div>`).join("")}</div>`;
@@ -549,9 +549,9 @@
         <div class="cashflow-row is-head"><span>Descrição</span><span>Valor</span><span>Referência</span></div>
         ${normalized.map((row) => `
           <div class="cashflow-row ${row.type === "section" ? "is-section" : ""} ${row.type === "subtotal" ? "is-subtotal" : ""} ${row.type === "total" ? "is-total" : ""}">
-            <span>${row.label}</span>
+            <span>${MBI.ui.escape(row.label)}</span>
             <strong>${row.type === "section" ? "" : row.type === "indicator" ? `${Math.round(row.amount || 0)} dias` : MBI.ui.money(row.amount || 0)}</strong>
-            <span>${row.reference || ""}</span>
+            <span>${MBI.ui.escape(row.reference || "")}</span>
           </div>
         `).join("")}
       </div>
@@ -561,7 +561,7 @@
   function copilot(client) {
     const tasks = MBI.storage.getDatabase().tasks.filter((task) => task.clientId === client.id);
     if (!tasks.length) return `<div class="insight-item"><strong>Copiloto</strong><span>Nenhuma acao pendente. A MB acompanha o proximo fechamento.</span></div>`;
-    return `<div class="priority-list">${tasks.map((task) => `<div class="priority-item"><span class="priority-dot ${task.priority === "Alta" ? "high" : "medium"}"></span><div><strong>${task.title}</strong><span>${task.owner} · vence ${task.due}</span></div>${MBI.ui.pill(task.status)}</div>`).join("")}</div>`;
+    return `<div class="priority-list">${tasks.map((task) => `<div class="priority-item"><span class="priority-dot ${task.priority === "Alta" ? "high" : "medium"}"></span><div><strong>${MBI.ui.escape(task.title)}</strong><span>${MBI.ui.escape(task.owner)} · vence ${MBI.ui.escape(task.due)}</span></div>${MBI.ui.pill(task.status)}</div>`).join("")}</div>`;
   }
 
   function onboarding(client) {
@@ -581,7 +581,7 @@
     return `
       <section class="grid grid-2">
         <article class="panel"><div class="panel-header"><div><h3>Ativação da plataforma</h3><p>Checklist guiado do cliente.</p></div>${MBI.ui.pill(`${progress}% ativo`, progress >= 80 ? "status-ok" : "status-warning")}</div><div class="progress-wrap"><div class="progress-track"><div class="progress-fill" style="--progress:${progress}%"></div></div><span>${done} de ${steps.length} etapas concluídas</span></div><div class="step-list">${steps.map(([title, status, detail]) => `<div class="step-card"><div class="step-icon">${MBI.ui.icon("check-circle")}</div><div><strong>${title}</strong><span>${detail}</span></div>${MBI.ui.pill(status)}</div>`).join("")}</div></article>
-        <article class="panel"><div class="panel-header"><div><h3>Seu consultor MB</h3><p>Acompanhamento humano do onboarding.</p></div></div><div class="consultant-card"><div><strong>${client.consultant}</strong><span>Responsável principal</span></div><span class="chip is-on">Próxima revisão: ${nextReview}</span></div><div class="insight-list" style="margin-top:14px"><div class="insight-item"><strong>IA MB</strong><span>Quanto melhor a qualidade dos dados, maior a profundidade da análise.</span></div></div></article>
+        <article class="panel"><div class="panel-header"><div><h3>Seu consultor MB</h3><p>Acompanhamento humano do onboarding.</p></div></div><div class="consultant-card"><div><strong>${MBI.ui.escape(client.consultant)}</strong><span>Responsável principal</span></div><span class="chip is-on">Próxima revisão: ${MBI.ui.escape(nextReview)}</span></div><div class="insight-list" style="margin-top:14px"><div class="insight-item"><strong>IA MB</strong><span>Quanto melhor a qualidade dos dados, maior a profundidade da análise.</span></div></div></article>
       </section>
     `;
   }
@@ -594,7 +594,7 @@
       .sort((a, b) => String(b.competence || b.due || "").localeCompare(String(a.competence || a.due || "")));
     return `
       <section class="grid grid-2">
-        <article class="panel"><div class="panel-header"><div><h3>Documentos liberados</h3><p>Arquivos publicados pela equipe MB para consulta e download.</p></div></div><form class="filter-row" data-form="document-filters"><input type="hidden" name="scope" value="client"><select name="category"><option>Todas</option>${["Fiscal", "Trabalhista", "Contábil", "Financeiro", "Societário", "Contratos", "Certidões"].map((item) => `<option ${filters.category === item ? "selected" : ""}>${item}</option>`).join("")}</select><input type="month" name="competence" value="${filters.competence || ""}"><button class="btn btn-primary" type="submit">${MBI.ui.icon("filter")} Filtrar</button></form>${MBI.ui.table(["Descricao", "Arquivo original", "Categoria", "Status", "Competencia", "Vencimento", "Arquivo"], docs.map((doc) => [doc.description || doc.name || "-", doc.fileName || doc.originalFileName || doc.name || "-", doc.category, MBI.ui.pill(doc.status), doc.competence || "-", doc.dueDate || doc.due || "-", `<button class="btn btn-soft btn-mini" type="button" data-action="document-download" data-document-id="${doc.id}">${MBI.ui.icon("download")} Baixar</button>`]))}</article>
+        <article class="panel"><div class="panel-header"><div><h3>Documentos liberados</h3><p>Arquivos publicados pela equipe MB para consulta e download.</p></div></div><form class="filter-row" data-form="document-filters"><input type="hidden" name="scope" value="client"><select name="category"><option>Todas</option>${["Fiscal", "Trabalhista", "Contábil", "Financeiro", "Societário", "Contratos", "Certidões"].map((item) => `<option ${filters.category === item ? "selected" : ""}>${item}</option>`).join("")}</select><input type="month" name="competence" value="${filters.competence || ""}"><button class="btn btn-primary" type="submit">${MBI.ui.icon("filter")} Filtrar</button></form>${MBI.ui.table(["Descricao", "Arquivo original", "Categoria", "Status", "Competencia", "Vencimento", "Arquivo"], docs.map((doc) => [MBI.ui.escape(doc.description || doc.name || "-"), MBI.ui.escape(doc.fileName || doc.originalFileName || doc.name || "-"), MBI.ui.escape(doc.category), MBI.ui.pill(doc.status), MBI.ui.escape(doc.competence || "-"), MBI.ui.escape(doc.dueDate || doc.due || "-"), `<button class="btn btn-soft btn-mini" type="button" data-action="document-download" data-document-id="${MBI.ui.escape(doc.id)}">${MBI.ui.icon("download")} Baixar</button>`]))}</article>
         <article class="panel"><div class="panel-header"><div><h3>Como a MB envia documentos</h3><p>O envio oficial acontece do escritorio para o cliente.</p></div>${MBI.ui.pill("Somente visualizacao")}</div><div class="flow-map"><div><strong>1. MB publica</strong><span>DAS, guias, folha, relatorios e documentos ficam disponiveis nesta tela.</span></div><div><strong>2. Cliente visualiza</strong><span>O empresario baixa arquivos, acompanha vencimentos e consulta o historico.</span></div><div><strong>3. Solicitacoes</strong><span>Se a MB precisar de algum arquivo, a solicitacao aparece como pendencia ou mensagem.</span></div></div><button class="btn btn-primary" type="button" data-route="#/cliente/comunicacao">${MBI.ui.icon("messages-square")} Falar com a MB</button></article>
       </section>
     `;
@@ -602,15 +602,15 @@
 
   function imports(client) {
     const rows = MBI.services.imports.list(client.id);
-    return `<section class="panel"><div class="panel-header"><div><h3>Histórico de importações</h3><p>Arquivos recebidos e status de validação.</p></div></div>${MBI.ui.table(["Arquivo", "Tipo", "Status", "Responsável", "Resultado"], rows.map((row) => [row.fileName, row.type, MBI.ui.pill(row.status), row.owner, row.result]))}</section>`;
+    return `<section class="panel"><div class="panel-header"><div><h3>Histórico de importações</h3><p>Arquivos recebidos e status de validação.</p></div></div>${MBI.ui.table(["Arquivo", "Tipo", "Status", "Responsável", "Resultado"], rows.map((row) => [MBI.ui.escape(row.fileName), MBI.ui.escape(row.type), MBI.ui.pill(row.status), MBI.ui.escape(row.owner), MBI.ui.escape(row.result)]))}</section>`;
   }
 
   function communication(client) {
     const messages = MBI.storage.getDatabase().messages.filter((message) => message.clientId === client.id);
     return `
       <section class="grid grid-2">
-        <article class="panel"><div class="panel-header"><div><h3>Seu consultor MB</h3><p>Canal operacional centralizado.</p></div></div><div class="notification-item"><strong>${client.consultant}</strong><span>Responsável principal</span></div><div class="notification-item"><strong>${client.analyst}</strong><span>Responsável financeiro</span></div></article>
-        <article class="panel"><div class="panel-header"><div><h3>Mensagens</h3><p>Histórico cliente x MB.</p></div></div><div class="insight-list">${messages.map((msg) => `<div class="insight-item"><strong>${msg.from}</strong><span>${msg.text}</span><em>${msg.at}</em></div>`).join("")}</div><form class="button-row" style="margin-top:14px" data-form="message"><input type="hidden" name="clientId" value="${client.id}"><input name="text" placeholder="Escrever mensagem para a MB"><button class="btn btn-primary" type="submit">${MBI.ui.icon("send")} Enviar</button></form></article>
+        <article class="panel"><div class="panel-header"><div><h3>Seu consultor MB</h3><p>Canal operacional centralizado.</p></div></div><div class="notification-item"><strong>${MBI.ui.escape(client.consultant)}</strong><span>Responsável principal</span></div><div class="notification-item"><strong>${MBI.ui.escape(client.analyst)}</strong><span>Responsável financeiro</span></div></article>
+        <article class="panel"><div class="panel-header"><div><h3>Mensagens</h3><p>Histórico cliente x MB.</p></div></div><div class="insight-list">${messages.map((msg) => `<div class="insight-item"><strong>${MBI.ui.escape(msg.from)}</strong><span>${MBI.ui.escape(msg.text)}</span><em>${MBI.ui.escape(msg.at)}</em></div>`).join("")}</div><form class="button-row" style="margin-top:14px" data-form="message"><input type="hidden" name="clientId" value="${MBI.ui.escape(client.id)}"><input name="text" placeholder="Escrever mensagem para a MB"><button class="btn btn-primary" type="submit">${MBI.ui.icon("send")} Enviar</button></form></article>
       </section>
     `;
   }

@@ -5,6 +5,12 @@
     return `<i data-lucide="${name}" aria-hidden="true"></i>`;
   }
 
+  // Escapa dado de usuario antes de interpolar em HTML (corpo, atributos e textarea).
+  // Fonte unica de verdade para evitar XSS armazenado em todas as telas.
+  function escape(value) {
+    return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
+  }
+
   function money(value) {
     return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(Number(value || 0));
   }
@@ -317,5 +323,5 @@
     return message ? `<div class="toast">${message}</div>` : "";
   }
 
-  MBI.ui = { icon, money, pill, metric, kpi, table, bars, lineChart, groupedBars, scoreGauge, runway, donut, waterfall, radar, dreTable, shell, nav, toast, statusClass };
+  MBI.ui = { icon, escape, money, pill, metric, kpi, table, bars, lineChart, groupedBars, scoreGauge, runway, donut, waterfall, radar, dreTable, shell, nav, toast, statusClass };
 })();
