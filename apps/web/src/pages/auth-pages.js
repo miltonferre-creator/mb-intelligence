@@ -3,7 +3,6 @@
   MBI.pages = MBI.pages || {};
 
   function login() {
-    const clients = MBI.services.clients.list();
     return `
       <main class="login-page">
         <section class="login-brand">
@@ -49,10 +48,6 @@
                 <label><span>E-mail</span><input name="email" type="email" autocomplete="email" required placeholder="seu@email.com.br"></label>
                 <label><span>Senha</span><input name="password" type="password" autocomplete="current-password" required placeholder="Sua senha de acesso"></label>
               </div>
-              <label>
-                <span>Cliente em operacao (somente equipe MB)</span>
-                <select name="clientId"><option value="">— Selecione um cliente —</option>${clients.map((client) => `<option value="${client.id}">${client.name}</option>`).join("")}</select>
-              </label>
               <div class="login-actions">
                 <button class="btn btn-primary" type="submit">${MBI.ui.icon("log-in")} Entrar</button>
                 <button class="btn btn-ghost" type="button" data-route="#/contratar">${MBI.ui.icon("shopping-bag")} Quero contratar</button>
