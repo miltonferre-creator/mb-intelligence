@@ -54,7 +54,7 @@
     const client = MBI.services.clients.current();
     return MBI.ui.shell({
       title: titles[route] || "Administração MB",
-      subtitle: `Operador: ${user.name} · Cliente em operação: ${client.name}`,
+      subtitle: `Operador: ${user.name} · Cliente em operação: ${client?.name || "Nenhum"}`,
       menu: menu(route),
       content,
       sessionLabel: user.role,
@@ -63,6 +63,7 @@
   }
 
   function render(route) {
+    if (!MBI.services.clients.list().length) return shell("#/admin/clientes", emptyClients());
     if (route === "#/admin/clientes") return shell(route, clients());
     if (route === "#/admin/novo-cliente") return shell("#/admin/clientes", clients());
     if (route === "#/admin/planos") return shell(route, plans());
@@ -77,10 +78,21 @@
     return shell("#/admin/operacao", operationV2());
   }
 
+  function emptyClients() {
+    return `
+      <section class="panel" style="text-align:center;padding:48px 24px">
+        <h3 style="margin-bottom:12px">Nenhum cliente cadastrado</h3>
+        <p style="color:var(--muted);margin-bottom:24px">Cadastre o primeiro cliente para comecar a operar o portal.</p>
+        <button class="btn btn-primary" type="button" data-route="#/admin/novo-cliente">${MBI.ui.icon("plus")} Cadastrar primeiro cliente</button>
+      </section>
+    `;
+  }
+
   function operationV2() {
     const db = MBI.storage.getDatabase();
     const clients = db.clients;
     const selected = MBI.services.clients.current();
+    if (!selected) return emptyClients();
     const data = MBI.services.finance.get(selected.id);
     const plan = MBI.services.plans.get(selected.planId);
     const selectedDocs = MBI.services.documents.listByClient(selected.id);
@@ -161,7 +173,7 @@
     return `
       <form data-form="select-admin-client" class="panel">
         <div class="panel-header"><div><h3>Cliente em operação</h3><p>Define o contexto das telas administrativas.</p></div></div>
-        <label><span>Cliente</span><select name="clientId">${MBI.services.clients.list().map((client) => `<option value="${client.id}" ${client.id === current.id ? "selected" : ""}>${client.name}</option>`).join("")}</select></label>
+        <label><span>Cliente</span><select name="clientId">${MBI.services.clients.list().map((client) => `<option value="${client.id}" ${client.id === current?.id ? "selected" : ""}>${client.name}</option>`).join("")}</select></label>
         <button class="btn btn-primary" style="margin-top:12px" type="submit">${MBI.ui.icon("refresh-cw")} Trocar contexto</button>
       </form>
     `;
@@ -194,8 +206,8 @@
             <button class="btn btn-primary" type="submit">${MBI.ui.icon("search")} Filtrar</button>
           </form>
           <article class="panel">
-            <div class="panel-header"><div><h3>Resumo</h3><p>Cliente selecionado para operacao.</p></div>${MBI.ui.pill(MBI.services.plans.get(current.planId)?.name || current.planId)}</div>
-            ${MBI.ui.table(["Campo", "Valor"], [["Empresa", current.name], ["CNPJ", current.cnpj], ["Consultor", current.consultant], ["Confianca", current.confidence]])}
+            <div class="panel-header"><div><h3>Resumo</h3><p>Cliente selecionado para operacao.</p></div>${MBI.ui.pill(MBI.services.plans.get(current?.planId)?.name || current?.planId || "—")}</div>
+            ${MBI.ui.table(["Campo", "Valor"], [["Empresa", current?.name || "—"], ["CNPJ", current?.cnpj || "—"], ["Consultor", current?.consultant || "—"], ["Confianca", current?.confidence || "—"]])}
           </article>
         </aside>
         <div class="admin-client-main">

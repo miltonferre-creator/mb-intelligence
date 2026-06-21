@@ -51,8 +51,8 @@
     const db = {
       ...local,
       version: local.version || MBI.seed.version,
-      plans: plans.data || local.plans,
-      clients: clients.data || local.clients,
+      plans: plans.data?.length ? plans.data : local.plans,
+      clients: clients.data?.length ? clients.data : local.clients,
       users: mergeUsers(local.users, users.data, me.user),
       documents: documents.data || [],
       imports: imports.data || [],
