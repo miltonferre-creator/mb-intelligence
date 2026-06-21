@@ -653,6 +653,17 @@ async function handleAuth(req, res, segments) {
 
   if (req.method === "POST" && segments[1] === "logout") return noContent(res);
 
+  if (req.method === "POST" && segments[1] === "reset-password") {
+    const body = await readBody(req);
+    if (!body.email) return error(res, 400, "Informe o e-mail cadastrado.");
+    await fetch(`${config.url}/auth/v1/recover`, {
+      method: "POST",
+      headers: { apikey: config.anonKey, "Content-Type": "application/json" },
+      body: JSON.stringify({ email: body.email })
+    });
+    return ok(res, { ok: true });
+  }
+
   if (req.method === "POST" && segments[1] === "change-password") {
     const ctx = await authContext(req, res);
     if (!ctx) return;
@@ -717,6 +728,7 @@ async function handleAuth(req, res, segments) {
 
   if (req.method === "POST" && segments[1] === "register-client") {
     const body = await readBody(req);
+    if (!body.password || body.password.length < 8) throw Object.assign(new Error("Informe uma senha de no minimo 8 caracteres."), { statusCode: 400 });
     await validateClientCnpj(body);
     const clientId = crypto.randomUUID();
     const companyId = crypto.randomUUID();
@@ -729,7 +741,7 @@ async function handleAuth(req, res, segments) {
       method: "POST",
       body: {
         email: body.email,
-        password: body.password || "123456",
+        password: body.password,
         email_confirm: true,
         user_metadata: { name: body.ownerName, type: "client", role: "Proprietario" }
       }
@@ -748,7 +760,7 @@ async function handleAuth(req, res, segments) {
         apikey: config.anonKey,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ email: body.email, password: body.password || "123456" })
+      body: JSON.stringify({ email: body.email, password: body.password })
     });
     const tokenData = await tokenResponse.json();
     if (!tokenResponse.ok) throw new Error(tokenData?.message || "Não foi possível iniciar a sessão do cliente.");
@@ -796,9 +808,14 @@ async function handleClients(req, res, segments) {
   const ctx = await requireMb(req, res);
   if (!ctx) return;
   if (req.method === "GET" && segments.length === 1) {
-    const query = ctx.profile.type === "mb" ? "/clients?select=*" : `/clients?id=eq.${ctx.profile.client_id}&select=*`;
+    const { url: listUrl } = parseUrl(req);
+    const limit = Math.min(Number(listUrl.searchParams.get("limit") || 100), 500);
+    const offset = Math.max(Number(listUrl.searchParams.get("offset") || 0), 0);
+    const query = ctx.profile.type === "mb"
+      ? `/clients?select=*&limit=${limit}&offset=${offset}&order=name.asc`
+      : `/clients?id=eq.${ctx.profile.client_id}&select=*`;
     const rows = await rest(query);
-    return ok(res, { data: rows.map(clientToApi) });
+    return ok(res, { data: rows.map(clientToApi), pagination: { limit, offset, count: rows.length } });
   }
   if (req.method === "GET" && segments[1]) {
     if (ctx.profile.type !== "mb" && String(ctx.profile.client_id) !== String(segments[1])) return error(res, 403, "Cliente fora do escopo do usuÃ¡rio.");
@@ -834,9 +851,12 @@ async function listClientScoped(req, res, table, mapper, select = "*") {
   const { url } = parseUrl(req);
   const clientId = url.searchParams.get("clientId") || (ctx.profile.type === "client" ? ctx.profile.client_id : null);
   if (clientId && !canAccessClient(ctx.profile, clientId)) return error(res, 403, "Cliente fora do escopo do usuário.");
-  const query = clientId ? `/${table}?client_id=eq.${clientId}&select=${select}` : `/${table}?select=${select}`;
+  const limit = Math.min(Number(url.searchParams.get("limit") || 50), 200);
+  const offset = Math.max(Number(url.searchParams.get("offset") || 0), 0);
+  const baseFilter = clientId ? `client_id=eq.${clientId}&` : "";
+  const query = `/${table}?${baseFilter}select=${select}&limit=${limit}&offset=${offset}&order=created_at.desc`;
   const rows = await rest(query);
-  return ok(res, { data: rows.map(mapper) });
+  return ok(res, { data: rows.map(mapper), pagination: { limit, offset, count: rows.length } });
 }
 
 async function handleDocuments(req, res, segments) {
@@ -1132,7 +1152,8 @@ async function handleUsers(req, res, segments) {
   }
   if (req.method === "POST") {
     const body = await readBody(req);
-    const authUser = await supabaseRequest("/auth/v1/admin/users", { method: "POST", body: { email: body.email, password: body.password || "123456", email_confirm: true, user_metadata: { name: body.name, role: body.role, type: body.type } } });
+    if (!body.password || body.password.length < 8) throw Object.assign(new Error("Informe uma senha de no minimo 8 caracteres."), { statusCode: 400 });
+    const authUser = await supabaseRequest("/auth/v1/admin/users", { method: "POST", body: { email: body.email, password: body.password, email_confirm: true, user_metadata: { name: body.name, role: body.role, type: body.type } } });
     const rows = await rest("/user_profiles", { method: "POST", body: [{ id: authUser.id, client_id: body.clientId || null, type: body.type || "client", name: body.name, email: body.email, role: body.role || "Somente leitura", status: body.status || "Ativo" }] });
     return created(res, { data: profileToApi(rows[0]) });
   }

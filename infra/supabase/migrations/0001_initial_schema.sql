@@ -236,9 +236,9 @@ create index if not exists idx_audit_logs_created_at on public.audit_logs(create
 
 insert into public.plans (id, name, price, tagline, modules, color)
 values
-  ('contabilidade', 'Contabilidade', 800, 'Organização contábil, documentos e guias em um só lugar.', '["Documentos","Guias","DAS","Pendências","Avisos"]'::jsonb, 'status-warning'),
-  ('financeiro', 'Financeiro IA', 1200, 'Dashboards, faturamento, folha, fiscal e análises automáticas.', '["Documentos","Fiscal","Folha","Faturamento","IA básica","Relatórios simples"]'::jsonb, 'status-ok'),
-  ('cfo', 'CFO as a Service', 2000, 'Análise executiva, DRE, caixa, score e apoio consultivo.', '["Todos os módulos","DRE","Fluxo de caixa","Score","Parecer MB","Reuniões CFO"]'::jsonb, 'status-danger')
+  ('contabilidade', 'Contabilidade', 500, 'Contabilidade, Simples Nacional, DAS, documentos e repositório digital.', '["Documentos","Guias","DAS","Pendências","Avisos","Repositório"]'::jsonb, 'status-warning'),
+  ('gestao', 'Gestão', 770, 'Tudo do Contabilidade + folha até 5 funcionários, dashboard e indicadores.', '["Documentos","Fiscal","Folha","Faturamento","Dashboard","Indicadores","Alertas","Observações IA"]'::jsonb, 'status-ok'),
+  ('cfo', 'CFO as a Service', 0, 'Análise executiva, DRE, caixa, score e apoio consultivo. Em breve.', '["Todos os módulos","DRE","Fluxo de caixa","Score","Parecer MB","Reuniões CFO"]'::jsonb, 'status-danger')
 on conflict (id) do update set
   name = excluded.name,
   price = excluded.price,

@@ -112,7 +112,7 @@
       const clientId = MBI.storage.nowId("cli");
       const companyId = MBI.storage.nowId("emp");
       const userId = MBI.storage.nowId("usr");
-      const planId = payload.planId || "financeiro";
+      const planId = payload.planId || "gestao";
       const client = {
         id: clientId,
         name: payload.companyName,
@@ -215,5 +215,17 @@
     return session;
   }
 
-  MBI.auth = { login, logout, currentSession, currentUser, registerClient, refreshSession };
+  async function resetPassword(email) {
+    try {
+      await MBI.api.request("/auth/reset-password", {
+        method: "POST",
+        auth: false,
+        body: { email }
+      });
+    } catch (error) {
+      if (!error.apiUnavailable) throw error;
+    }
+  }
+
+  MBI.auth = { login, logout, currentSession, currentUser, registerClient, refreshSession, resetPassword };
 })();

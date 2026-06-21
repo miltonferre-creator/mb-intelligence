@@ -23,14 +23,15 @@
 
   function matrix() {
     return [
-      ["Documentos e guias", "Sim", "Sim", "Sim", "Base"],
-      ["Faturamento e fiscal", "Básico", "Completo", "Completo", "Plano + dados"],
-      ["Folha", "Documentos", "Folha e encargos", "Folha e encargos", "Plano"],
-      ["Dashboard financeiro", "Não", "Sim", "Sim", "Plano"],
-      ["DRE", "Não", "Básica se houver dados", "Completa e validada", "Plano + dados"],
-      ["Fluxo de caixa", "Não", "Básico se houver dados", "Completo e validado", "Plano + extrato"],
-      ["IA", "Não", "Observações", "Executiva + aprovação MB", "Governança"],
-      ["CFO consultivo", "Não", "Não", "Sim", "Plano CFO"]
+      ["Documentos e guias", "Sim", "Sim", "Em breve", "Base"],
+      ["Faturamento e fiscal", "Básico", "Completo", "Em breve", "Plano + dados"],
+      ["Folha (até 5 func.)", "Não", "Sim", "Em breve", "Plano Gestão"],
+      ["Dashboard financeiro", "Não", "Sim", "Em breve", "Plano Gestão"],
+      ["Indicadores e alertas", "Não", "Sim", "Em breve", "Plano Gestão"],
+      ["Observações IA", "Não", "Sim", "Em breve", "Plano Gestão"],
+      ["DRE executiva", "Não", "Não", "Em breve", "CFO (futuro)"],
+      ["Fluxo de caixa gerencial", "Não", "Não", "Em breve", "CFO (futuro)"],
+      ["CFO consultivo", "Não", "Não", "Em breve", "CFO (futuro)"]
     ];
   }
 

@@ -3,10 +3,11 @@
 
   const root = document.getElementById("root");
   let toastMessage = "";
+  // TODO: preencher cnpj e crc da MB antes de gerar relatórios para clientes reais
   const MB_REPORT_CONFIG = Object.assign({
-    companyName: "MB Empresas Assessoria Empresarial",
-    cnpj: "",
-    crc: ""
+    companyName: "MB Assessoria Empresarial",
+    cnpj: "", // ex: "00.000.000/0001-00"
+    crc: ""   // ex: "CRC/CE 00000"
   }, window.MB_REPORT_CONFIG || {});
 
   function route() {
@@ -36,7 +37,17 @@
     const session = MBI.auth.currentSession();
 
     if (!session) {
-      root.innerHTML = currentRoute === "#/contratar" ? MBI.pages.auth.register() : MBI.pages.auth.login();
+      if (currentRoute === "#/contratar") root.innerHTML = MBI.pages.auth.register();
+      else if (currentRoute === "#/recuperar-senha") root.innerHTML = MBI.pages.auth.resetPassword();
+      else if (currentRoute === "#/privacidade") root.innerHTML = MBI.pages.auth.privacy();
+      else root.innerHTML = MBI.pages.auth.login();
+      root.insertAdjacentHTML("beforeend", MBI.ui.toast(toastMessage));
+      refreshIcons();
+      return;
+    }
+
+    if (currentRoute === "#/privacidade") {
+      root.innerHTML = MBI.pages.auth.privacy();
       root.insertAdjacentHTML("beforeend", MBI.ui.toast(toastMessage));
       refreshIcons();
       return;
@@ -355,6 +366,13 @@
         return;
       }
 
+      if (form.dataset.form === "reset-password") {
+        await MBI.auth.resetPassword(data.email);
+        showToast("Se o e-mail estiver cadastrado, voce receberá um link de recuperação em breve.");
+        navigate("#/login");
+        return;
+      }
+
       if (form.dataset.form === "select-competence") {
         MBI.services.finance.setSelectedCompetence(data.clientId, data.competence);
         if (MBI.auth.currentSession()?.token) {
@@ -572,22 +590,6 @@
       return;
     }
 
-    const fillLogin = event.target.closest("[data-fill-login]");
-    if (fillLogin) {
-      const form = fillLogin.closest("form");
-      const email = document.querySelector("input[name='email']");
-      const password = document.querySelector("input[name='password']");
-      const clientSelect = document.querySelector("select[name='clientId']");
-      const demoClient = document.querySelector("input[name='demoClientId']");
-      const demoMode = document.querySelector("input[name='demoMode']");
-      if (email) email.value = fillLogin.dataset.fillLogin;
-      if (password) password.value = "123456";
-      if (clientSelect && fillLogin.dataset.demoClientId) clientSelect.value = fillLogin.dataset.demoClientId;
-      if (demoClient) demoClient.value = fillLogin.dataset.demoClientId || "";
-      if (demoMode) demoMode.value = fillLogin.dataset.demoMode || "";
-      form?.requestSubmit();
-      return;
-    }
 
     const action = event.target.closest("[data-action]");
     if (!action) return;

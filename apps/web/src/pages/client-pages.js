@@ -149,8 +149,8 @@
     const tasks = MBI.storage.getDatabase().tasks.filter((task) => task.clientId === client.id);
     const primaryTask = tasks[0];
     const executiveText = client.planId === "contabilidade"
-      ? "Acompanhe guias, documentos e obrigacoes. Para analises financeiras, evolua para Financeiro IA."
-      : client.planId === "financeiro"
+      ? "Acompanhe guias, documentos e obrigacoes. Para analises financeiras, evolua para o Plano Gestao."
+      : client.planId === "gestao"
         ? "Acompanhe faturamento, fiscal, folha e alertas gerenciais automaticos enquanto a MB valida a base."
         : "Acompanhe DRE, caixa, score e decisoes executivas com validacao consultiva da MB.";
 
@@ -200,7 +200,7 @@
   function tabAllowed(client, tab) {
     if (tab === "overview") return true;
     if (client.planId === "cfo") return true;
-    if (client.planId === "financeiro") return ["finance", "analysis", "history"].includes(tab);
+    if (client.planId === "gestao") return ["finance", "analysis", "history"].includes(tab);
     return false;
   }
 
@@ -295,9 +295,9 @@
 
   function overviewTab(client, data) {
     const locked = client.planId === "contabilidade"
-      ? `<section class="grid grid-3" style="margin-top:14px">${lockedUpgrade("DRE gerencial", "Financeiro IA", "Visualize a cascata de resultado e entenda lucro, margem e custos.")}${lockedUpgrade("Score financeiro", "Financeiro IA", "Libere o score com dimensões de liquidez, rentabilidade e eficiência.")}${lockedUpgrade("CFO consultivo", "CFO as a Service", "Receba cenários, pareceres e recomendações executivas da MB.")}</section>`
-      : client.planId === "financeiro"
-        ? `<section class="grid grid-2" style="margin-top:14px">${lockedUpgrade("Radar CFO", "CFO as a Service", "Compare as seis dimensões do score com leitura executiva.")}${lockedUpgrade("Cenários consultivos", "CFO as a Service", "Simule investimento, margem e caixa mínimo com parecer MB.")}</section>`
+      ? `<section class="grid grid-3" style="margin-top:14px">${lockedUpgrade("DRE gerencial", "Gestao", "Visualize a cascata de resultado e entenda lucro, margem e custos.")}${lockedUpgrade("Score financeiro", "Gestao", "Libere o score com dimensões de liquidez, rentabilidade e eficiência.")}${lockedUpgrade("CFO consultivo", "CFO (em breve)", "Receba cenários, pareceres e recomendações executivas da MB.")}</section>`
+      : client.planId === "gestao"
+        ? `<section class="grid grid-2" style="margin-top:14px">${lockedUpgrade("Radar CFO", "CFO (em breve)", "Compare as seis dimensões do score com leitura executiva.")}${lockedUpgrade("Cenários consultivos", "CFO (em breve)", "Simule investimento, margem e caixa mínimo com parecer MB.")}</section>`
         : "";
     return `
       ${cockpit(client, data)}
@@ -315,7 +315,7 @@
   }
 
   function financeTab(client, data) {
-    if (!tabAllowed(client, "finance")) return lockedUpgrade("Financeiro gerencial", "Financeiro IA", "DRE, DFC e evolução financeira ficam disponíveis nos planos financeiros.");
+    if (!tabAllowed(client, "finance")) return lockedUpgrade("Financeiro gerencial", "Gestao", "DRE, DFC e evolução financeira ficam disponíveis nos planos financeiros.");
     const dreActions = client.planId === "cfo"
       ? `<div class="report-actions"><button class="btn btn-ghost" type="button" data-action="print-report" data-report="dre">${MBI.ui.icon("printer")} Imprimir</button><button class="btn btn-soft" type="button" data-action="export-report" data-report="dre">${MBI.ui.icon("file-spreadsheet")} Excel</button></div>`
       : "";
@@ -339,7 +339,7 @@
   }
 
   function analysisTab(client, data) {
-    if (!tabAllowed(client, "analysis")) return lockedUpgrade("Análise financeira", "Financeiro IA", "Score, composição de despesas e fôlego de caixa ficam disponíveis nos planos financeiros.");
+    if (!tabAllowed(client, "analysis")) return lockedUpgrade("Análise financeira", "Gestao", "Score, composição de despesas e fôlego de caixa ficam disponíveis nos planos financeiros.");
     return `
       <section class="grid grid-3">
         <article class="panel"><div class="panel-header"><div><h3>MB Financial Score</h3><p>Leitura visual do risco financeiro.</p></div></div>${MBI.ui.scoreGauge(data.score, "MB Financial Score")}${MBI.ui.bars(scoreBars(data))}</article>
@@ -348,13 +348,13 @@
       </section>
       <section class="grid grid-2" style="margin-top:14px">
         <article class="panel"><div class="panel-header"><div><h3>Margem e meta MB</h3><p>Eficiência da operação.</p></div></div>${MBI.ui.bars([["Margem atual", Math.min(Math.max(data.margin || 0, 0) * 3, 100), `${data.margin || 0}%`, "teal"], ["Meta MB", Math.min(Math.max(data.marginTarget || 20, 0) * 3, 100), `${data.marginTarget || 20}%`, "blue"], ["Pressão de custo", percentOf(data.expenses || 0, data.revenue || 1), `${percentOf(data.expenses || 0, data.revenue || 1)}% da receita`, "amber"]])}</article>
-        ${client.planId === "cfo" ? `<article class="panel"><div class="panel-header"><div><h3>Radar CFO</h3><p>Seis dimensões do score financeiro.</p></div></div>${MBI.ui.radar(data.scoreBreakdown)}</article>` : lockedUpgrade("Radar CFO", "CFO as a Service", "O radar executivo mostra as dimensões de score com leitura consultiva.")}
+        ${client.planId === "cfo" ? `<article class="panel"><div class="panel-header"><div><h3>Radar CFO</h3><p>Seis dimensões do score financeiro.</p></div></div>${MBI.ui.radar(data.scoreBreakdown)}</article>` : lockedUpgrade("Radar CFO", "CFO (em breve)", "O radar executivo mostra as dimensões de score com leitura consultiva.")}
       </section>
     `;
   }
 
   function historyTab(client, data) {
-    if (!tabAllowed(client, "history")) return lockedUpgrade("Histórico financeiro", "Financeiro IA", "Acompanhe evolução, comparativos e tendências por competência.");
+    if (!tabAllowed(client, "history")) return lockedUpgrade("Histórico financeiro", "Gestao", "Acompanhe evolução, comparativos e tendências por competência.");
     const periods = MBI.services.finance.listPeriods(client.id);
     return `
       <section class="grid grid-2">
@@ -366,7 +366,7 @@
   }
 
   function scenariosTab(client, data) {
-    if (!tabAllowed(client, "scenarios")) return lockedUpgrade("Cenários executivos", "CFO as a Service", "Simulações de margem, investimento, caixa mínimo e parecer MB ficam no plano CFO.");
+    if (!tabAllowed(client, "scenarios")) return lockedUpgrade("Cenários executivos", "CFO (em breve)", "Simulações de margem, investimento, caixa mínimo e parecer MB ficam no plano CFO.");
     const safeInvestment = Number(data.investmentCapacity || 0);
     const marginGap = Math.max(Number(data.marginTarget || 20) - Number(data.margin || 0), 0);
     return `
@@ -410,7 +410,7 @@
         ${MBI.ui.metric("Faturamento", MBI.ui.money(data.revenue), latestMonth, data.revenue ? "Base atualizada para leitura gerencial." : "Dados financeiros ainda insuficientes.", "blue")}
         ${MBI.ui.metric("Impostos / DAS", MBI.ui.money(data.taxes), "Simples", "Guia e vencimentos seguem acompanhamento fiscal da MB.", "amber")}
         ${MBI.ui.metric("Resultado", data.result ? MBI.ui.money(data.result) : "Indisponível", `${data.margin || 0}%`, client.planId === "contabilidade" ? "Plano atual não libera análise financeira completa." : "Resultado calculado com dados disponíveis.", "teal")}
-        ${MBI.ui.metric("Score", data.score || "N/A", "MB Financial", client.planId === "cfo" ? "Score financeiro liberado para leitura executiva." : "Score completo disponível no CFO as a Service.", "brand")}
+        ${MBI.ui.metric("Score", data.score || "N/A", "MB Financial", client.planId === "cfo" ? "Score financeiro liberado para leitura executiva." : "Score completo disponível no CFO (em breve).", "brand")}
       </section>
     `;
 

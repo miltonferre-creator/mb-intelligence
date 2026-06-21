@@ -2,31 +2,32 @@
   window.MBI = window.MBI || {};
 
   MBI.seed = {
-    version: 6,
+    version: 7,
     plans: [
       {
         id: "contabilidade",
         name: "Contabilidade",
-        price: 800,
-        tagline: "Organizacao contabil, documentos e guias em um so lugar.",
-        modules: ["Documentos", "Guias", "DAS", "Pendencias", "Avisos"],
+        price: 500,
+        tagline: "Contabilidade, Simples Nacional, DAS, documentos e repositorio digital.",
+        modules: ["Documentos", "Guias", "DAS", "Pendencias", "Avisos", "Repositorio"],
         color: "status-warning"
       },
       {
-        id: "financeiro",
-        name: "Financeiro IA",
-        price: 1200,
-        tagline: "Dashboards, faturamento, folha, fiscal e analises automaticas.",
-        modules: ["Documentos", "Fiscal", "Folha", "Faturamento", "IA basica", "Relatorios simples"],
+        id: "gestao",
+        name: "Gestao",
+        price: 770,
+        tagline: "Tudo do Contabilidade + folha ate 5 funcionarios, dashboard e indicadores.",
+        modules: ["Documentos", "Fiscal", "Folha", "Faturamento", "Dashboard", "Indicadores", "Alertas", "Observacoes IA"],
         color: "status-ok"
       },
       {
         id: "cfo",
         name: "CFO as a Service",
-        price: 2000,
-        tagline: "Analise executiva, DRE, caixa, score e apoio consultivo.",
+        price: 0,
+        tagline: "Analise executiva, DRE, caixa, score e apoio consultivo. Em breve.",
         modules: ["Todos os modulos", "DRE", "Fluxo de caixa", "Score", "Parecer MB", "Reunioes CFO"],
-        color: "status-danger"
+        color: "status-danger",
+        comingSoon: true
       }
     ],
     clients: [
@@ -58,8 +59,8 @@
         city: "Natal/RN",
         segment: "Saude",
         taxRegime: "Simples Nacional",
-        planId: "financeiro",
-        maturity: "Financeiro integrado",
+        planId: "gestao",
+        maturity: "Gestao integrada",
         status: "Ativo",
         owner: "Dra. Camila Norte",
         email: "camila@clinicanorte.com.br",
