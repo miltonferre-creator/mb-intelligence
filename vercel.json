@@ -1,12 +1,6 @@
 {
   "buildCommand": null,
   "outputDirectory": "apps/web",
-  "functions": {
-    "api/handler.js": {
-      "runtime": "nodejs20.x",
-      "maxDuration": 30
-    }
-  },
   "rewrites": [
     { "source": "/health",             "destination": "/api/handler" },
     { "source": "/auth/:path*",        "destination": "/api/handler" },
