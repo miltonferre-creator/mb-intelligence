@@ -1,0 +1,24 @@
+{
+  "buildCommand": null,
+  "outputDirectory": "apps/web",
+  "functions": {
+    "api/handler.js": {
+      "runtime": "nodejs20.x",
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    { "source": "/health",             "destination": "/api/handler" },
+    { "source": "/auth/:path*",        "destination": "/api/handler" },
+    { "source": "/plans/:path*",       "destination": "/api/handler" },
+    { "source": "/clients/:path*",     "destination": "/api/handler" },
+    { "source": "/documents/:path*",   "destination": "/api/handler" },
+    { "source": "/imports/:path*",     "destination": "/api/handler" },
+    { "source": "/finance/:path*",     "destination": "/api/handler" },
+    { "source": "/users/:path*",       "destination": "/api/handler" },
+    { "source": "/messages/:path*",    "destination": "/api/handler" },
+    { "source": "/tasks/:path*",       "destination": "/api/handler" },
+    { "source": "/approvals/:path*",   "destination": "/api/handler" },
+    { "source": "/audit/:path*",       "destination": "/api/handler" }
+  ]
+}

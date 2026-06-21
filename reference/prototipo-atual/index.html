@@ -1,0 +1,2509 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MB Intelligence | Inteligência Financeira e Gestão Operacional</title>
+    <meta name="description" content="Protótipo web da MB Intelligence: plataforma de inteligência financeira e gestão operacional para empresas modernas.">
+    <meta name="theme-color" content="#520006">
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <section class="login-screen" data-login-screen>
+      <div class="login-art">
+        <img src="assets/mb-logo-premium.svg" alt="MB Assessoria Empresarial">
+        <h1>MB Intelligence</h1>
+        <p>Plataforma de inteligência financeira e gestão operacional para empresas modernas.</p>
+        <div class="login-proof">
+          <span>Integra dados</span>
+          <span>Consolida informações</span>
+          <span>Interpreta números</span>
+          <span>Apoia decisões</span>
+        </div>
+      </div>
+
+      <form class="login-card" data-login-form>
+        <span class="eyebrow">Tela 0 - Login único</span>
+        <h2>Entrar na plataforma</h2>
+        <p>O sistema identifica plano, perfil e permissões. Clientes acessam o portal; a equipe MB acessa a operação, validação e publicação dos dados.</p>
+
+        <label>
+          <span>E-mail</span>
+          <input type="email" name="email" value="cfo@cliente.com" autocomplete="email" required>
+        </label>
+        <label>
+          <span>Senha</span>
+          <input type="password" name="password" value="123456" autocomplete="current-password" required>
+        </label>
+
+        <div class="login-admin-context">
+          <label>
+            <span>Empresa / ambiente de acesso</span>
+            <select name="organization" data-login-organization>
+              <option value="MB Assessoria Empresarial">MB Assessoria Empresarial</option>
+              <option value="Comércio Silva LTDA">Comércio Silva LTDA</option>
+              <option value="Clínica Norte PME">Clínica Norte PME</option>
+              <option value="Serviços Prime ME">Serviços Prime ME</option>
+            </select>
+          </label>
+          <label>
+            <span>Operador MB, se for equipe interna</span>
+            <select name="operator" data-login-operator>
+              <option value="master">Marcos Lima - Administrador master</option>
+              <option value="operacional">Carla Souza - Gestora operacional</option>
+              <option value="fiscal">Paula Martins - Fiscal</option>
+              <option value="trabalhista">Renata Alves - Trabalhista</option>
+              <option value="financeiro">Ana Ribeiro - Analista financeiro</option>
+              <option value="cfo">Bruno Andrade - Consultor CFO</option>
+              <option value="atendimento">Lucas Pereira - Atendimento</option>
+            </select>
+          </label>
+        </div>
+        <p class="login-context-note">No acesso do cliente, o sistema usa a empresa vinculada. No acesso MB, o operador define perfil, permissões e carteira de trabalho do protótipo.</p>
+
+        <div class="login-row">
+          <a href="#" aria-label="Recuperar senha">Recuperar senha</a>
+          <span>2FA futuro</span>
+        </div>
+
+        <button class="btn btn-primary" type="submit">
+          <i data-lucide="log-in" aria-hidden="true"></i>
+          <span>Entrar</span>
+        </button>
+        <button class="btn btn-light" type="button" data-open-purchase>
+          <i data-lucide="shopping-bag" aria-hidden="true"></i>
+          <span>Criar conta e contratar plano</span>
+        </button>
+
+        <div class="demo-logins" aria-label="Acessos de demonstração">
+          <button type="button" data-demo-email="contabilidade@cliente.com" data-demo-organization="Serviços Prime ME">Cliente Contabilidade</button>
+          <button type="button" data-demo-email="financeiro@cliente.com" data-demo-organization="Clínica Norte PME">Cliente Financeiro IA</button>
+          <button type="button" data-demo-email="cfo@cliente.com" data-demo-organization="Comércio Silva LTDA">Cliente CFO</button>
+          <button type="button" data-demo-email="admin@mbempresas.com.br" data-demo-operator="master" data-demo-organization="MB Assessoria Empresarial">Admin Master</button>
+          <button type="button" data-demo-email="financeiro@mbempresas.com.br" data-demo-operator="financeiro" data-demo-organization="Comércio Silva LTDA">Ana Financeiro</button>
+          <button type="button" data-demo-email="cfo@mbempresas.com.br" data-demo-operator="cfo" data-demo-organization="Clínica Norte PME">Bruno CFO</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="purchase-screen is-hidden" data-purchase-screen>
+      <header class="purchase-header">
+        <button class="brand-button" type="button" data-back-login aria-label="Voltar para login">
+          <img src="assets/mb-logo-premium.svg" alt="MB Assessoria Empresarial">
+        </button>
+        <button class="btn btn-light" type="button" data-back-login>
+          <i data-lucide="arrow-left" aria-hidden="true"></i>
+          <span>Voltar ao login</span>
+        </button>
+      </header>
+
+      <main class="purchase-layout">
+        <section class="purchase-copy">
+          <span class="eyebrow">Tela 0.1 - Contratação online</span>
+          <h1>Escolha o plano, cadastre a empresa e finalize o pagamento.</h1>
+                  <p>Fluxo comercial para novos clientes contratarem a MB Intelligence com pagamento por Pix ou cartão de crédito. Após a confirmação, a equipe MB valida o cadastro, define responsáveis e ativa os módulos contratados.</p>
+        </section>
+
+        <section class="pricing-grid" aria-label="Planos disponíveis para contratação">
+          <article class="pricing-card" data-purchase-plan-card="contabilidade">
+            <span>Plano Contabilidade</span>
+            <strong data-plan-price-display="contabilidade">R$ 800</strong>
+            <em>/mês</em>
+            <p>Organização contábil, documentos, guias, DAS, vencimentos e pendências simples.</p>
+            <button class="btn btn-light" type="button" data-select-purchase-plan="contabilidade">Selecionar</button>
+          </article>
+          <article class="pricing-card is-selected" data-purchase-plan-card="financeiro">
+            <span>Plano Financeiro IA</span>
+            <strong data-plan-price-display="financeiro">R$ 1.200</strong>
+            <em>/mês</em>
+            <p>Dashboards, fiscal, folha, faturamento, importações e observações automáticas por IA.</p>
+            <button class="btn btn-primary" type="button" data-select-purchase-plan="financeiro">Selecionado</button>
+          </article>
+          <article class="pricing-card" data-purchase-plan-card="cfo">
+            <span>Plano CFO as a Service</span>
+            <strong data-plan-price-display="cfo">R$ 2.000</strong>
+            <em>/mês</em>
+            <p>DRE, caixa, score, relatórios executivos, parecer MB, reuniões e apoio consultivo.</p>
+            <button class="btn btn-light" type="button" data-select-purchase-plan="cfo">Selecionar</button>
+          </article>
+        </section>
+
+        <form class="checkout-card" data-purchase-form>
+          <div class="card-heading">
+            <div>
+              <span class="mini-label">Cadastro da empresa</span>
+              <h2>Dados para ativação</h2>
+            </div>
+            <span class="status-pill status-warning" data-selected-plan-label>Financeiro IA</span>
+          </div>
+
+          <div class="form-grid">
+            <label>
+              <span>Razão social</span>
+              <input name="company" value="Empresa Exemplo LTDA" required>
+            </label>
+            <label>
+              <span>CNPJ</span>
+              <input name="cnpj" value="12.345.678/0001-90" required>
+            </label>
+            <label>
+              <span>Responsável</span>
+              <input name="owner" value="Mariana Silva" required>
+            </label>
+            <label>
+              <span>WhatsApp</span>
+              <input name="phone" value="(85) 99999-0000" required>
+            </label>
+            <label>
+              <span>E-mail de acesso</span>
+              <input type="email" name="email" value="novo@cliente.com" required>
+            </label>
+            <label>
+              <span>Regime tributário</span>
+              <select name="tax_regime">
+                <option>Simples Nacional</option>
+                <option>Lucro Presumido</option>
+                <option>Lucro Real</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="payment-box">
+            <div class="payment-tabs" aria-label="Forma de pagamento">
+              <button class="is-active" type="button" data-payment-method="pix">Pix</button>
+              <button type="button" data-payment-method="card">Cartão de crédito</button>
+            </div>
+            <div class="payment-panel" data-payment-panel="pix">
+              <i data-lucide="qr-code" aria-hidden="true"></i>
+              <div>
+                <strong>Pagamento por Pix</strong>
+                <p>Após finalizar, o sistema gera QR Code e chave Pix para pagamento da primeira mensalidade.</p>
+              </div>
+            </div>
+            <div class="payment-panel is-hidden" data-payment-panel="card">
+              <i data-lucide="credit-card" aria-hidden="true"></i>
+              <div>
+                <strong>Cartão de crédito</strong>
+                <p>Protótipo do checkout com cobrança recorrente mensal e confirmação automática.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="checkout-summary">
+            <div><span>Plano escolhido</span><strong data-selected-plan-name>Financeiro IA</strong></div>
+            <div><span>Mensalidade</span><strong data-selected-plan-price>R$ 1.200</strong></div>
+            <div><span>Pagamento</span><strong data-selected-payment>Pix</strong></div>
+          </div>
+
+          <button class="btn btn-primary" type="submit">
+            <i data-lucide="check-circle-2" aria-hidden="true"></i>
+            <span>Finalizar contratação</span>
+          </button>
+          <p class="purchase-result is-hidden" data-purchase-result>Contratação simulada com sucesso. A equipe MB receberá o cadastro para validação e ativação do plano.</p>
+        </form>
+      </main>
+    </section>
+
+    <div class="app-shell is-hidden" data-app-shell>
+      <aside class="sidebar" aria-label="Navegação principal">
+        <button class="brand-button" type="button" data-view-link="dashboard-cliente" aria-label="Ir para início">
+          <img src="assets/mb-logo-premium.svg" alt="MB Assessoria Empresarial">
+        </button>
+
+        <div class="nav-group" data-client-nav>
+          <span>Portal do cliente</span>
+          <button class="nav-item is-active" type="button" data-view-link="dashboard-cliente" data-module="dashboard">
+            <i data-lucide="sparkles" aria-hidden="true"></i>
+            <span>Inteligência financeira</span>
+          </button>
+          <button class="nav-item" type="button" data-view-link="documentos-guias" data-module="documents">
+            <i data-lucide="folder-open" aria-hidden="true"></i>
+            <span>Documentos e guias</span>
+          </button>
+          <button class="nav-item" type="button" data-view-link="pendencias-notificacoes" data-module="notifications">
+            <i data-lucide="bell" aria-hidden="true"></i>
+            <span>Pendências e avisos</span>
+          </button>
+          <button class="nav-item" type="button" data-view-link="comunicacao-mb" data-module="communication">
+            <i data-lucide="message-circle" aria-hidden="true"></i>
+            <span>Comunicação</span>
+          </button>
+          <button class="nav-item" type="button" data-view-link="perfil-cliente" data-module="profile">
+            <i data-lucide="user-round" aria-hidden="true"></i>
+            <span>Perfil e consultor</span>
+          </button>
+          <button class="nav-item" type="button" data-view-link="planos-cliente" data-module="plans">
+            <i data-lucide="layers-3" aria-hidden="true"></i>
+            <span>Planos</span>
+          </button>
+          <button class="nav-item nav-item-secondary" type="button" data-view-link="envio-arquivos" data-module="upload_files">
+            <i data-lucide="upload-cloud" aria-hidden="true"></i>
+            <span>Enviar arquivo</span>
+          </button>
+        </div>
+
+        <div class="nav-group is-hidden" data-admin-nav>
+          <span>Administração MB</span>
+          <button class="nav-item" type="button" data-view-link="admin-cockpit">
+            <i data-lucide="monitor-dot" aria-hidden="true"></i>
+            <span>Cockpit MB</span>
+          </button>
+          <button class="nav-item" type="button" data-view-link="admin-clientes">
+            <i data-lucide="building-2" aria-hidden="true"></i>
+            <span>Clientes e planos</span>
+          </button>
+          <button class="nav-item" type="button" data-view-link="admin-dados">
+            <i data-lucide="panel-top-open" aria-hidden="true"></i>
+            <span>Dados e publicações</span>
+          </button>
+          <button class="nav-item" type="button" data-view-link="admin-planos">
+            <i data-lucide="key-round" aria-hidden="true"></i>
+            <span>Planos e permissões</span>
+          </button>
+          <button class="nav-item" type="button" data-view-link="admin-operacao">
+            <i data-lucide="workflow" aria-hidden="true"></i>
+            <span>Operação, tarefas e SLA</span>
+          </button>
+          <button class="nav-item" type="button" data-view-link="admin-comercial">
+            <i data-lucide="trending-up" aria-hidden="true"></i>
+            <span>Comercial</span>
+          </button>
+          <button class="nav-item" type="button" data-view-link="admin-aprovacao">
+            <i data-lucide="badge-check" aria-hidden="true"></i>
+            <span>IA e aprovações</span>
+          </button>
+          <button class="nav-item" type="button" data-view-link="admin-integracoes">
+            <i data-lucide="database-zap" aria-hidden="true"></i>
+            <span>Integrações e dados</span>
+          </button>
+          <button class="nav-item" type="button" data-view-link="admin-equipe">
+            <i data-lucide="users-round" aria-hidden="true"></i>
+            <span>Equipe</span>
+          </button>
+          <button class="nav-item" type="button" data-view-link="admin-relatorios">
+            <i data-lucide="bar-chart-3" aria-hidden="true"></i>
+            <span>Relatórios</span>
+          </button>
+          <button class="nav-item" type="button" data-view-link="admin-mapa">
+            <i data-lucide="map" aria-hidden="true"></i>
+            <span>Mapa do produto</span>
+          </button>
+        </div>
+
+        <div class="sidebar-footer">
+          <span class="mini-label">Ambiente</span>
+          <strong data-sidebar-context>Portal do cliente</strong>
+          <span data-sidebar-plan>Acesso definido no login</span>
+        </div>
+      </aside>
+
+      <div class="workspace">
+        <header class="topbar">
+          <div class="topbar-title">
+            <span class="product-chip">MB Intelligence</span>
+            <h1 data-environment-title>Portal do cliente</h1>
+          </div>
+
+          <div class="topbar-actions">
+            <div class="context-card">
+              <span data-context-label-primary>Empresa</span>
+              <strong data-current-plan-label>Comércio Silva LTDA</strong>
+            </div>
+            <div class="context-card">
+              <span data-context-label-secondary>Perfil</span>
+              <strong data-current-profile>Proprietário</strong>
+            </div>
+            <button class="icon-button" type="button" data-view-link="pendencias-notificacoes" aria-label="Alertas">
+              <i data-lucide="bell" aria-hidden="true"></i>
+              <span class="notification-dot"></span>
+            </button>
+            <button class="user-button" type="button" data-logout aria-label="Sair">
+              <span>MB</span>
+            </button>
+          </div>
+        </header>
+
+        <main>
+          <section class="view is-active" id="dashboard-cliente" data-view="dashboard-cliente">
+            <div class="hero-panel">
+              <div class="hero-copy">
+                <div class="eyebrow-row">
+                  <span class="eyebrow">Cliente C1 - Inteligência financeira</span>
+                </div>
+                <h2 data-dashboard-title>Inteligência executiva para decisão financeira.</h2>
+                <p data-dashboard-message>Acompanhe DRE, fluxo de caixa, margem, score, simulações, recomendações e análises validadas pela MB.</p>
+              </div>
+            </div>
+
+            <section class="entrepreneur-cockpit">
+              <article class="company-health-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Cockpit do empresário</span>
+                    <h3>Saúde financeira agora</h3>
+                  </div>
+                  <span class="status-pill status-warning">Atenção</span>
+                </div>
+                <div class="health-gauge" style="--score: 78%">
+                  <strong>78</strong>
+                  <span>MB Financial Score</span>
+                </div>
+                <p>Empresa saudável, com atenção em margem, despesas fixas e concentração de receita.</p>
+              </article>
+
+              <article class="priority-card priority-critical">
+                <span class="priority-level">Prioridade 1</span>
+                <h3>Caixa precisa de proteção</h3>
+                <p>Preservar reserva mínima antes de assumir novo investimento.</p>
+                <strong>Responsável: MB CFO</strong>
+              </article>
+
+              <article class="priority-card priority-warning">
+                <span class="priority-level">Prioridade 2</span>
+                <h3>Despesas acima da média</h3>
+                <p>Revisar contratos recorrentes e despesas administrativas.</p>
+                <strong>Prazo: esta semana</strong>
+              </article>
+
+              <article class="priority-card priority-notice">
+                <span class="priority-level">Prioridade 3</span>
+                <h3>DAS vence em 3 dias</h3>
+                <p>Guia disponível para pagamento e acompanhamento.</p>
+                <strong>Status: liberado</strong>
+              </article>
+            </section>
+
+            <section class="ai-command-center">
+              <article class="ai-spotlight">
+                <div>
+                  <span class="mini-label">IA MB</span>
+                  <h3>Motor central da experiência</h3>
+                  <p>Priorizei três ações para este mês: proteger caixa, reduzir pressão de despesas e concluir validação dos dados financeiros.</p>
+                </div>
+                <span class="confidence confidence-high">Orientação ativa</span>
+              </article>
+              <article class="journey-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Jornada acompanhada</span>
+                    <h3>Da organização à decisão</h3>
+                  </div>
+                </div>
+                <div class="journey-flow">
+                  <div class="is-done"><span>1</span><strong>Entrada</strong><em>Onboarding</em></div>
+                  <div class="is-done"><span>2</span><strong>Dados</strong><em>Documentos + OFX</em></div>
+                  <div class="is-active"><span>3</span><strong>Inteligência</strong><em>IA + indicadores</em></div>
+                  <div><span>4</span><strong>Decisão</strong><em>Ação MB</em></div>
+                </div>
+              </article>
+              <article class="followup-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Acompanhamento MB</span>
+                    <h3>Últimas movimentações</h3>
+                  </div>
+                </div>
+                <div class="compact-timeline">
+                  <div><strong>Hoje, 09:40</strong><span>Insight de caixa aprovado pela MB.</span></div>
+                  <div><strong>Ontem</strong><span>DRE revisada e relatório liberado.</span></div>
+                  <div><strong>20/05</strong><span>Guia DAS publicada no portal.</span></div>
+                </div>
+              </article>
+            </section>
+
+            <section class="dashboard-showcase">
+              <article class="showcase-main-chart">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Cockpit financeiro</span>
+                    <h3>Resultado do mês em destaque</h3>
+                  </div>
+                  <span class="confidence confidence-high">Base validada pela MB</span>
+                </div>
+                <div class="showcase-kpis">
+                  <div><span>Faturamento</span><strong>R$ 186.420</strong><em>+12%</em></div>
+                  <div><span>Resultado</span><strong>R$ 40.310</strong><em>21,6%</em></div>
+                  <div><span>Caixa</span><strong>R$ 84.600</strong><em>42 dias</em></div>
+                  <div><span>Score</span><strong>78</strong><em>Saudável</em></div>
+                </div>
+                <div class="finance-area-chart" aria-label="Gráfico financeiro principal">
+                  <svg viewBox="0 0 900 320" role="img" aria-label="Faturamento, despesas e caixa projetado">
+                    <defs>
+                      <linearGradient id="mbAreaRed" x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0%" stop-color="#e32732" stop-opacity=".36"/>
+                        <stop offset="100%" stop-color="#e32732" stop-opacity="0"/>
+                      </linearGradient>
+                      <linearGradient id="mbAreaGreen" x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0%" stop-color="#12a879" stop-opacity=".26"/>
+                        <stop offset="100%" stop-color="#12a879" stop-opacity="0"/>
+                      </linearGradient>
+                    </defs>
+                    <path class="area area-red" d="M40 246 C120 220 158 218 230 190 S360 158 452 168 590 90 690 88 806 66 860 42 L860 300 L40 300 Z"/>
+                    <path class="area area-green" d="M40 270 C126 258 180 246 242 232 S368 212 450 204 570 170 680 156 792 136 860 118 L860 300 L40 300 Z"/>
+                    <path class="line line-red" d="M40 246 C120 220 158 218 230 190 S360 158 452 168 590 90 690 88 806 66 860 42"/>
+                    <path class="line line-dark" d="M40 260 C122 244 170 238 230 224 S360 206 452 210 592 160 690 154 808 132 860 126"/>
+                    <path class="line line-green" d="M40 270 C126 258 180 246 242 232 S368 212 450 204 570 170 680 156 792 136 860 118"/>
+                  </svg>
+                </div>
+                <div class="chart-analysis-row">
+                  <span><i class="dot dot-red"></i> Receita em aceleração</span>
+                  <span><i class="dot dot-dark"></i> Despesas pressionando margem</span>
+                  <span><i class="dot dot-green"></i> Caixa positivo, mas exige proteção</span>
+                </div>
+                <div class="result-intelligence">
+                  <strong>IA MB + Parecer MB</strong>
+                  <span>O crescimento de receita é positivo, mas as despesas cresceram em ritmo superior. A recomendação MB é revisar contratos recorrentes antes de aprovar novos investimentos.</span>
+                </div>
+              </article>
+
+              <aside class="result-cards">
+                <article>
+                  <div class="result-ring" style="--ring: 74%"><strong>+12%</strong></div>
+                  <div>
+                    <span class="mini-label">Faturamento</span>
+                    <h3>R$ 186.420</h3>
+                    <p><strong>IA MB:</strong> crescimento saudável, com atenção à concentração em poucos clientes.</p>
+                  </div>
+                </article>
+                <article>
+                  <div class="mini-spark" style="--spark: 68%"><span></span></div>
+                  <div>
+                    <span class="mini-label">Despesas</span>
+                    <h3>R$ 132.870</h3>
+                    <p><strong>MB:</strong> despesas subiram acima da receita; revisar despesas administrativas.</p>
+                  </div>
+                </article>
+                <article>
+                  <div class="result-ring" style="--ring: 58%"><strong>42d</strong></div>
+                  <div>
+                    <span class="mini-label">Caixa</span>
+                    <h3>R$ 84.600</h3>
+                    <p><strong>IA MB:</strong> caixa sustenta operação, mas investimento depende de reserva mínima.</p>
+                  </div>
+                </article>
+                <article>
+                  <div class="result-ring" style="--ring: 78%"><strong>78</strong></div>
+                  <div>
+                    <span class="mini-label">MB Financial Score</span>
+                    <h3>Saudável</h3>
+                    <p><strong>MB:</strong> score bom; principal atenção está na margem e qualidade do caixa.</p>
+                  </div>
+                </article>
+              </aside>
+            </section>
+
+            <section class="cfo-core-financials" data-cfo-only>
+              <article class="dre-panel">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">DRE gerencial</span>
+                    <h3>Resultado econômico validado pela MB</h3>
+                  </div>
+                  <div class="report-actions">
+                    <button class="btn btn-light btn-small" type="button" data-print-report="dre">
+                      <i data-lucide="printer" aria-hidden="true"></i>
+                      <span>Imprimir</span>
+                    </button>
+                    <button class="btn btn-light btn-small" type="button" data-export-report="dre">
+                      <i data-lucide="file-spreadsheet" aria-hidden="true"></i>
+                      <span>Excel</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="dre-summary">
+                  <div><span>Receita líquida</span><strong>R$ 186.420</strong><em>100%</em></div>
+                  <div><span>Custos e despesas</span><strong>R$ 132.870</strong><em>71,3%</em></div>
+                  <div><span>Resultado operacional</span><strong>R$ 40.310</strong><em>21,6%</em></div>
+                </div>
+                <div class="dre-waterfall">
+                  <div style="--bar: 100%"><span>Receita</span><strong>186k</strong></div>
+                  <div style="--bar: 71%"><span>Custos</span><strong>-92k</strong></div>
+                  <div style="--bar: 32%"><span>Despesas</span><strong>-40k</strong></div>
+                  <div style="--bar: 22%"><span>Resultado</span><strong>40k</strong></div>
+                </div>
+                <p class="panel-analysis"><strong>MB CFO:</strong> resultado positivo, mas a margem depende de controle das despesas administrativas e renegociação de contratos recorrentes.</p>
+              </article>
+
+              <article class="cashflow-panel">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Fluxo de caixa</span>
+                    <h3>Entradas, saídas e fôlego financeiro</h3>
+                  </div>
+                  <div class="report-actions">
+                    <button class="btn btn-light btn-small" type="button" data-print-report="cashflow">
+                      <i data-lucide="printer" aria-hidden="true"></i>
+                      <span>Imprimir</span>
+                    </button>
+                    <button class="btn btn-light btn-small" type="button" data-export-report="cashflow">
+                      <i data-lucide="file-spreadsheet" aria-hidden="true"></i>
+                      <span>Excel</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="cashflow-balance">
+                  <div><span>Saldo atual</span><strong>R$ 84.600</strong></div>
+                  <div><span>Geração do mês</span><strong>R$ 22.800</strong></div>
+                  <div><span>Fôlego</span><strong>42 dias</strong></div>
+                </div>
+                <div class="cashflow-projection" aria-label="Projeção de fluxo de caixa">
+                  <span style="--bar: 64%"><b>Sem 1</b></span>
+                  <span style="--bar: 78%"><b>Sem 2</b></span>
+                  <span style="--bar: 58%"><b>Sem 3</b></span>
+                  <span style="--bar: 72%"><b>Sem 4</b></span>
+                  <span style="--bar: 46%"><b>Sem 5</b></span>
+                  <span style="--bar: 52%"><b>Sem 6</b></span>
+                </div>
+                <p class="panel-analysis"><strong>IA MB:</strong> caixa suporta a operação, mas novos investimentos devem respeitar reserva mínima e aprovação consultiva.</p>
+              </article>
+            </section>
+
+            <section class="dashboard-message-card">
+              <i data-lucide="network" aria-hidden="true"></i>
+              <p>A MB Intelligence não substitui ERP, banco ou sistema fiscal. Ela integra, consolida, organiza, interpreta e apoia decisões com governança da MB.</p>
+            </section>
+
+            <section class="activation-layout">
+              <article class="activation-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Onboarding guiado</span>
+                    <h3>Ativação da inteligência financeira</h3>
+                  </div>
+                  <span class="status-pill status-warning">72% concluído</span>
+                </div>
+                <div class="activation-progress" style="--progress: 72%"><span></span></div>
+                <div class="checklist-grid">
+                  <div class="is-done"><i data-lucide="check" aria-hidden="true"></i><span>Dados cadastrais confirmados</span></div>
+                  <div class="is-done"><i data-lucide="check" aria-hidden="true"></i><span>XML fiscal recebido</span></div>
+                  <div class="is-current"><i data-lucide="clock-3" aria-hidden="true"></i><span>Enviar OFX ou extrato bancário</span></div>
+                  <div><i data-lucide="circle" aria-hidden="true"></i><span>Validar categorias sugeridas</span></div>
+                  <div><i data-lucide="circle" aria-hidden="true"></i><span>Revisar DRE com a MB</span></div>
+                </div>
+              </article>
+
+              <article class="consultor-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Seu consultor MB</span>
+                    <h3>Bruno Andrade</h3>
+                  </div>
+                  <span class="consultor-avatar">BA</span>
+                </div>
+                <div class="consultor-meta">
+                  <div><span>Função</span><strong>Consultor CFO</strong></div>
+                  <div><span>Última interação</span><strong>Hoje, 09:40</strong></div>
+                  <div><span>Próxima análise</span><strong>27/05/2026</strong></div>
+                </div>
+                <button class="btn btn-light" type="button" data-view-link="comunicacao-mb">
+                  <i data-lucide="message-circle" aria-hidden="true"></i>
+                  <span>Falar com a MB</span>
+                </button>
+              </article>
+
+              <article class="notification-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Notificações</span>
+                    <h3>Atualizações importantes</h3>
+                  </div>
+                  <span class="status-pill status-warning">4 novas</span>
+                </div>
+                <div class="notification-feed compact-feed">
+                  <div><strong>DRE aprovada</strong><span>Relatório de Maio/2026 liberado para visualização.</span></div>
+                  <div><strong>Pendência operacional</strong><span>Extrato OFX solicitado para fechar caixa.</span></div>
+                  <div><strong>IA MB</strong><span>Despesa administrativa acima da média histórica.</span></div>
+                </div>
+              </article>
+            </section>
+
+            <section class="metrics-grid" data-dashboard-metrics>
+              <article class="metric-card" data-module-card="documents">
+                <span>Documentos recentes</span>
+                <strong>18</strong>
+                <em>Fiscal, contábil e trabalhista</em>
+              </article>
+              <article class="metric-card" data-module-card="das">
+                <span>DAS do mês</span>
+                <strong>R$ 13.240</strong>
+                <em>Vencimento 20/06/2026</em>
+              </article>
+              <article class="metric-card" data-module-card="revenue">
+                <span>Faturamento</span>
+                <strong>R$ 186.420</strong>
+                <em class="good">+12% vs. mês anterior</em>
+              </article>
+              <article class="metric-card" data-module-card="payroll">
+                <span>Folha e encargos</span>
+                <strong>R$ 36.280</strong>
+                <em>19,4% do faturamento</em>
+              </article>
+              <article class="metric-card" data-module-card="dre">
+                <span>DRE gerencial</span>
+                <strong>R$ 40.310</strong>
+                <em class="good">Resultado estimado</em>
+              </article>
+              <article class="metric-card" data-module-card="cashflow">
+                <span>Fluxo de caixa</span>
+                <strong>R$ 84.600</strong>
+                <em>42 dias de fôlego</em>
+              </article>
+              <article class="metric-card" data-module-card="score">
+                <span>MB Financial Score</span>
+                <strong>78</strong>
+                <em class="good">Saudável</em>
+              </article>
+              <article class="metric-card" data-module-card="investment">
+                <span>Capacidade de investimento</span>
+                <strong>R$ 32.000</strong>
+                <em>Após caixa mínimo</em>
+              </article>
+            </section>
+
+            <section class="copilot-strip">
+              <article class="ai-spotlight">
+                <div>
+                  <span class="mini-label">IA MB</span>
+                  <h3>Copiloto financeiro em operação</h3>
+                  <p>As despesas cresceram acima da receita. Reduza despesas administrativas em aproximadamente 12% para recuperar a margem média dos últimos meses.</p>
+                </div>
+                <span class="confidence confidence-high">Insight aprovado</span>
+              </article>
+              <article>
+                <span class="mini-label">Próxima ação</span>
+                <strong>Revisar despesas sem categoria</strong>
+                <p>Responsável: MB Financeiro · Prazo: 24/05/2026 · Origem: IA + regra de conciliação.</p>
+              </article>
+              <article>
+                <span class="mini-label">Orientação simples</span>
+                <strong>Conecte ou envie extratos</strong>
+                <p>Isso melhora a precisão da análise de caixa e libera recomendações mais completas.</p>
+              </article>
+            </section>
+
+            <section class="dashboard-grid">
+              <article class="chart-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label" data-chart-kicker>Evolução mensal</span>
+                    <h3 data-chart-title>Receita, despesas e caixa</h3>
+                  </div>
+                  <span class="confidence confidence-high" data-chart-confidence>Base validada</span>
+                </div>
+                <div class="combo-chart">
+                  <div class="bars">
+                    <span style="--revenue: 52%; --expense: 38%"><b>Jan</b></span>
+                    <span style="--revenue: 60%; --expense: 44%"><b>Fev</b></span>
+                    <span style="--revenue: 56%; --expense: 46%"><b>Mar</b></span>
+                    <span style="--revenue: 72%; --expense: 58%"><b>Abr</b></span>
+                    <span style="--revenue: 84%; --expense: 66%"><b>Mai</b></span>
+                  </div>
+                  <svg viewBox="0 0 620 170" role="img" aria-label="Linha de evolução financeira">
+                    <path d="M20 130 C92 116 130 124 190 96 S302 88 362 70 456 82 520 46 582 52 604 34" fill="none" stroke="#ff666f" stroke-width="7" stroke-linecap="round"/>
+                    <path d="M20 142 C96 132 126 136 194 124 S310 112 370 96 466 98 520 78 574 80 604 68" fill="none" stroke="#12a879" stroke-width="5" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="legend-row">
+                  <span><i class="dot dot-red"></i> Receita</span>
+                  <span><i class="dot dot-dark"></i> Despesas</span>
+                  <span><i class="dot dot-green"></i> Caixa</span>
+                </div>
+              </article>
+
+              <article class="insight-panel">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Leitura financeira</span>
+                    <h3 data-insight-title>Análise executiva MB</h3>
+                  </div>
+                  <i data-lucide="sparkles" aria-hidden="true"></i>
+                </div>
+                <div class="insight-list" data-dashboard-insights></div>
+              </article>
+            </section>
+
+            <section class="cfo-analytics" data-cfo-only>
+              <div class="section-title section-title-compact">
+                <span class="eyebrow">Análises executivas</span>
+                <h2>Gráficos executivos para decisão, simulação e validação MB.</h2>
+              </div>
+              <div class="cfo-chart-grid">
+                <article class="cfo-chart-card">
+                  <div class="card-heading">
+                    <div>
+                      <span class="mini-label">Margem por linha</span>
+                      <h3>Rentabilidade validada</h3>
+                    </div>
+                    <span class="confidence confidence-high">DRE revisada</span>
+                  </div>
+                  <div class="horizontal-bars">
+                    <div style="--bar: 82%"><span>Serviços recorrentes</span><strong>28%</strong></div>
+                    <div style="--bar: 58%"><span>Projetos pontuais</span><strong>19%</strong></div>
+                    <div style="--bar: 36%"><span>Produtos revendidos</span><strong>11%</strong></div>
+                  </div>
+                </article>
+                <article class="cfo-chart-card">
+                  <div class="card-heading">
+                    <div>
+                      <span class="mini-label">Ponte de caixa</span>
+                      <h3>Do saldo atual ao caixa projetado</h3>
+                    </div>
+                  </div>
+                  <div class="bridge-chart">
+                    <div class="bridge-step base" style="--level: 64%; --start: 0%"><span>Saldo</span><strong>84,6k</strong></div>
+                    <div class="bridge-step positive" style="--level: 38%; --start: 64%"><span>Entradas</span><strong>+52k</strong></div>
+                    <div class="bridge-step negative" style="--level: 30%; --start: 72%"><span>Saídas</span><strong>-41k</strong></div>
+                    <div class="bridge-step projected" style="--level: 72%; --start: 0%"><span>Projetado</span><strong>95,6k</strong></div>
+                  </div>
+                </article>
+                <article class="cfo-chart-card">
+                  <div class="card-heading">
+                    <div>
+                      <span class="mini-label">Capacidade de investimento</span>
+                      <h3>Limite seguro com reserva mínima</h3>
+                    </div>
+                  </div>
+                  <div class="investment-meter" style="--meter: 64%">
+                    <strong>R$ 32.000</strong>
+                    <span>Seguro agora</span>
+                  </div>
+                </article>
+                <article class="cfo-chart-card">
+                  <div class="card-heading">
+                    <div>
+                      <span class="mini-label">Concentração de receita</span>
+                      <h3>Dependência dos maiores clientes</h3>
+                    </div>
+                    <span class="confidence confidence-medium">Atenção</span>
+                  </div>
+                  <div class="donut-layout">
+                    <div class="donut-chart" style="--a: 142deg; --b: 238deg"></div>
+                    <div class="stack-list compact-list">
+                      <div><strong>Top 3 clientes</strong><span>47% da receita</span></div>
+                      <div><strong>Ação MB</strong><span>Estratégia comercial para reduzir concentração.</span></div>
+                    </div>
+                  </div>
+                </article>
+              </div>
+            </section>
+
+            <section class="dashboard-message-card" data-non-cfo-note>
+              <i data-lucide="bar-chart-3" aria-hidden="true"></i>
+              <p>Gráficos de margem, ponte de caixa, capacidade de investimento, concentração de receita e parecer MB ficam disponíveis quando a análise executiva está liberada.</p>
+            </section>
+
+            <section class="live-grid">
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Próximas ações recomendadas</span>
+                    <h3>Copiloto financeiro</h3>
+                  </div>
+                  <span class="status-pill status-warning">3 abertas</span>
+                </div>
+                <div class="action-list">
+                  <div><strong>Validar DRE Maio/2026</strong><span>Alta · MB Financeiro · Vence hoje</span><em>Origem: MB</em></div>
+                  <div><strong>Revisar despesas administrativas</strong><span>Média · Cliente + MB · 2 dias</span><em>Origem: IA MB</em></div>
+                  <div><strong>Atualizar extrato bancário</strong><span>Alta · Cliente · 1 dia</span><em>Origem: Dados insuficientes</em></div>
+                </div>
+              </article>
+
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Timeline do cliente</span>
+                    <h3>Acompanhamento contínuo</h3>
+                  </div>
+                </div>
+                <div class="activity-timeline">
+                  <div><strong>Hoje, 09:40</strong><span>Insight de caixa aprovado pela MB e liberado ao cliente.</span></div>
+                  <div><strong>22/05/2026</strong><span>DRE gerencial revisada e relatório executivo publicado.</span></div>
+                  <div><strong>21/05/2026</strong><span>OFX importado para conciliação bancária.</span></div>
+                  <div><strong>20/05/2026</strong><span>DAS do Simples Nacional disponibilizado no portal.</span></div>
+                </div>
+              </article>
+            </section>
+          </section>
+
+          <section class="view" id="acoes-timeline" data-view="acoes-timeline">
+            <div class="section-title">
+              <span class="eyebrow">Cliente C2 - Copiloto MB</span>
+              <h2>Recomendações, simulações, pendências e plano de ação financeiro da empresa.</h2>
+            </div>
+
+            <section class="ops-grid">
+              <article class="ops-card ops-card-wide mvp-freeze-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">MVP congelado</span>
+                    <h3>Escopo recomendado antes de banco, backend e integrações reais</h3>
+                  </div>
+                  <span class="confidence confidence-high">Executar agora</span>
+                </div>
+                <div class="mvp-freeze-grid">
+                  <div>
+                    <strong>Obrigatório</strong>
+                    <span>Login, documentos, dashboard principal, pendências, IA simples, operação MB, DRE/caixa básico e aprovações.</span>
+                  </div>
+                  <div>
+                    <strong>Segurar para depois</strong>
+                    <span>IA preditiva avançada, benchmarking, Open Finance profundo, automações pesadas e machine learning sofisticado.</span>
+                  </div>
+                  <div>
+                    <strong>Critério de sucesso</strong>
+                    <span>Cliente entende o que resolver primeiro; MB opera carteira com governança, SLA e validação.</span>
+                  </div>
+                </div>
+              </article>
+
+              <article class="ops-card ops-card-wide">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Próximas ações recomendadas</span>
+                    <h3>Ações geradas pela IA, pela MB e por regras do sistema</h3>
+                  </div>
+                  <span class="confidence confidence-medium">Copiloto ativo</span>
+                </div>
+                <div class="action-table">
+                  <div class="table-row table-head"><span>Ação</span><span>Prioridade</span><span>Responsável</span><span>Prazo</span><span>Status</span><span>Origem</span></div>
+                  <div class="table-row"><span>Enviar extrato bancário</span><span>Alta</span><span>Cliente</span><span>24/05</span><span>Pendente</span><span>Dados insuficientes</span></div>
+                  <div class="table-row"><span>Revisar despesas sem categoria</span><span>Média</span><span>MB Financeiro</span><span>25/05</span><span>Em análise</span><span>IA MB</span></div>
+                  <div class="table-row"><span>Validar DRE Maio/2026</span><span>Alta</span><span>Consultor CFO</span><span>Hoje</span><span>Aguardando MB</span><span>Workflow</span></div>
+                  <div class="table-row"><span>Cobrar cliente inadimplente</span><span>Média</span><span>Gestor financeiro</span><span>27/05</span><span>Sugerido</span><span>Regra objetiva</span></div>
+                </div>
+              </article>
+
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">IA MB</span>
+                    <h3>Recomendações em destaque</h3>
+                  </div>
+                </div>
+                <div class="stack-list">
+                  <div><strong>Margem em atenção</strong><span>Sua margem caiu 4%. Revise custos fixos e contratos recorrentes.</span></div>
+                  <div><strong>Investimento moderado</strong><span>O caixa atual suporta até R$ 32.000 sem comprometer a reserva mínima.</span></div>
+                  <div><strong>Precisão limitada</strong><span>Envie extratos bancários para melhorar a análise de caixa.</span></div>
+                </div>
+              </article>
+
+              <article class="ops-card ops-card-wide" data-cfo-only>
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">CFO as a Service</span>
+                    <h3>Simulações e pareceres consultivos</h3>
+                  </div>
+                  <span class="confidence confidence-high">Validado pela equipe MB</span>
+                </div>
+                <div class="cfo-simulation-grid">
+                  <div><strong>Investimento seguro</strong><span>Até R$ 32.000 sem romper caixa mínimo projetado.</span></div>
+                  <div><strong>Contratação planejada</strong><span>Nova vaga de R$ 7.800/mês exige redução de 6% em despesas fixas.</span></div>
+                  <div><strong>Capital de giro</strong><span>Reserva recomendada: R$ 118.000 para 45 dias de operação.</span></div>
+                  <div><strong>Parecer MB</strong><span>Aprovar investimento moderado somente após conciliação final do banco.</span></div>
+                </div>
+              </article>
+
+              <article class="ops-card" data-cfo-only>
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Reunião CFO</span>
+                    <h3>Perguntas preparadas pela MB</h3>
+                  </div>
+                </div>
+                <div class="stack-list">
+                  <div><strong>Cliente concentrado</strong><span>Qual plano comercial reduz dependência dos 3 maiores clientes?</span></div>
+                  <div><strong>Margem pressionada</strong><span>Quais contratos podem ser renegociados ainda neste mês?</span></div>
+                  <div><strong>Investimento</strong><span>O retorno esperado compensa consumir parte da reserva?</span></div>
+                </div>
+              </article>
+
+              <article class="ops-card" data-non-cfo-note>
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Upgrade disponível</span>
+                    <h3>Copiloto executivo no Plano CFO</h3>
+                  </div>
+                </div>
+                <p class="muted-copy">Simulações, parecer financeiro, plano de ação consultivo e reunião com diretor financeiro são liberados no Plano CFO as a Service.</p>
+              </article>
+
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Linha do tempo</span>
+                    <h3>Atividades recentes</h3>
+                  </div>
+                </div>
+                <div class="activity-timeline">
+                  <div><strong>Hoje</strong><span>Dashboard financeiro atualizado após validação MB.</span></div>
+                  <div><strong>Ontem</strong><span>Relatório fiscal anexado e DAS liberado.</span></div>
+                  <div><strong>20/05</strong><span>Pendência de extrato bancário aberta pelo sistema.</span></div>
+                  <div><strong>18/05</strong><span>Reunião CFO registrada com plano de ação financeiro.</span></div>
+                </div>
+              </article>
+            </section>
+          </section>
+
+          <section class="view" id="pendencias-notificacoes" data-view="pendencias-notificacoes">
+            <div class="section-title">
+              <span class="eyebrow">Cliente C7 - Pendências e notificações</span>
+              <h2>Alertas, solicitações, documentos liberados e status dos processos da empresa.</h2>
+            </div>
+
+            <section class="process-status-grid">
+              <article><span>Aguardando envio</span><strong>3</strong><em>Cliente</em></article>
+              <article><span>Aguardando revisão</span><strong>5</strong><em>Equipe MB</em></article>
+              <article><span>Validado</span><strong>12</strong><em>Competência atual</em></article>
+              <article><span>Dados insuficientes</span><strong>2</strong><em>Bloqueiam análise</em></article>
+            </section>
+
+            <section class="notification-layout">
+              <article class="ops-card ops-card-wide">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Central de pendências</span>
+                    <h3>O que precisa de ação</h3>
+                  </div>
+                  <span class="confidence confidence-medium">Priorizado pela IA MB</span>
+                </div>
+                <div class="status-table">
+                  <div class="table-row table-head"><span>Item</span><span>Status</span><span>Responsável</span><span>Prazo</span><span>Impacto</span></div>
+                  <div class="table-row"><span>Extrato OFX Maio/2026</span><span class="status-badge status-waiting">Aguardando envio</span><span>Cliente</span><span>24/05</span><span>Libera caixa</span></div>
+                  <div class="table-row"><span>DRE gerencial</span><span class="status-badge status-review">Aguardando revisão</span><span>MB Financeiro</span><span>Hoje</span><span>Libera análise CFO</span></div>
+                  <div class="table-row"><span>DAS Simples</span><span class="status-badge status-approved">Aprovado</span><span>MB Fiscal</span><span>20/06</span><span>Guia disponível</span></div>
+                  <div class="table-row"><span>Integração ERP</span><span class="status-badge status-error">Erro na integração</span><span>MB + Cliente</span><span>Urgente</span><span>Afeta faturamento</span></div>
+                </div>
+              </article>
+
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Notificações recentes</span>
+                    <h3>Atualizações da operação</h3>
+                  </div>
+                </div>
+                <div class="notification-feed">
+                  <div><strong>Novo documento disponível</strong><span>DAS Maio/2026 publicado pela MB Fiscal.</span><em>Hoje, 10:12</em></div>
+                  <div><strong>Análise liberada</strong><span>Insight de caixa aprovado por Bruno CFO.</span><em>Hoje, 09:40</em></div>
+                  <div><strong>Pendência aberta</strong><span>Enviar extrato bancário para validar o caixa.</span><em>Ontem</em></div>
+                  <div><strong>Integração desconectada</strong><span>ERP precisa de nova autorização.</span><em>20/05</em></div>
+                </div>
+              </article>
+            </section>
+          </section>
+
+          <section class="view" id="comunicacao-mb" data-view="comunicacao-mb">
+            <div class="section-title">
+              <span class="eyebrow">Cliente C8 - Comunicação MB</span>
+              <h2>Comentários, solicitações e histórico operacional entre cliente e equipe MB.</h2>
+            </div>
+
+            <section class="communication-layout">
+              <article class="ops-card ops-card-wide">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Conversa operacional</span>
+                    <h3>Comércio Silva LTDA x MB Assessoria</h3>
+                  </div>
+                  <span class="status-pill status-good">Canal ativo</span>
+                </div>
+                <div class="message-thread">
+                  <div class="message-bubble from-mb"><strong>Bruno CFO</strong><p>Incluí no Copiloto uma simulação de investimento com três cenários. Antes de liberar o parecer final, precisamos do OFX de Maio.</p><span>Hoje, 09:40</span></div>
+                  <div class="message-bubble from-client"><strong>Cliente</strong><p>Vamos enviar o extrato até o fim do dia. A simulação já considera a nova contratação?</p><span>Hoje, 10:05</span></div>
+                  <div class="message-bubble from-mb"><strong>Ana Financeiro</strong><p>Sim. A simulação moderada considera impacto mensal de R$ 7.800 e reserva mínima de 45 dias.</p><span>Hoje, 10:18</span></div>
+                </div>
+                <div class="reply-box">
+                  <input value="Escrever resposta ou solicitação para a MB...">
+                  <button class="btn btn-primary" type="button">
+                    <i data-lucide="send" aria-hidden="true"></i>
+                    <span>Enviar</span>
+                  </button>
+                </div>
+              </article>
+
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Solicitações abertas</span>
+                    <h3>Histórico com anexos</h3>
+                  </div>
+                </div>
+                <div class="stack-list">
+                  <div><strong>Extrato bancário</strong><span>Aberto · Cliente · vence hoje</span></div>
+                  <div><strong>Classificação de despesas</strong><span>Em análise · MB Financeiro</span></div>
+                  <div><strong>Parecer de investimento</strong><span>Aguardando conciliação final</span></div>
+                  <div><strong>Folha Maio/2026</strong><span>Validado · Trabalhista</span></div>
+                </div>
+              </article>
+            </section>
+          </section>
+
+          <section class="view" id="perfil-cliente" data-view="perfil-cliente">
+            <div class="section-title">
+              <span class="eyebrow">Cliente C9 - Perfil, plano e consultor</span>
+              <h2>Dados da empresa, plano contratado, responsáveis MB e progresso de ativação.</h2>
+            </div>
+
+            <section class="profile-experience-grid">
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Empresa</span>
+                    <h3>Comércio Silva LTDA</h3>
+                  </div>
+                  <span class="status-pill status-good">Ativo</span>
+                </div>
+                <div class="profile-grid profile-grid-compact">
+                  <div><span>CNPJ</span><strong>12.345.678/0001-90</strong></div>
+                  <div><span>Regime</span><strong>Simples Nacional</strong></div>
+                  <div><span>Plano</span><strong>CFO as a Service</strong></div>
+                  <div><span>Maturidade</span><strong>Nível 3</strong></div>
+                </div>
+              </article>
+
+              <article class="ops-card consultor-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Seu consultor MB</span>
+                    <h3>Bruno Andrade</h3>
+                  </div>
+                  <span class="consultor-avatar">BA</span>
+                </div>
+                <div class="timeline-list">
+                  <div><strong>Última interação</strong><span>Insight de caixa aprovado hoje às 09:40.</span></div>
+                  <div><strong>Próxima análise</strong><span>Revisão CFO mensal em 27/05/2026.</span></div>
+                  <div><strong>Responsáveis</strong><span>Ana Financeiro, Paula Fiscal e Renata Trabalhista.</span></div>
+                </div>
+              </article>
+
+              <article class="ops-card ops-card-wide">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Ativação</span>
+                    <h3>Checklist consultivo da jornada</h3>
+                  </div>
+                  <span class="confidence confidence-medium">72% concluído</span>
+                </div>
+                <div class="journey-steps">
+                  <div class="is-complete"><span>1</span><strong>Cadastro</strong><em>Validado</em></div>
+                  <div class="is-complete"><span>2</span><strong>Documentos</strong><em>Recebidos</em></div>
+                  <div class="is-active"><span>3</span><strong>Dados financeiros</strong><em>OFX pendente</em></div>
+                  <div><span>4</span><strong>Validação MB</strong><em>Em sequência</em></div>
+                  <div><span>5</span><strong>Rotina mensal</strong><em>Próximo passo</em></div>
+                </div>
+              </article>
+            </section>
+          </section>
+
+          <section class="view" id="planos-cliente" data-view="planos-cliente">
+            <div class="section-title">
+              <span class="eyebrow">Cliente C10 - Planos e módulos disponíveis</span>
+              <h2>O plano contratado define automaticamente quais módulos aparecem no portal.</h2>
+            </div>
+
+            <section class="plan-grid">
+              <article class="plan-card" data-plan-card="contabilidade">
+                <span class="plan-tag">Plano Contabilidade</span>
+                <h3>Organização contábil, documentos e guias em um só lugar.</h3>
+                <ul>
+                  <li>Foco em documentos, guias, DAS e obrigações básicas.</li>
+                  <li>Portal simples para consultar, baixar e acompanhar vencimentos.</li>
+                  <li>Não libera dashboards financeiros, DRE, caixa, IA gerencial ou score.</li>
+                </ul>
+              </article>
+              <article class="plan-card" data-plan-card="financeiro">
+                <span class="plan-tag">Plano Financeiro IA</span>
+                <h3>Dashboards, faturamento, folha, fiscal e análises automáticas por IA.</h3>
+                <ul>
+                  <li>Inclui tudo do Contabilidade, com visão gerencial automatizada.</li>
+                  <li>Mostra faturamento, fiscal, folha, alertas e observações básicas da IA.</li>
+                  <li>Não inclui parecer executivo, simulações CFO, reuniões ou decisão validada por diretor financeiro.</li>
+                </ul>
+              </article>
+              <article class="plan-card plan-card-strong" data-plan-card="cfo">
+                <span class="plan-tag">Plano CFO as a Service</span>
+                <h3>Tudo do Financeiro IA com apoio de um diretor financeiro para tomada de decisão.</h3>
+                <ul>
+                  <li>DRE completa, fluxo de caixa validado, score, margem e capacidade de investimento.</li>
+                  <li>Simulações gerenciais, parecer MB, plano de ação e histórico de reuniões.</li>
+                  <li>Insights estratégicos revisados pela equipe MB antes de chegar ao cliente.</li>
+                </ul>
+              </article>
+            </section>
+
+            <section class="plan-difference-grid">
+              <article>
+                <span class="mini-label">Plano 1</span>
+                <h3>Contabilidade</h3>
+                <p>Organiza a rotina contábil e documental. O cliente sabe o que precisa pagar, baixar e acompanhar.</p>
+                <strong>Valor percebido: segurança operacional.</strong>
+              </article>
+              <article>
+                <span class="mini-label">Plano 2</span>
+                <h3>Financeiro IA</h3>
+                <p>Transforma dados fiscais, faturamento e folha em dashboards e observações automáticas, sem consultoria executiva.</p>
+                <strong>Valor percebido: leitura automatizada.</strong>
+              </article>
+              <article>
+                <span class="mini-label">Plano 3</span>
+                <h3>CFO as a Service</h3>
+                <p>Une dashboards completos, DRE validada, caixa, score, simulações, parecer MB e apoio de diretor financeiro.</p>
+                <strong>Valor percebido: decisão orientada.</strong>
+              </article>
+            </section>
+
+            <article class="matrix-card">
+              <div class="card-heading">
+                <div>
+                  <span class="mini-label">Matriz de acesso sugerida</span>
+                  <h3>Módulos liberados por plano</h3>
+                </div>
+                <button class="btn btn-light" type="button" data-view-link="dashboard-cliente">Ver no painel financeiro</button>
+              </div>
+              <div class="access-matrix" data-access-matrix></div>
+            </article>
+          </section>
+
+          <section class="view" id="documentos-guias" data-view="documentos-guias">
+            <div class="section-title">
+              <span class="eyebrow">Cliente C3 - Documentos e guias</span>
+              <h2>Central essencial do Plano Contabilidade e base operacional dos demais planos.</h2>
+            </div>
+
+            <section class="document-layout">
+              <aside class="document-filter">
+                <button class="doc-filter is-active" type="button">Todos</button>
+                <button class="doc-filter" type="button">DAS</button>
+                <button class="doc-filter" type="button">Fiscal</button>
+                <button class="doc-filter" type="button">Contábil</button>
+                <button class="doc-filter" type="button">Trabalhista</button>
+                <button class="doc-filter" type="button">Guias</button>
+              </aside>
+
+              <article class="document-list">
+                <div class="doc-row">
+                  <i data-lucide="receipt-text" aria-hidden="true"></i>
+                  <span>DAS Simples Nacional - Maio/2026</span>
+                  <strong>Vence 20/06</strong>
+                  <em>Aberto</em>
+                </div>
+                <div class="doc-row">
+                  <i data-lucide="file-code-2" aria-hidden="true"></i>
+                  <span>XML de notas emitidas</span>
+                  <strong>Fiscal</strong>
+                  <em>ZIP</em>
+                </div>
+                <div class="doc-row">
+                  <i data-lucide="folder-check" aria-hidden="true"></i>
+                  <span>Holerites Maio/2026</span>
+                  <strong>Trabalhista</strong>
+                  <em>PDF</em>
+                </div>
+                <div class="doc-row">
+                  <i data-lucide="file-text" aria-hidden="true"></i>
+                  <span>Balancete e obrigações contábeis</span>
+                  <strong>Contábil</strong>
+                  <em>PDF</em>
+                </div>
+              </article>
+            </section>
+          </section>
+
+          <section class="view" id="envio-arquivos" data-view="envio-arquivos">
+            <div class="section-title">
+              <span class="eyebrow">Cliente C11 - Envio eventual de arquivos</span>
+              <h2>Área secundária para o cliente enviar documentos solicitados pela MB.</h2>
+            </div>
+
+            <section class="upload-layout">
+              <form class="upload-card" data-upload-form>
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Novo envio</span>
+                    <h3>Detalhes do arquivo</h3>
+                  </div>
+                  <span class="status-pill status-neutral">Uso eventual</span>
+                </div>
+
+                <label class="drop-zone">
+                  <input type="file" name="file">
+                  <i data-lucide="cloud-upload" aria-hidden="true"></i>
+                  <strong>Arraste o arquivo ou clique para selecionar</strong>
+                  <span>PDF, XML, XLSX, CSV, OFX, ZIP ou imagem até 25 MB.</span>
+                </label>
+
+                <div class="form-grid">
+                  <label>
+                    <span>Empresa</span>
+                    <select name="company">
+                      <option>Comércio Silva LTDA</option>
+                      <option>Filial Norte Serviços</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Competência</span>
+                    <input name="period" value="Maio/2026">
+                  </label>
+                  <label>
+                    <span>Categoria</span>
+                    <select name="category">
+                      <option>Fiscal</option>
+                      <option>Trabalhista</option>
+                      <option>Contábil</option>
+                      <option>Financeiro</option>
+                      <option>Societário</option>
+                      <option>Contratos</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Tipo do documento</span>
+                    <select name="type">
+                      <option>Extrato bancário</option>
+                      <option>XML de notas fiscais</option>
+                      <option>Folha de pagamento</option>
+                      <option>Comprovante de pagamento</option>
+                      <option>Contrato</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Vencimento, se houver</span>
+                    <input name="due" value="20/06/2026">
+                  </label>
+                  <label>
+                    <span>Visibilidade</span>
+                    <select name="visibility">
+                      <option>Equipe MB e proprietário</option>
+                      <option>Somente equipe MB</option>
+                      <option>RH do cliente</option>
+                      <option>Financeiro do cliente</option>
+                    </select>
+                  </label>
+                </div>
+
+                <label>
+                  <span>Observações para a MB</span>
+                  <textarea name="notes" rows="4">Extrato enviado para conciliação de caixa e análise mensal.</textarea>
+                </label>
+
+                <button class="btn btn-primary" type="submit">
+                  <i data-lucide="send" aria-hidden="true"></i>
+                  <span>Enviar arquivo</span>
+                </button>
+                <p class="purchase-result is-hidden" data-upload-result>Arquivo simulado como enviado. A equipe MB receberá a pendência na esteira operacional.</p>
+              </form>
+
+              <aside class="upload-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Foco principal do cliente</span>
+                    <h3>Arquivos recentes</h3>
+                  </div>
+                </div>
+                <div class="stack-list upload-history">
+                  <div><strong>Extrato Itaú Maio/2026.ofx</strong><span>Financeiro - Aguardando validação MB</span></div>
+                  <div><strong>Notas emitidas Maio/2026.zip</strong><span>Fiscal - Processado automaticamente</span></div>
+                  <div><strong>Folha Maio/2026.pdf</strong><span>Trabalhista - Revisão em andamento</span></div>
+                  <div><strong>Contrato fornecedor.pdf</strong><span>Contratos - Disponível para consulta</span></div>
+                </div>
+
+                <div class="upload-rules">
+                  <strong>Regra de uso</strong>
+                  <span>O cliente visualiza documentos no portal. O envio pelo cliente existe apenas para pendências específicas solicitadas pela MB.</span>
+                </div>
+              </aside>
+            </section>
+          </section>
+
+          <section class="view" id="financeiro-ia" data-view="financeiro-ia" data-required-module="financial_ai">
+            <div class="section-title">
+              <span class="eyebrow">Cliente C4 - Financeiro IA</span>
+              <h2>Dashboards, faturamento, folha, fiscal e observações automáticas por IA.</h2>
+            </div>
+
+            <section class="locked-state is-hidden" data-locked-view="financial_ai">
+              <i data-lucide="lock" aria-hidden="true"></i>
+              <h3>Este módulo está disponível nos planos Financeiro IA e CFO as a Service.</h3>
+              <p>Seu plano atual permite acesso a documentos, guias e obrigações. Solicite upgrade para liberar dashboards e análises automáticas.</p>
+              <button class="btn btn-primary" type="button" data-view-link="planos-cliente">Ver planos</button>
+            </section>
+
+            <section class="module-content" data-module-content="financial_ai">
+              <section class="metrics-grid">
+                <article class="metric-card"><span>Faturamento</span><strong>R$ 186.420</strong><em class="good">+12% no mês</em></article>
+                <article class="metric-card"><span>Alíquota efetiva</span><strong>7,1%</strong><em>Simples Nacional</em></article>
+                <article class="metric-card"><span>Folha + encargos</span><strong>R$ 36.280</strong><em>19,4% do faturamento</em></article>
+                <article class="metric-card"><span>Qualidade dos dados</span><strong>74%</strong><em class="warning">Despesas parciais</em></article>
+              </section>
+
+              <section class="dashboard-grid">
+                <article class="chart-card">
+                  <div class="card-heading">
+                    <div>
+                      <span class="mini-label">IA limitada</span>
+                      <h3>Observações automáticas</h3>
+                    </div>
+                    <span class="confidence confidence-medium">Escopo básico</span>
+                  </div>
+                  <div class="insight-list">
+                    <div class="insight-item"><strong>O faturamento cresceu em relação ao mês anterior.</strong><p>Receita mensal subiu 12%, mantendo evolução positiva nos últimos dois meses.</p></div>
+                    <div class="insight-item"><strong>A análise de margem não está disponível.</strong><p>Não há dados suficientes de despesas para cálculo seguro.</p></div>
+                    <div class="insight-item"><strong>A folha representa 19,4% do faturamento informado.</strong><p>Indicador deve ser acompanhado caso o faturamento recue.</p></div>
+                  </div>
+                </article>
+                <article class="ops-card">
+                  <div class="card-heading">
+                    <div>
+                      <span class="mini-label">Pendências para melhorar análise</span>
+                      <h3>Dados necessários</h3>
+                    </div>
+                  </div>
+                  <div class="stack-list">
+                    <div><strong>Importar despesas</strong><span>Excel, CSV ou OFX</span></div>
+                    <div><strong>Enviar extrato bancário</strong><span>Necessário para caixa</span></div>
+                    <div><strong>Validar folha</strong><span>Competência Maio/2026</span></div>
+                  </div>
+                </article>
+              </section>
+            </section>
+          </section>
+
+          <section class="view" id="cfo-service" data-view="cfo-service" data-required-module="cfo">
+            <div class="section-title">
+              <span class="eyebrow">Cliente C5 - CFO as a Service</span>
+              <h2>Inteligência financeira completa com apoio executivo da MB.</h2>
+            </div>
+
+            <section class="locked-state is-hidden" data-locked-view="cfo">
+              <i data-lucide="lock" aria-hidden="true"></i>
+              <h3>Este módulo está disponível apenas no Plano CFO as a Service.</h3>
+              <p>Para apoio estratégico com diretor financeiro, parecer MB, capacidade de investimento e plano de ação, solicite upgrade.</p>
+              <button class="btn btn-primary" type="button" data-view-link="planos-cliente">Solicitar upgrade</button>
+            </section>
+
+            <section class="module-content" data-module-content="cfo">
+              <section class="metrics-grid">
+                <article class="metric-card"><span>DRE gerencial</span><strong>R$ 40.310</strong><em>Resultado estimado</em></article>
+                <article class="metric-card"><span>Fluxo de caixa</span><strong>R$ 84.600</strong><em>42 dias de fôlego</em></article>
+                <article class="metric-card"><span>MB Financial Score</span><strong>78</strong><em class="good">Saudável</em></article>
+                <article class="metric-card"><span>Investimento seguro</span><strong>R$ 32.000</strong><em>Após caixa mínimo</em></article>
+              </section>
+
+              <section class="cfo-chart-grid">
+                <article class="cfo-chart-card">
+                  <div class="card-heading">
+                    <div>
+                      <span class="mini-label">DRE executiva</span>
+                      <h3>Receita, margem e resultado</h3>
+                    </div>
+                  </div>
+                  <div class="horizontal-bars">
+                    <div style="--bar: 92%"><span>Receita líquida</span><strong>186k</strong></div>
+                    <div style="--bar: 71%"><span>Margem bruta</span><strong>62k</strong></div>
+                    <div style="--bar: 47%"><span>Resultado</span><strong>40k</strong></div>
+                  </div>
+                </article>
+                <article class="cfo-chart-card">
+                  <div class="card-heading">
+                    <div>
+                      <span class="mini-label">Risco financeiro</span>
+                      <h3>Pressões monitoradas</h3>
+                    </div>
+                    <span class="confidence confidence-medium">Atenção</span>
+                  </div>
+                  <div class="risk-grid">
+                    <div><strong>18%</strong><span>despesas acima da média</span></div>
+                    <div><strong>47%</strong><span>receita no top 3 clientes</span></div>
+                    <div><strong>42</strong><span>dias de caixa</span></div>
+                  </div>
+                </article>
+                <article class="cfo-chart-card">
+                  <div class="card-heading">
+                    <div>
+                      <span class="mini-label">Simulação</span>
+                      <h3>Investimento x reserva</h3>
+                    </div>
+                  </div>
+                  <div class="scenario-list">
+                    <div><span>Conservador</span><strong>R$ 18k</strong><em>Baixo risco</em></div>
+                    <div><span>Moderado</span><strong>R$ 32k</strong><em>Recomendado</em></div>
+                    <div><span>Agressivo</span><strong>R$ 55k</strong><em>Não recomendado</em></div>
+                  </div>
+                </article>
+              </section>
+
+              <section class="dashboard-grid">
+                <article class="ops-card">
+                  <div class="card-heading">
+                    <div>
+                      <span class="mini-label">Plano de ação financeiro</span>
+                      <h3>Recomendações estratégicas</h3>
+                    </div>
+                    <span class="confidence confidence-high">Validado pela MB</span>
+                  </div>
+                  <div class="stack-list">
+                    <div><strong>Revisar despesas operacionais</strong><span>Pressão de 18% acima da média histórica.</span></div>
+                    <div><strong>Proteger caixa mínimo</strong><span>Manter reserva para 45 dias antes de investir.</span></div>
+                    <div><strong>Simular contratação</strong><span>Impacto mensal estimado em R$ 7.800.</span></div>
+                  </div>
+                </article>
+                <article class="ops-card">
+                  <div class="card-heading">
+                    <div>
+                      <span class="mini-label">Histórico consultivo</span>
+                      <h3>Reuniões e pareceres</h3>
+                    </div>
+                  </div>
+                  <div class="timeline-list">
+                    <div><strong>22/05/2026</strong><span>Parecer de investimento liberado pela MB.</span></div>
+                    <div><strong>15/05/2026</strong><span>Reunião CFO: revisão de margem e caixa.</span></div>
+                    <div><strong>08/05/2026</strong><span>DRE validada e relatório executivo publicado.</span></div>
+                  </div>
+                </article>
+              </section>
+            </section>
+          </section>
+
+          <section class="view" id="admin-cockpit" data-view="admin-cockpit">
+            <div class="section-title">
+              <span class="eyebrow">Admin M1 - Cockpit operacional MB</span>
+              <h2>Visão viva da operação consultiva, dados, clientes, SLAs e aprovações.</h2>
+            </div>
+
+            <section class="cockpit-hero">
+              <article class="ai-spotlight">
+                <div>
+                  <span class="mini-label">IA MB Operacional</span>
+                  <h3>14 clientes precisam de atenção hoje</h3>
+                  <p>Priorize clientes com dados insuficientes, DRE pendente e oportunidades de upgrade. A fila crítica concentra 7 SLAs vencidos.</p>
+                </div>
+                <span class="confidence confidence-high">Fila priorizada</span>
+              </article>
+              <article>
+                <span>MB Operational Score médio</span>
+                <strong>76</strong>
+                <em>Atenção operacional</em>
+              </article>
+              <article>
+                <span>Clientes em risco</span>
+                <strong>9</strong>
+                <em>Sem acesso ou dados incompletos</em>
+              </article>
+            </section>
+
+            <section class="mini-metric-grid">
+              <article><span>Clientes ativos</span><strong>128</strong><em>42 no CFO</em></article>
+              <article><span>Análises aguardando</span><strong>14</strong><em>IA + MB</em></article>
+              <article><span>DREs pendentes</span><strong>9</strong><em>Maio/2026</em></article>
+              <article><span>SLAs vencidos</span><strong>7</strong><em>Crítico</em></article>
+              <article><span>Integrações offline</span><strong>6</strong><em>ERP ou banco</em></article>
+              <article><span>Sem dados suficientes</span><strong>18</strong><em>Bloquear análise</em></article>
+              <article><span>Upsell provável</span><strong>23</strong><em>Comercial</em></article>
+              <article><span>Sem acesso recente</span><strong>11</strong><em>Risco de churn</em></article>
+            </section>
+
+            <section class="operational-radar">
+              <article class="ops-card ops-card-wide">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Radar operacional</span>
+                    <h3>Status dos processos por etapa</h3>
+                  </div>
+                  <span class="confidence confidence-medium">Atualizado em tempo real no protótipo</span>
+                </div>
+                <div class="status-lanes">
+                  <div><span class="status-badge status-waiting">Aguardando envio</span><strong>21</strong><em>Cliente precisa agir</em></div>
+                  <div><span class="status-badge status-review">Aguardando revisão</span><strong>17</strong><em>Equipe MB</em></div>
+                  <div><span class="status-badge status-approved">Aprovado</span><strong>64</strong><em>Liberado ao cliente</em></div>
+                  <div><span class="status-badge status-error">Erro na integração</span><strong>6</strong><em>ERP ou banco</em></div>
+                  <div><span class="status-badge status-insufficient">Dados insuficientes</span><strong>18</strong><em>Análise bloqueada</em></div>
+                </div>
+              </article>
+
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">SLA hoje</span>
+                    <h3>Risco por compromisso</h3>
+                  </div>
+                </div>
+                <div class="horizontal-bars">
+                  <div style="--bar: 78%"><span>DAS e guias</span><strong>78%</strong></div>
+                  <div style="--bar: 64%"><span>DREs</span><strong>64%</strong></div>
+                  <div style="--bar: 52%"><span>Folha</span><strong>52%</strong></div>
+                  <div style="--bar: 38%"><span>Parecer CFO</span><strong>38%</strong></div>
+                </div>
+              </article>
+            </section>
+
+            <section class="queue-board">
+              <article class="ops-card ops-card-wide">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Filas operacionais MB</span>
+                    <h3>Trabalho vivo por área, prioridade e gargalo</h3>
+                  </div>
+                  <span class="confidence confidence-medium">Operação priorizada</span>
+                </div>
+                <div class="queue-grid">
+                  <div class="queue-column is-critical">
+                    <span>Fiscal</span>
+                    <strong>6</strong>
+                    <em>DAS e XML pendentes</em>
+                  </div>
+                  <div class="queue-column">
+                    <span>Trabalhista</span>
+                    <strong>5</strong>
+                    <em>Folhas em revisão</em>
+                  </div>
+                  <div class="queue-column is-warning">
+                    <span>DRE</span>
+                    <strong>9</strong>
+                    <em>Fechamentos pendentes</em>
+                  </div>
+                  <div class="queue-column is-critical">
+                    <span>Aprovação IA</span>
+                    <strong>14</strong>
+                    <em>Insights aguardando MB</em>
+                  </div>
+                  <div class="queue-column">
+                    <span>Onboarding</span>
+                    <strong>8</strong>
+                    <em>Clientes em ativação</em>
+                  </div>
+                  <div class="queue-column is-warning">
+                    <span>Integrações</span>
+                    <strong>6</strong>
+                    <em>ERPs ou bancos offline</em>
+                  </div>
+                </div>
+              </article>
+            </section>
+
+            <section class="ops-grid">
+              <article class="ops-card ops-card-wide">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Fila de trabalho</span>
+                    <h3>Prioridades da equipe MB</h3>
+                  </div>
+                  <span class="status-pill status-warning">Operação em andamento</span>
+                </div>
+                <div class="kanban-grid">
+                  <div><strong>Fiscal</strong><span>6 DAS pendentes</span><em>2 vencem hoje</em></div>
+                  <div><strong>Financeiro</strong><span>11 caixas pendentes</span><em>4 sem OFX</em></div>
+                  <div><strong>Trabalhista</strong><span>5 folhas em revisão</span><em>1 aguardando cliente</em></div>
+                  <div><strong>Consultivo</strong><span>8 pareceres CFO</span><em>3 para aprovação</em></div>
+                </div>
+              </article>
+
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Timeline operacional</span>
+                    <h3>Atividades recentes</h3>
+                  </div>
+                </div>
+                <div class="activity-timeline">
+                  <div><strong>10:12</strong><span>Ana publicou relatório fiscal para Clínica Norte PME.</span></div>
+                  <div><strong>09:40</strong><span>IA marcou 4 clientes com margem pressionada.</span></div>
+                  <div><strong>09:10</strong><span>Bruno aprovou insight executivo de caixa.</span></div>
+                  <div><strong>08:55</strong><span>Integração Omie reconectada para Comércio Silva.</span></div>
+                </div>
+              </article>
+
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">MB Operational Score</span>
+                    <h3>Qualidade operacional</h3>
+                  </div>
+                </div>
+                <div class="score-stack">
+                  <div><span>Entrega de documentos</span><strong>82</strong><em style="--bar: 82%"></em></div>
+                  <div><span>Integrações ativas</span><strong>69</strong><em style="--bar: 69%"></em></div>
+                  <div><span>Resposta às pendências</span><strong>74</strong><em style="--bar: 74%"></em></div>
+                  <div><span>Uso da plataforma</span><strong>78</strong><em style="--bar: 78%"></em></div>
+                </div>
+              </article>
+            </section>
+          </section>
+
+          <section class="view" id="admin-clientes" data-view="admin-clientes">
+            <div class="section-title">
+              <span class="eyebrow">Admin M2 - Gestão de clientes</span>
+              <h2>Clientes, empresas, planos, usuários, permissões e oportunidades de upgrade.</h2>
+            </div>
+
+            <section class="admin-grid">
+              <article class="admin-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Carteira</span>
+                    <h3>Clientes acompanhados</h3>
+                  </div>
+                </div>
+                <div class="client-list">
+                  <div><strong>Comércio Silva LTDA</strong><span>CFO as a Service</span><em>Todos os módulos</em></div>
+                  <div><strong>Clínica Norte PME</strong><span>Financeiro IA</span><em>Upsell provável</em></div>
+                  <div><strong>Serviços Prime ME</strong><span>Contabilidade</span><em>Upgrade sugerido</em></div>
+                </div>
+              </article>
+
+              <article class="admin-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Ficha do cliente</span>
+                    <h3>Comércio Silva LTDA</h3>
+                  </div>
+                  <span class="status-pill status-good">Ativo</span>
+                </div>
+                <div class="profile-grid profile-grid-compact">
+                  <div><span>Plano atual</span><strong>CFO as a Service</strong></div>
+                  <div><span>Maturidade</span><strong>Nível 3</strong></div>
+                  <div><span>Qualidade</span><strong>91%</strong></div>
+                  <div><span>Último acesso</span><strong>Hoje</strong></div>
+                </div>
+              </article>
+
+              <article class="admin-card admin-card-wide">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Módulos liberados por cliente</span>
+                    <h3>Controle comercial e operacional</h3>
+                  </div>
+                </div>
+                <div class="module-chips">
+                  <span class="is-on">Documentos</span>
+                  <span class="is-on">DAS</span>
+                  <span class="is-on">Financeiro IA</span>
+                  <span class="is-on">DRE</span>
+                  <span class="is-on">Caixa</span>
+                  <span class="is-on">Score</span>
+                  <span class="is-on">CFO consultivo</span>
+                  <span class="is-on">Parecer MB</span>
+                </div>
+              </article>
+
+              <article class="admin-card admin-card-wide">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Novo cliente MB</span>
+                    <h3>Cadastrar empresa e definir plano</h3>
+                  </div>
+                  <span class="status-pill status-warning">Ativação interna</span>
+                </div>
+
+                <form class="admin-register" data-admin-client-form>
+                  <div class="form-grid">
+                    <label>
+                      <span>Razão social</span>
+                      <input name="company" value="Nova Empresa Cliente LTDA">
+                    </label>
+                    <label>
+                      <span>CNPJ</span>
+                      <input name="cnpj" value="98.765.432/0001-10">
+                    </label>
+                    <label>
+                      <span>Responsável legal</span>
+                      <input name="owner" value="Carlos Menezes">
+                    </label>
+                    <label>
+                      <span>Grupo econômico</span>
+                      <input name="group" value="Grupo Cliente Principal">
+                    </label>
+                    <label>
+                      <span>Consultor MB</span>
+                      <select name="consultant">
+                        <option>Ana Financeiro</option>
+                        <option>Bruno CFO</option>
+                        <option>Camila Fiscal</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Status inicial</span>
+                      <select name="status">
+                        <option>Implantação</option>
+                        <option>Ativo</option>
+                        <option>Aguardando documentos</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <div class="admin-plan-picker" aria-label="Escolha do plano do cliente">
+                    <button type="button" data-admin-plan-choice="contabilidade">Contabilidade <strong data-admin-plan-price="contabilidade">R$ 800</strong></button>
+                    <button class="is-active" type="button" data-admin-plan-choice="financeiro">Financeiro IA <strong data-admin-plan-price="financeiro">R$ 1.200</strong></button>
+                    <button type="button" data-admin-plan-choice="cfo">CFO as a Service <strong data-admin-plan-price="cfo">R$ 2.000</strong></button>
+                  </div>
+
+                  <div class="admin-plan-summary">
+                    <div><span>Plano escolhido</span><strong data-admin-selected-plan>Financeiro IA</strong></div>
+                    <div><span>Módulos liberados</span><strong data-admin-selected-modules>Documentos, DAS, Fiscal, Folha, Faturamento e IA básica</strong></div>
+                    <div><span>SLA sugerido</span><strong data-admin-selected-sla>Até 3 dias úteis para análises simples</strong></div>
+                  </div>
+
+                  <div class="action-row">
+                    <button class="btn btn-primary" type="submit">
+                      <i data-lucide="user-plus" aria-hidden="true"></i>
+                      <span>Cadastrar cliente</span>
+                    </button>
+                    <button class="btn btn-light" type="button" data-view-link="admin-planos">Ver matriz de permissões</button>
+                  </div>
+                  <p class="purchase-result is-hidden" data-admin-client-result>Cliente simulado como cadastrado. O plano define automaticamente os módulos do portal.</p>
+                </form>
+              </article>
+            </section>
+          </section>
+
+          <section class="view" id="admin-dados" data-view="admin-dados">
+            <div class="section-title">
+              <span class="eyebrow">Admin M3 - Dados e publicações</span>
+              <h2>A equipe MB alimenta os dados que o cliente visualiza no portal.</h2>
+            </div>
+
+            <section class="data-command-bar">
+              <label>
+                <span>Cliente</span>
+                <select>
+                  <option>Comércio Silva LTDA</option>
+                  <option>Clínica Norte PME</option>
+                  <option>Serviços Prime ME</option>
+                </select>
+              </label>
+              <label>
+                <span>Competência</span>
+                <input value="Maio/2026">
+              </label>
+              <label>
+                <span>Plano</span>
+                <select>
+                  <option>CFO as a Service</option>
+                  <option>Financeiro IA</option>
+                  <option>Contabilidade</option>
+                </select>
+              </label>
+              <button class="btn btn-primary" type="button" data-publish-dashboard>
+                <i data-lucide="send" aria-hidden="true"></i>
+                <span>Publicar no portal</span>
+              </button>
+            </section>
+            <p class="purchase-result is-hidden" data-dashboard-publish-result>Dados simulados como publicados. O dashboard do cliente será atualizado após validação e permissões do plano.</p>
+
+            <section class="rules-ai-grid">
+              <article>
+                <span class="mini-label">Regras automáticas</span>
+                <h3>Cálculos objetivos</h3>
+                <p>Crescimento, margens, variações, impostos, comparações mês contra mês e alertas numéricos.</p>
+              </article>
+              <article>
+                <span class="mini-label">IA MB</span>
+                <h3>Interpretação consultiva</h3>
+                <p>Resumo executivo, explicações, insights, recomendações e orientação de próximos passos.</p>
+              </article>
+            </section>
+
+            <article class="ops-card ops-card-wide cfo-admin-panel">
+              <div class="card-heading">
+                <div>
+                  <span class="mini-label">Análises CFO da equipe MB</span>
+                  <h3>Dados que alimentam o Dashboard e o Copiloto do cliente CFO</h3>
+                </div>
+                <span class="confidence confidence-high">Publicação com governança</span>
+              </div>
+              <div class="form-grid form-grid-four">
+                <label><span>Tese executiva</span><input value="Margem pressionada por despesas fixas"></label>
+                <label><span>Capacidade de investimento</span><input value="R$ 32.000"></label>
+                <label><span>Risco financeiro</span><select><option>Atenção</option><option>Saudável</option><option>Risco</option></select></label>
+                <label><span>Responsável MB</span><input value="Bruno CFO"></label>
+                <label><span>Recomendação MB</span><input value="Reduzir despesas administrativas em 12%"></label>
+                <label><span>Parecer</span><select><option>Aprovar após conciliação</option><option>Aprovar</option><option>Rejeitar</option><option>Solicitar dados</option></select></label>
+                <label><span>Destino</span><select><option>Dashboard + Copiloto</option><option>Somente Copiloto</option><option>Somente relatório executivo</option></select></label>
+                <label><span>Status</span><select><option>Rascunho MB</option><option>Em revisão</option><option>Aprovado para cliente</option></select></label>
+              </div>
+              <div class="scenario-list admin-scenario-list">
+                <div><span>Simulação conservadora</span><strong>R$ 18k</strong><em>preserva 60 dias de caixa</em></div>
+                <div><span>Simulação moderada</span><strong>R$ 32k</strong><em>preserva 45 dias de caixa</em></div>
+                <div><span>Simulação agressiva</span><strong>R$ 55k</strong><em>exige capital de giro</em></div>
+              </div>
+            </article>
+
+            <section class="admin-data-grid">
+              <article class="ops-card ops-card-wide">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Dashboard do cliente</span>
+                    <h3>Indicadores que aparecem na tela inicial</h3>
+                  </div>
+                  <span class="confidence confidence-medium">Rascunho MB</span>
+                </div>
+                <div class="form-grid form-grid-four">
+                  <label><span>Faturamento do mês</span><input value="R$ 186.420"></label>
+                  <label><span>Despesas</span><input value="R$ 132.870"></label>
+                  <label><span>Resultado estimado</span><input value="R$ 40.310"></label>
+                  <label><span>Saldo financeiro</span><input value="R$ 84.600"></label>
+                  <label><span>Margem estimada</span><input value="21,6%"></label>
+                  <label><span>Status financeiro</span><select><option>Atenção</option><option>Saudável</option><option>Risco</option><option>Dados insuficientes</option></select></label>
+                  <label><span>MB Financial Score</span><input value="78"></label>
+                  <label><span>Confiabilidade</span><select><option>Alta</option><option>Média</option><option>Baixa</option></select></label>
+                </div>
+              </article>
+
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Faturamento</span>
+                    <h3>Receita e origem</h3>
+                  </div>
+                </div>
+                <div class="stacked-form">
+                  <label><span>Receita acumulada 12 meses</span><input value="R$ 1.940.000"></label>
+                  <label><span>Ticket médio</span><input value="R$ 4.820"></label>
+                  <label><span>Cliente mais relevante</span><input value="Rede Alfa - 18% da receita"></label>
+                  <label><span>Importação base</span><select><option>XML + CSV validado</option><option>Manual</option><option>ERP conectado</option></select></label>
+                </div>
+              </article>
+
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Caixa</span>
+                    <h3>Banco e fluxo financeiro</h3>
+                  </div>
+                </div>
+                <div class="stacked-form">
+                  <label><span>Entradas</span><input value="R$ 192.800"></label>
+                  <label><span>Saídas</span><input value="R$ 170.000"></label>
+                  <label><span>Geração de caixa</span><input value="R$ 22.800"></label>
+                  <label><span>Fonte</span><select><option>OFX conciliado</option><option>Excel enviado</option><option>Banco conectado</option></select></label>
+                </div>
+              </article>
+
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Fiscal</span>
+                    <h3>DAS, impostos e notas</h3>
+                  </div>
+                </div>
+                <div class="stacked-form">
+                  <label><span>DAS do mês</span><input value="R$ 13.240"></label>
+                  <label><span>Vencimento</span><input value="20/06/2026"></label>
+                  <label><span>Alíquota efetiva</span><input value="7,1%"></label>
+                  <label><span>XML de notas</span><select><option>Importado e conferido</option><option>Pendente</option><option>Parcial</option></select></label>
+                </div>
+              </article>
+
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Trabalhista</span>
+                    <h3>Folha, encargos e pró-labore</h3>
+                  </div>
+                </div>
+                <div class="stacked-form">
+                  <label><span>Folha + encargos</span><input value="R$ 36.280"></label>
+                  <label><span>FGTS</span><input value="R$ 4.180"></label>
+                  <label><span>INSS</span><input value="R$ 6.900"></label>
+                  <label><span>Pró-labore</span><input value="R$ 12.000"></label>
+                </div>
+              </article>
+
+              <article class="ops-card ops-card-wide">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Publicação MB para o cliente</span>
+                    <h3>Enviar documentos, guias e relatórios ao portal</h3>
+                  </div>
+                  <span class="status-pill status-good">Equipe MB envia</span>
+                </div>
+                <form class="mb-publish-form" data-mb-publish-form>
+                  <div class="form-grid">
+                    <label><span>Tipo de publicação</span><select><option>DAS / guia</option><option>Relatório financeiro</option><option>Folha / holerite</option><option>DRE gerencial</option><option>Parecer MB</option></select></label>
+                    <label><span>Categoria</span><select><option>Fiscal</option><option>Financeiro</option><option>Trabalhista</option><option>Contábil</option><option>Societário</option></select></label>
+                    <label><span>Competência</span><input value="Maio/2026"></label>
+                    <label><span>Visibilidade</span><select><option>Proprietário e gestor financeiro</option><option>Somente proprietário</option><option>RH do cliente</option><option>Todos os usuários do cliente</option></select></label>
+                  </div>
+                  <label class="drop-zone drop-zone-compact">
+                    <input type="file" name="mb_file">
+                    <i data-lucide="file-up" aria-hidden="true"></i>
+                    <strong>Selecionar arquivo para publicar</strong>
+                    <span>PDF, XML, XLSX, CSV, OFX ou ZIP.</span>
+                  </label>
+                  <div class="action-row">
+                    <button class="btn btn-primary" type="submit">
+                      <i data-lucide="upload" aria-hidden="true"></i>
+                      <span>Publicar documento</span>
+                    </button>
+                    <button class="btn btn-light" type="button">Salvar como rascunho</button>
+                  </div>
+                  <p class="purchase-result is-hidden" data-mb-publish-result>Publicação simulada. O documento ficará visível no portal conforme a permissão escolhida.</p>
+                </form>
+              </article>
+            </section>
+          </section>
+
+          <section class="view" id="admin-planos" data-view="admin-planos">
+            <div class="section-title">
+              <span class="eyebrow">Admin M4 - Planos e permissões</span>
+              <h2>Configuração de regras de acesso, permissões e valores comerciais dos planos.</h2>
+            </div>
+
+            <section class="ops-grid">
+              <article class="ops-card ops-card-wide">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Matriz operacional</span>
+                    <h3>Plano contratado + perfil + dados disponíveis</h3>
+                  </div>
+                  <span class="confidence confidence-high">Regra central</span>
+                </div>
+                <div class="access-matrix" data-admin-access-matrix></div>
+              </article>
+
+              <article class="ops-card ops-card-wide">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Preços comerciais</span>
+                    <h3>Valores editáveis pela equipe MB</h3>
+                  </div>
+                  <span class="status-pill status-warning">Admin altera</span>
+                </div>
+                <form class="price-editor" data-price-form>
+                  <label>
+                    <span>Plano Contabilidade</span>
+                    <input data-plan-price-input="contabilidade" value="R$ 800">
+                  </label>
+                  <label>
+                    <span>Plano Financeiro IA</span>
+                    <input data-plan-price-input="financeiro" value="R$ 1.200">
+                  </label>
+                  <label>
+                    <span>Plano CFO as a Service</span>
+                    <input data-plan-price-input="cfo" value="R$ 2.000">
+                  </label>
+                  <button class="btn btn-primary" type="submit">
+                    <i data-lucide="save" aria-hidden="true"></i>
+                    <span>Atualizar valores</span>
+                  </button>
+                </form>
+                <p class="purchase-result is-hidden" data-price-result>Valores atualizados no protótipo. A contratação online e o cadastro interno passam a exibir os novos preços.</p>
+              </article>
+
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Perfis cliente</span>
+                    <h3>Permissões finais</h3>
+                  </div>
+                </div>
+                <div class="stack-list">
+                  <div><strong>Proprietário</strong><span>Todos os módulos liberados pelo plano.</span></div>
+                  <div><strong>Gestor financeiro</strong><span>Dashboards, DRE, caixa, documentos financeiros.</span></div>
+                  <div><strong>RH</strong><span>Folha, FGTS, INSS, holerites.</span></div>
+                  <div><strong>Somente leitura</strong><span>Visualiza, mas não envia ou aprova.</span></div>
+                </div>
+              </article>
+
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Perfis MB</span>
+                    <h3>Administração interna</h3>
+                  </div>
+                </div>
+                <div class="stack-list">
+                  <div><strong>Administrador master</strong><span>Tudo, usuários, planos e permissões.</span></div>
+                  <div><strong>Gestor operacional</strong><span>Carteira, SLAs, tarefas e produtividade.</span></div>
+                  <div><strong>Consultor CFO</strong><span>Score, pareceres, relatórios e decisões.</span></div>
+                  <div><strong>Atendimento</strong><span>Cadastro, documentos, pendências e status.</span></div>
+                </div>
+              </article>
+            </section>
+          </section>
+
+          <section class="view" id="admin-operacao" data-view="admin-operacao">
+            <div class="section-title">
+              <span class="eyebrow">Admin M5 - Operação, tarefas e SLA</span>
+              <h2>Tarefas, pendências, SLAs vencidos e entregas por área.</h2>
+            </div>
+
+            <section class="mini-metric-grid">
+              <article><span>Tarefas abertas</span><strong>48</strong><em>12 críticas</em></article>
+              <article><span>SLAs vencidos</span><strong>7</strong><em>Prioridade alta</em></article>
+              <article><span>DREs pendentes</span><strong>9</strong><em>Maio/2026</em></article>
+              <article><span>Análises em aprovação</span><strong>14</strong><em>IA + relatórios</em></article>
+            </section>
+
+            <section class="ops-grid">
+              <article class="ops-card ops-card-wide">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Fila de tarefas</span>
+                    <h3>Trabalho priorizado por cliente, área e prazo</h3>
+                  </div>
+                  <span class="confidence confidence-medium">SLA inteligente</span>
+                </div>
+                <div class="status-table">
+                  <div class="table-row table-head"><span>Tarefa</span><span>Cliente</span><span>Área</span><span>Status</span><span>Prazo</span><span>Responsável</span></div>
+                  <div class="table-row"><span>Publicar DAS Maio</span><span>Clínica Norte</span><span>Fiscal</span><span class="status-badge status-review">Revisão</span><span>Hoje</span><span>Paula</span></div>
+                  <div class="table-row"><span>Validar caixa</span><span>Comércio Silva</span><span>Financeiro</span><span class="status-badge status-waiting">Aguardando OFX</span><span>24/05</span><span>Ana</span></div>
+                  <div class="table-row"><span>Aprovar parecer CFO</span><span>Distribuidora Alfa</span><span>Consultivo</span><span class="status-badge status-review">Aprovação</span><span>Hoje</span><span>Bruno</span></div>
+                  <div class="table-row"><span>Reconectar ERP</span><span>Mercado Central</span><span>Integrações</span><span class="status-badge status-error">Erro</span><span>Urgente</span><span>Suporte</span></div>
+                </div>
+              </article>
+
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Comunicação interna</span>
+                    <h3>Solicitações com resposta pendente</h3>
+                  </div>
+                </div>
+                <div class="notification-feed">
+                  <div><strong>Cliente perguntou sobre investimento</strong><span>Encaminhar para Bruno CFO.</span><em>12 min</em></div>
+                  <div><strong>RH pediu holerites</strong><span>Trabalhista deve anexar documentos.</span><em>43 min</em></div>
+                  <div><strong>Fiscal pediu XML faltante</strong><span>Cliente ainda não respondeu.</span><em>1 dia</em></div>
+                </div>
+              </article>
+            </section>
+
+            <section class="ops-grid">
+              <article class="ops-card ops-card-wide">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Esteira operacional</span>
+                    <h3>Entregas por área</h3>
+                  </div>
+                </div>
+                <div class="kanban-grid">
+                  <div><strong>Fiscal</strong><span>DAS pendente: 6</span><em>2 vencem hoje</em></div>
+                  <div><strong>Financeiro</strong><span>Caixas pendentes: 11</span><em>4 sem extrato</em></div>
+                  <div><strong>Trabalhista</strong><span>Folha: 5</span><em>1 aguardando cliente</em></div>
+                  <div><strong>Consultivo</strong><span>Reuniões CFO: 8</span><em>3 para agendar</em></div>
+                </div>
+              </article>
+            </section>
+          </section>
+
+          <section class="view" id="admin-comercial" data-view="admin-comercial">
+            <div class="section-title">
+              <span class="eyebrow">Admin M6 - Inteligência comercial MB</span>
+              <h2>Upsell, expansão, risco de cancelamento e clientes estratégicos.</h2>
+            </div>
+
+            <section class="mini-metric-grid">
+              <article><span>Upsell para Financeiro IA</span><strong>16</strong><em>Prontos para proposta</em></article>
+              <article><span>Upsell para CFO</span><strong>7</strong><em>Dados maduros</em></article>
+              <article><span>Risco de cancelamento</span><strong>5</strong><em>Baixo uso</em></article>
+              <article><span>Clientes estratégicos</span><strong>12</strong><em>Alto potencial</em></article>
+            </section>
+
+            <section class="ops-grid">
+              <article class="ops-card ops-card-wide">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Alertas comerciais</span>
+                    <h3>Oportunidades sugeridas pelo sistema</h3>
+                  </div>
+                  <span class="confidence confidence-medium">IA + regras</span>
+                </div>
+                <div class="commercial-list">
+                  <div><strong>Serviços Prime ME</strong><span>Plano Contabilidade · Faturamento crescente · sugerir Financeiro IA</span><em>Potencial: R$ 400/mês</em></div>
+                  <div><strong>Clínica Norte PME</strong><span>Financeiro IA · boa qualidade de dados · sugerir CFO as a Service</span><em>Potencial: R$ 800/mês</em></div>
+                  <div><strong>Distribuidora Alfa</strong><span>Alto uso do dashboard · dúvidas recorrentes de caixa</span><em>Prioridade alta</em></div>
+                  <div><strong>Mercado Central</strong><span>Sem acesso há 28 dias · risco de cancelamento</span><em>Ação de relacionamento</em></div>
+                </div>
+              </article>
+
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Recomendação MB</span>
+                    <h3>Próximas abordagens</h3>
+                  </div>
+                </div>
+                <div class="stack-list">
+                  <div><strong>Oferta Financeiro IA</strong><span>Clientes com documentos em dia e faturamento recorrente.</span></div>
+                  <div><strong>Oferta CFO</strong><span>Clientes com DRE básica, caixa importado e decisões frequentes.</span></div>
+                  <div><strong>Retenção</strong><span>Clientes sem acesso recente ou com pendências críticas.</span></div>
+                </div>
+              </article>
+
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Uso da plataforma</span>
+                    <h3>Sinais comerciais</h3>
+                  </div>
+                </div>
+                <div class="score-stack">
+                  <div><span>Acessos a dashboards</span><strong>84%</strong><em style="--bar: 84%"></em></div>
+                  <div><span>Relatórios baixados</span><strong>67%</strong><em style="--bar: 67%"></em></div>
+                  <div><span>Clientes sem login</span><strong>11</strong><em style="--bar: 32%"></em></div>
+                  <div><span>Potencial de expansão</span><strong>72%</strong><em style="--bar: 72%"></em></div>
+                </div>
+              </article>
+            </section>
+          </section>
+
+          <section class="view" id="admin-aprovacao" data-view="admin-aprovacao">
+            <div class="section-title">
+              <span class="eyebrow">Admin M7 - IA e aprovações</span>
+              <h2>Insights, DRE, fluxo de caixa e relatórios só chegam ao cliente após revisão.</h2>
+            </div>
+
+            <section class="approval-layout">
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Fila de aprovação</span>
+                    <h3>Itens aguardando MB</h3>
+                  </div>
+                </div>
+                <div class="stack-list">
+                  <div><strong>DRE Maio/2026</strong><span>Alta prioridade - Ana Financeiro</span></div>
+                  <div><strong>Insight de caixa</strong><span>Confiabilidade média - Bruno CFO</span></div>
+                  <div><strong>Relatório executivo</strong><span>Aguardando revisão final</span></div>
+                </div>
+              </article>
+
+              <article class="ops-card ops-card-wide">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Insight gerado pela IA</span>
+                    <h3>Revisão antes da liberação</h3>
+                  </div>
+                  <span class="confidence confidence-medium">Confiabilidade média</span>
+                </div>
+                <div class="approval-box">
+                  <p>Se o ritmo atual de despesas continuar, o caixa pode ficar negativo em aproximadamente 45 dias.</p>
+                  <div class="source-grid">
+                    <div><span>Fonte</span><strong>ERP + OFX</strong></div>
+                    <div><span>Data da análise</span><strong>22/05/2026</strong></div>
+                    <div><span>Revisor</span><strong>Bruno CFO</strong></div>
+                    <div><span>Status</span><strong>Em revisão</strong></div>
+                  </div>
+                  <div class="action-row">
+                    <button class="btn btn-primary" type="button">Aprovar</button>
+                    <button class="btn btn-light" type="button">Editar</button>
+                    <button class="btn btn-light" type="button">Rejeitar</button>
+                  </div>
+                </div>
+              </article>
+            </section>
+          </section>
+
+          <section class="view" id="qualidade-dados" data-view="qualidade-dados">
+            <div class="section-title">
+              <span class="eyebrow">Cliente C6 - Qualidade dos dados</span>
+              <h2>Fontes conectadas, lacunas, confiança e bloqueios de análise por cliente.</h2>
+            </div>
+
+            <section class="ops-grid">
+              <article class="ops-card ops-card-wide">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Comércio Silva LTDA</span>
+                    <h3>Mapa de qualidade das fontes</h3>
+                  </div>
+                  <span class="confidence confidence-high">Score de dados 91%</span>
+                </div>
+                <div class="quality-list">
+                  <div><span>ERP conectado</span><strong>Omie ativo</strong><em style="--bar: 96%"></em></div>
+                  <div><span>Banco / OFX</span><strong>Conciliado 94%</strong><em style="--bar: 94%"></em></div>
+                  <div><span>XML de notas</span><strong>Disponível</strong><em style="--bar: 88%"></em></div>
+                  <div><span>Categorias revisadas</span><strong>91%</strong><em style="--bar: 91%"></em></div>
+                  <div><span>DRE validada</span><strong>Sim</strong><em style="--bar: 100%"></em></div>
+                  <div><span>Caixa validado</span><strong>Parcial</strong><em style="--bar: 78%"></em></div>
+                </div>
+              </article>
+
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Bloqueios por dados</span>
+                    <h3>Análises incompatíveis</h3>
+                  </div>
+                </div>
+                <div class="stack-list">
+                  <div><strong>Margem precisa</strong><span>Não liberar sem despesas importadas.</span></div>
+                  <div><strong>Análise de caixa</strong><span>Exige banco conectado ou OFX/Excel.</span></div>
+                  <div><strong>Estratégia CFO</strong><span>Pendente de validação MB.</span></div>
+                </div>
+              </article>
+
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">MB Operational Score</span>
+                    <h3>Operação do cliente</h3>
+                  </div>
+                  <span class="status-pill status-warning">Atenção</span>
+                </div>
+                <div class="score-stack">
+                  <div><span>Entrega de documentos</span><strong>82</strong><em style="--bar: 82%"></em></div>
+                  <div><span>Integração ativa</span><strong>69</strong><em style="--bar: 69%"></em></div>
+                  <div><span>Resposta às pendências</span><strong>74</strong><em style="--bar: 74%"></em></div>
+                  <div><span>Uso da plataforma</span><strong>78</strong><em style="--bar: 78%"></em></div>
+                </div>
+              </article>
+            </section>
+          </section>
+
+          <section class="view" id="admin-integracoes" data-view="admin-integracoes">
+            <div class="section-title">
+              <span class="eyebrow">Admin M8 - Integrações e qualidade dos dados</span>
+              <h2>Fontes conectadas, erros, lacunas e confiabilidade das análises por cliente.</h2>
+            </div>
+
+            <section class="mini-metric-grid">
+              <article><span>ERPs conectados</span><strong>74</strong><em>Omie, Conta Azul e Bling</em></article>
+              <article><span>Bancos / OFX</span><strong>91</strong><em>Fontes financeiras</em></article>
+              <article><span>Erros ativos</span><strong>6</strong><em>Exigem ação</em></article>
+              <article><span>Dados insuficientes</span><strong>18</strong><em>Análise bloqueada</em></article>
+            </section>
+
+            <section class="ops-grid">
+              <article class="ops-card ops-card-wide">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Mapa de integrações</span>
+                    <h3>Visão por cliente e fonte de dados</h3>
+                  </div>
+                  <span class="confidence confidence-medium">Governança operacional</span>
+                </div>
+                <div class="status-table">
+                  <div class="table-row table-head"><span>Cliente</span><span>ERP</span><span>Banco</span><span>XML</span><span>Status</span><span>Confiança</span></div>
+                  <div class="table-row"><span>Comércio Silva</span><span>Omie ativo</span><span>OFX conciliado</span><span>Importado</span><span class="status-badge status-approved">Validado</span><span>Alta</span></div>
+                  <div class="table-row"><span>Clínica Norte</span><span>Conta Azul</span><span>CSV parcial</span><span>Importado</span><span class="status-badge status-review">Revisar</span><span>Média</span></div>
+                  <div class="table-row"><span>Serviços Prime</span><span>Não conectado</span><span>Pendente</span><span>Parcial</span><span class="status-badge status-insufficient">Insuficiente</span><span>Baixa</span></div>
+                  <div class="table-row"><span>Mercado Central</span><span>Bling erro</span><span>Open Finance futuro</span><span>OK</span><span class="status-badge status-error">Erro</span><span>Média</span></div>
+                </div>
+              </article>
+
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">IA MB</span>
+                    <h3>Recomendações de saneamento</h3>
+                  </div>
+                </div>
+                <div class="stack-list">
+                  <div><strong>Priorizar Serviços Prime</strong><span>Sem banco e sem ERP, bloquear margem e caixa.</span></div>
+                  <div><strong>Reconectar Mercado Central</strong><span>Falha de token impede atualização de faturamento.</span></div>
+                  <div><strong>Revisar Clínica Norte</strong><span>CSV parcial não sustenta fluxo de caixa completo.</span></div>
+                </div>
+              </article>
+            </section>
+          </section>
+
+          <section class="view" id="admin-equipe" data-view="admin-equipe">
+            <div class="section-title">
+              <span class="eyebrow">Admin M9 - Equipe e produtividade</span>
+              <h2>Responsáveis, carga operacional, áreas da MB e produtividade da carteira.</h2>
+            </div>
+
+            <section class="team-grid">
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Financeiro</span>
+                    <h3>Ana Ribeiro</h3>
+                  </div>
+                  <span class="status-pill status-warning">11 tarefas</span>
+                </div>
+                <div class="score-stack">
+                  <div><span>DREs revisadas</span><strong>18</strong><em style="--bar: 82%"></em></div>
+                  <div><span>Caixas pendentes</span><strong>4</strong><em style="--bar: 44%"></em></div>
+                  <div><span>SLA no prazo</span><strong>91%</strong><em style="--bar: 91%"></em></div>
+                </div>
+              </article>
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Fiscal</span>
+                    <h3>Paula Martins</h3>
+                  </div>
+                  <span class="status-pill status-good">Em dia</span>
+                </div>
+                <div class="score-stack">
+                  <div><span>DAS publicados</span><strong>42</strong><em style="--bar: 88%"></em></div>
+                  <div><span>Pendências fiscais</span><strong>6</strong><em style="--bar: 36%"></em></div>
+                  <div><span>SLA no prazo</span><strong>96%</strong><em style="--bar: 96%"></em></div>
+                </div>
+              </article>
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Consultivo</span>
+                    <h3>Bruno Andrade</h3>
+                  </div>
+                  <span class="status-pill status-warning">8 pareceres</span>
+                </div>
+                <div class="score-stack">
+                  <div><span>Clientes CFO</span><strong>42</strong><em style="--bar: 84%"></em></div>
+                  <div><span>Reuniões agendadas</span><strong>14</strong><em style="--bar: 66%"></em></div>
+                  <div><span>Pareceres aprovados</span><strong>9</strong><em style="--bar: 58%"></em></div>
+                </div>
+              </article>
+            </section>
+          </section>
+
+          <section class="view" id="admin-relatorios" data-view="admin-relatorios">
+            <div class="section-title">
+              <span class="eyebrow">Admin M10 - Relatórios operacionais</span>
+              <h2>Indicadores internos para gestão da carteira, operação, produtividade e receita recorrente.</h2>
+            </div>
+
+            <section class="ops-grid">
+              <article class="ops-card ops-card-wide">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Relatórios MB</span>
+                    <h3>Pacote de gestão interna</h3>
+                  </div>
+                  <span class="confidence confidence-high">Pronto para especificação técnica</span>
+                </div>
+                <div class="report-grid">
+                  <div><strong>Carteira de clientes</strong><span>Clientes por plano, status, maturidade e responsável.</span></div>
+                  <div><strong>Produtividade da equipe</strong><span>Tarefas concluídas, SLAs, pendências e gargalos.</span></div>
+                  <div><strong>Status das análises</strong><span>DREs, caixas, IA, pareceres e relatórios em aprovação.</span></div>
+                  <div><strong>Receita recorrente</strong><span>Planos, upgrades, churn e potencial comercial.</span></div>
+                  <div><strong>Documentos e guias</strong><span>Publicações por competência e downloads pelo cliente.</span></div>
+                  <div><strong>Integrações</strong><span>Fontes ativas, falhas, qualidade e confiabilidade dos dados.</span></div>
+                </div>
+              </article>
+
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Painel executivo MB</span>
+                    <h3>Resumo mensal</h3>
+                  </div>
+                </div>
+                <div class="scenario-list">
+                  <div><span>MRR estimado</span><strong>R$ 171k</strong><em>+8,2% mês</em></div>
+                  <div><span>Upsell aberto</span><strong>R$ 18k</strong><em>23 oportunidades</em></div>
+                  <div><span>SLA cumprido</span><strong>89%</strong><em>meta 95%</em></div>
+                </div>
+              </article>
+            </section>
+          </section>
+
+          <section class="view" id="admin-mapa" data-view="admin-mapa">
+            <div class="section-title">
+              <span class="eyebrow">Admin M11 - Mapa do produto</span>
+              <h2>Checklist interno para avaliar cobertura, lacunas e prioridade das próximas telas.</h2>
+            </div>
+
+            <section class="ops-grid">
+              <article class="ops-card ops-card-wide">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Cobertura atual do protótipo</span>
+                    <h3>Telas já representadas</h3>
+                  </div>
+                  <span class="confidence confidence-high">Base validada</span>
+                </div>
+                <div class="product-map">
+                  <div><strong>Login único</strong><span>Cliente e equipe MB com redirecionamento automático.</span><em>Completa para protótipo</em></div>
+                  <div><strong>Contratação online</strong><span>Cadastro, escolha de plano, Pix e cartão.</span><em>Protótipo comercial</em></div>
+                  <div><strong>Portal do cliente</strong><span>Inteligência financeira única por plano, onboarding, IA MB, documentos, pendências, notificações, comunicação, perfil e planos.</span><em>Completa para validação</em></div>
+                  <div><strong>Administração MB</strong><span>Cockpit, clientes, planos, preços, dados, publicações, operação, comercial, IA, integrações, equipe, relatórios e qualidade.</span><em>Completa para validação</em></div>
+                  <div><strong>Governança</strong><span>Bloqueio por plano, bloqueio por dados, separação de regras x IA e aprovação humana da MB antes de insights estratégicos.</span><em>Regra central</em></div>
+                </div>
+              </article>
+
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Fora do MVP visual</span>
+                    <h3>O que fica para fase posterior</h3>
+                  </div>
+                </div>
+                <div class="stack-list">
+                  <div><strong>Open Finance completo</strong><span>Conexão bancária profunda e automações recorrentes.</span></div>
+                  <div><strong>IA preditiva avançada</strong><span>Modelos sofisticados de previsão, benchmarking e machine learning.</span></div>
+                  <div><strong>Cobrança recorrente</strong><span>Histórico de faturas, inadimplência e alteração de cartão.</span></div>
+                  <div><strong>Termos e aceite</strong><span>Contrato digital, LGPD e autorizações.</span></div>
+                </div>
+              </article>
+
+              <article class="ops-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="mini-label">Prioridade recomendada</span>
+                    <h3>Antes do banco de dados</h3>
+                  </div>
+                </div>
+                <div class="stack-list">
+                  <div><strong>1. MVP real</strong><span>Login, clientes, planos, documentos, dashboard simples, DRE básica, caixa básico, importação OFX/Excel/CSV, IA simples, pendências e aprovações.</span></div>
+                  <div><strong>2. Não entrar agora</strong><span>IA preditiva avançada, benchmarking, Open Finance profundo, app mobile e machine learning avançado.</span></div>
+                  <div><strong>3. Validar Admin MB</strong><span>Cockpit, alimentação de dados, publicação, SLA, responsáveis e governança.</span></div>
+                  <div><strong>4. Mapear integrações</strong><span>O que entra por importação manual e o que fica para fase 2.</span></div>
+                </div>
+              </article>
+            </section>
+          </section>
+
+          <section class="print-report" data-report-template="dre" aria-label="Relatório DRE para impressão">
+            <header>
+              <img src="assets/mb-logo-premium.svg" alt="MB Assessoria Empresarial">
+              <div>
+                <span>MB Intelligence</span>
+                <h1>DRE Gerencial</h1>
+                <p>Comércio Silva LTDA · Competência Maio/2026 · Revisado pela equipe MB</p>
+              </div>
+            </header>
+            <section class="print-summary">
+              <div><span>Receita líquida</span><strong>R$ 186.420</strong></div>
+              <div><span>Custos e despesas</span><strong>R$ 132.870</strong></div>
+              <div><span>Resultado operacional</span><strong>R$ 40.310</strong></div>
+              <div><span>Margem operacional</span><strong>21,6%</strong></div>
+            </section>
+            <table>
+              <thead><tr><th>Conta gerencial</th><th>Valor</th><th>% Receita</th><th>Análise MB</th></tr></thead>
+              <tbody>
+                <tr><td>Receita líquida</td><td>R$ 186.420</td><td>100%</td><td>Receita em crescimento no mês.</td></tr>
+                <tr><td>Custos variáveis</td><td>R$ 92.560</td><td>49,6%</td><td>Pressão moderada sobre margem bruta.</td></tr>
+                <tr><td>Despesas administrativas</td><td>R$ 40.310</td><td>21,6%</td><td>Revisar contratos recorrentes.</td></tr>
+                <tr><td>Resultado operacional</td><td>R$ 40.310</td><td>21,6%</td><td>Resultado positivo, com atenção a despesas fixas.</td></tr>
+              </tbody>
+            </table>
+            <footer>Relatório gerencial emitido pela MB Intelligence. Informações sujeitas à qualidade dos dados enviados e validação MB.</footer>
+          </section>
+
+          <section class="print-report" data-report-template="cashflow" aria-label="Relatório de fluxo de caixa para impressão">
+            <header>
+              <img src="assets/mb-logo-premium.svg" alt="MB Assessoria Empresarial">
+              <div>
+                <span>MB Intelligence</span>
+                <h1>Fluxo de Caixa Gerencial</h1>
+                <p>Comércio Silva LTDA · Competência Maio/2026 · Caixa conciliado pela equipe MB</p>
+              </div>
+            </header>
+            <section class="print-summary">
+              <div><span>Saldo atual</span><strong>R$ 84.600</strong></div>
+              <div><span>Entradas do mês</span><strong>R$ 192.800</strong></div>
+              <div><span>Saídas do mês</span><strong>R$ 170.000</strong></div>
+              <div><span>Fôlego financeiro</span><strong>42 dias</strong></div>
+            </section>
+            <table>
+              <thead><tr><th>Movimento</th><th>Valor</th><th>Status</th><th>Análise MB</th></tr></thead>
+              <tbody>
+                <tr><td>Saldo inicial</td><td>R$ 61.800</td><td>Validado</td><td>Base conciliada com OFX.</td></tr>
+                <tr><td>Entradas operacionais</td><td>R$ 192.800</td><td>Conciliado</td><td>Recebimentos concentrados nos maiores clientes.</td></tr>
+                <tr><td>Saídas operacionais</td><td>R$ 170.000</td><td>Conciliado</td><td>Despesas administrativas em atenção.</td></tr>
+                <tr><td>Saldo projetado</td><td>R$ 95.600</td><td>Projetado</td><td>Caixa positivo, investimento deve preservar reserva mínima.</td></tr>
+              </tbody>
+            </table>
+            <footer>Relatório gerencial emitido pela MB Intelligence. Informações sujeitas à qualidade dos dados enviados e validação MB.</footer>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <script src="assets/lucide.min.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

@@ -1,0 +1,602 @@
+(function () {
+  window.MBI = window.MBI || {};
+  MBI.pages = MBI.pages || {};
+
+  const titles = {
+    "#/admin/operacao": "Operacao MB",
+    "#/admin/clientes": "Gestao de clientes",
+    "#/admin/novo-cliente": "Gestao de clientes",
+    "#/admin/planos": "Planos e permissões",
+    "#/admin/alimentar-portal": "Alimentar portal",
+    "#/admin/dados-cliente": "Informações do cliente",
+    "#/admin/documentos": "Documentos",
+    "#/admin/importacoes": "Alimentar portal",
+    "#/admin/usuarios": "Usuários e perfis",
+    "#/admin/aprovacoes": "Aprovações",
+    "#/admin/auditoria": "Auditoria",
+    "#/admin/relatorios": "Indicadores MB"
+  };
+
+  function menu(active) {
+    return MBI.ui.nav([
+      ["#/admin/operacao", "layout-dashboard", "Operacao"],
+      ["#/admin/clientes", "building-2", "Clientes"],
+      ["#/admin/planos", "badge-dollar-sign", "Planos"],
+      ["#/admin/alimentar-portal", "panel-top", "Alimentar portal"],
+      ["#/admin/documentos", "folder-up", "Documentos"],
+      ["#/admin/usuarios", "users-round", "Usuários"],
+      ["#/admin/aprovacoes", "shield-check", "Aprovações"],
+      ["#/admin/auditoria", "history", "Auditoria"],
+      ["#/admin/relatorios", "file-bar-chart", "Indicadores"]
+    ], active);
+  }
+
+  function currentMonthValue() {
+    return MBI.services.finance?.currentMonth?.() || new Date().toISOString().slice(0, 7);
+  }
+
+  function currentDateValue() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function sessionFilters(key) {
+    return MBI.auth.currentSession()?.uiFilters?.[key] || {};
+  }
+
+  function roleOwner(needle, fallback) {
+    const text = String(needle || "").toLowerCase();
+    const user = MBI.services.users.list("mb").find((item) => String(item.role || "").toLowerCase().includes(text));
+    return user?.name || fallback;
+  }
+
+  function shell(route, content) {
+    const user = MBI.auth.currentUser();
+    const client = MBI.services.clients.current();
+    return MBI.ui.shell({
+      title: titles[route] || "Administração MB",
+      subtitle: `Operador: ${user.name} · Cliente em operação: ${client.name}`,
+      menu: menu(route),
+      content,
+      sessionLabel: user.role,
+      sessionName: user.name
+    });
+  }
+
+  function render(route) {
+    if (route === "#/admin/clientes") return shell(route, clients());
+    if (route === "#/admin/novo-cliente") return shell("#/admin/clientes", clients());
+    if (route === "#/admin/planos") return shell(route, plans());
+    if (route === "#/admin/alimentar-portal") return shell(route, publicationCenter());
+    if (route === "#/admin/dados-cliente") return shell(route, publicationCenter());
+    if (route === "#/admin/documentos") return shell(route, documents());
+    if (route === "#/admin/importacoes") return shell("#/admin/alimentar-portal", publicationCenter());
+    if (route === "#/admin/usuarios") return shell(route, users());
+    if (route === "#/admin/aprovacoes") return shell(route, approvals());
+    if (route === "#/admin/auditoria") return shell(route, audit());
+    if (route === "#/admin/relatorios") return shell(route, reports());
+    return shell("#/admin/operacao", operationV2());
+  }
+
+  function operationV2() {
+    const db = MBI.storage.getDatabase();
+    const clients = db.clients;
+    const selected = MBI.services.clients.current();
+    const data = MBI.services.finance.get(selected.id);
+    const plan = MBI.services.plans.get(selected.planId);
+    const selectedDocs = MBI.services.documents.listByClient(selected.id);
+    const selectedImports = MBI.services.imports.list(selected.id);
+    const selectedTasks = db.tasks.filter((task) => task.clientId === selected.id);
+    const selectedApprovals = db.approvals.filter((item) => item.clientId === selected.id);
+    const openApprovals = db.approvals.filter((item) => !item.status?.includes("Aprovado"));
+    const clientsInRisk = clients.filter((client) => client.confidence === "Baixa" || client.status === "Onboarding").length;
+    const fiscalQueue = db.documents.filter((doc) => /Fiscal|DAS|XML/i.test(`${doc.category} ${doc.name}`) && !/Aprovado|Disponivel|Validado/i.test(doc.status || "")).length;
+    const financeQueue = db.imports.filter((item) => !/Validado/i.test(item.status || "")).length;
+    const dreQueue = openApprovals.length;
+    const onboardingQueue = clients.filter((client) => client.status === "Onboarding").length;
+    const operationalQueues = [
+      ["Fiscal", `${fiscalQueue} documento(s)`, fiscalQueue ? "Alta" : "Normal", roleOwner("fiscal", "Equipe Fiscal"), MBI.ui.pill(fiscalQueue ? "Atencao" : "Em dia")],
+      ["Financeiro", `${financeQueue} importacao(oes)`, financeQueue ? "Alta" : "Normal", roleOwner("financeiro", "Equipe Financeira"), MBI.ui.pill(financeQueue ? "Em revisao" : "Em dia")],
+      ["DRE / IA", `${dreQueue} aprovacao(oes)`, dreQueue ? "Media" : "Normal", roleOwner("cfo", "Consultoria MB"), MBI.ui.pill(dreQueue ? "Aguardando" : "Em dia")],
+      ["Onboarding", `${onboardingQueue} cliente(s)`, onboardingQueue ? "Alta" : "Normal", roleOwner("operacional", "Gestao MB"), MBI.ui.pill(onboardingQueue ? "Pendente" : "Em dia")]
+    ];
+    const journey = [
+      ["Cadastro", selected.status === "Ativo" ? "Ativo" : selected.status, selected.status === "Ativo" ? "Cliente pronto para operacao" : "Completar ativacao", "building-2"],
+      ["Documentos", selectedDocs.length ? "Recebido" : "Pendente", selectedDocs.length ? `${selectedDocs.length} documento(s)` : "Publicar documentos iniciais", "folder-up"],
+      ["Importacoes", selectedImports.length ? "Em fila" : "Nao iniciada", selectedImports.length ? `${selectedImports.length} arquivo(s)` : "Carregar OFX, CSV, XML ou Excel", "database-zap"],
+      ["Analise", selected.confidence === "Alta" ? "Confiavel" : "Revisar", selected.confidence === "Alta" ? "Pode liberar leitura executiva" : "Dados ainda exigem validacao", "shield-check"]
+    ];
+
+    return `
+      <section class="grid grid-4">
+        ${MBI.ui.metric("Clientes ativos", String(clients.filter((c) => c.status === "Ativo").length), "carteira", "Carteira pronta para operacao em escala.", "blue")}
+        ${MBI.ui.metric("Clientes em risco", String(clientsInRisk), "prioridade", "Onboarding, baixa confianca ou dados insuficientes exigem acao.", "amber")}
+        ${MBI.ui.metric("Aprovacoes IA", String(openApprovals.length), "pendentes", "Insights estrategicos exigem validacao humana antes do cliente.", "brand")}
+        ${MBI.ui.metric("Importacoes", String(db.imports.length), "arquivos", "Base inicial para consolidar dados financeiros e fiscais.", "teal")}
+      </section>
+
+      <section class="grid admin-cockpit-grid" style="margin-top:14px">
+        ${clientSelector()}
+        <article class="panel selected-client-card">
+          <div class="panel-header"><div><h3>Cliente em operacao</h3><p>Contexto central para documentos, dados, importacoes e aprovacoes.</p></div>${MBI.ui.pill(plan.name)}</div>
+          ${MBI.ui.table(["Campo", "Valor", ""], [
+            ["Empresa", selected.name, ""],
+            ["Responsavel", selected.owner, ""],
+            ["Maturidade", selected.maturity, ""],
+            ["Confianca", selected.confidence, ""],
+            ["Faturamento", MBI.ui.money(data.revenue || 0), ""],
+            ["Pendencias", String(selectedTasks.length), ""]
+          ])}
+          <div class="brief-actions">
+            <button class="btn btn-primary" type="button" data-route="#/admin/alimentar-portal">${MBI.ui.icon("panel-top")} Alimentar portal</button>
+            <button class="btn btn-ghost" type="button" data-route="#/admin/documentos">${MBI.ui.icon("folder-up")} Publicar documento</button>
+          </div>
+        </article>
+        <article class="panel">
+          <div class="panel-header"><div><h3>Jornada operacional</h3><p>O que precisa acontecer para o cliente evoluir.</p></div>${MBI.ui.pill(selected.confidence)}</div>
+          <div class="process-strip compact">
+            ${journey.map(([title, status, detail, icon]) => `<article class="process-step"><div>${MBI.ui.icon(icon)}</div><strong>${title}</strong>${MBI.ui.pill(status)}<span>${detail}</span></article>`).join("")}
+          </div>
+        </article>
+      </section>
+
+      <section class="grid grid-2" style="margin-top:14px">
+        <article class="panel"><div class="panel-header"><div><h3>Filas operacionais</h3><p>Trabalho da MB organizado por area.</p></div></div>${MBI.ui.table(["Fila", "Volume", "Prioridade", "Responsavel", "Status"], operationalQueues)}</article>
+        <article class="panel"><div class="panel-header"><div><h3>Proximas acoes</h3><p>Tarefas do cliente selecionado.</p></div></div><div class="priority-list">${selectedTasks.map((task) => `<div class="priority-item"><span class="priority-dot ${task.priority === "Alta" ? "high" : "medium"}"></span><div><strong>${task.title}</strong><span>${task.owner} · vence ${task.due}</span></div>${MBI.ui.pill(task.status)}</div>`).join("") || `<div class="empty-lock">${MBI.ui.icon("check-circle")}<h3>Nenhuma tarefa aberta</h3><p>Cliente sem pendencias operacionais no momento.</p></div>`}</div></article>
+      </section>
+
+      <section class="grid grid-3" style="margin-top:14px">
+        <article class="panel"><div class="panel-header"><div><h3>Aprovacoes do cliente</h3><p>Governanca antes de liberar ao portal.</p></div></div>${MBI.ui.table(["Analise", "Confianca", "Status"], selectedApprovals.map((row) => [row.title, row.confidence, MBI.ui.pill(row.status)]))}</article>
+        <article class="panel"><div class="panel-header"><div><h3>Oportunidade comercial</h3><p>Upsell e retencao orientados por dados.</p></div></div><div class="metric-analysis"><strong>MB:</strong> ${selected.planId === "contabilidade" ? "Cliente pode evoluir para Financeiro IA quando enviar extratos e faturamento." : selected.planId === "financeiro" ? "Cliente com dados financeiros pode receber oferta CFO as a Service." : "Cliente CFO deve receber acompanhamento executivo e revisao mensal."}</div></article>
+        <article class="panel"><div class="panel-header"><div><h3>Ultimas acoes</h3><p>Trilha operacional recente.</p></div></div><div class="timeline">${MBI.services.audit.list(5).map((row) => `<div class="timeline-item"><time>${row.at}</time><span><strong>${row.action}</strong><br>${row.user} · ${row.target}</span></div>`).join("")}</div></article>
+      </section>
+    `;
+  }
+
+  function operation() {
+    return operationV2();
+  }
+
+  function clientSelector() {
+    const current = MBI.services.clients.current();
+    return `
+      <form data-form="select-admin-client" class="panel">
+        <div class="panel-header"><div><h3>Cliente em operação</h3><p>Define o contexto das telas administrativas.</p></div></div>
+        <label><span>Cliente</span><select name="clientId">${MBI.services.clients.list().map((client) => `<option value="${client.id}" ${client.id === current.id ? "selected" : ""}>${client.name}</option>`).join("")}</select></label>
+        <button class="btn btn-primary" style="margin-top:12px" type="submit">${MBI.ui.icon("refresh-cw")} Trocar contexto</button>
+      </form>
+    `;
+  }
+
+  function clients() {
+    const filters = sessionFilters("adminClients");
+    const search = String(filters.search || "").toLowerCase();
+    const filtered = MBI.services.clients.list()
+      .filter((client) => !search || `${client.name} ${client.cnpj} ${client.segment}`.toLowerCase().includes(search))
+      .filter((client) => !filters.planId || filters.planId === "Todos" || client.planId === filters.planId)
+      .filter((client) => !filters.status || filters.status === "Todos" || client.status === filters.status)
+      .filter((client) => !filters.confidence || filters.confidence === "Todos" || client.confidence === filters.confidence)
+      .sort((a, b) => String(a.name).localeCompare(String(b.name), "pt-BR"));
+    const rows = filtered.map((client) => {
+      const plan = MBI.services.plans.get(client.planId);
+      return [client.name, plan.name, MBI.ui.pill(client.status), client.maturity, `<button class="btn btn-soft" type="button" data-action="set-client" data-client-id="${client.id}">Operar</button>`];
+    });
+    const current = MBI.services.clients.current();
+    return `
+      <section class="admin-client-page">
+        <aside class="admin-client-side">
+          ${clientSelector()}
+          <form class="panel filter-stack" data-form="admin-client-filters">
+            <div class="panel-header"><div><h3>Buscar cliente</h3><p>Filtre a carteira por dados comerciais e operacionais.</p></div></div>
+            <label><span>Nome, CNPJ ou segmento</span><input name="search" placeholder="Buscar cliente" value="${filters.search || ""}"></label>
+            <label><span>Plano</span><select name="planId"><option>Todos</option>${MBI.services.plans.list().map((plan) => `<option value="${plan.id}" ${filters.planId === plan.id ? "selected" : ""}>${plan.name}</option>`).join("")}</select></label>
+            <label><span>Status</span><select name="status"><option>Todos</option>${["Ativo", "Onboarding", "Pausado", "Risco"].map((status) => `<option ${filters.status === status ? "selected" : ""}>${status}</option>`).join("")}</select></label>
+            <label><span>Confianca</span><select name="confidence"><option>Todos</option>${["Baixa", "Media", "Alta"].map((confidence) => `<option ${filters.confidence === confidence ? "selected" : ""}>${confidence}</option>`).join("")}</select></label>
+            <button class="btn btn-primary" type="submit">${MBI.ui.icon("search")} Filtrar</button>
+          </form>
+          <article class="panel">
+            <div class="panel-header"><div><h3>Resumo</h3><p>Cliente selecionado para operacao.</p></div>${MBI.ui.pill(MBI.services.plans.get(current.planId)?.name || current.planId)}</div>
+            ${MBI.ui.table(["Campo", "Valor"], [["Empresa", current.name], ["CNPJ", current.cnpj], ["Consultor", current.consultant], ["Confianca", current.confidence]])}
+          </article>
+        </aside>
+        <div class="admin-client-main">
+          <article class="panel">
+            <div class="panel-header"><div><h3>Carteira de clientes</h3><p>Lista operacional com busca, filtros e troca rapida de contexto.</p></div>${MBI.ui.pill(`${filtered.length} cliente(s)`)}</div>
+            ${MBI.ui.table(["Cliente", "Plano", "Status", "Maturidade", "Acao"], rows)}
+          </article>
+          ${clientProfileEditor(current)}
+          <div class="section-title" style="margin-top:6px"><h2>Cadastrar novo cliente</h2><p>O cadastro e a troca de plano ficam nesta mesma tela para evitar duplicidade.</p></div>
+          ${newClient()}
+        </div>
+      </section>
+    `;
+  }
+
+  function clientProfileEditor(client) {
+    return `
+      <form class="panel" data-form="update-client-profile">
+        <input type="hidden" name="clientId" value="${client.id}">
+        <div class="panel-header"><div><h3>Ficha do cliente</h3><p>Edite cadastro, plano contratado, status, maturidade e responsaveis MB.</p></div><button class="btn btn-primary" type="submit">${MBI.ui.icon("save")} Salvar ficha</button></div>
+        <div class="form-section two">
+          <label><span>Razao social</span><input name="name" value="${client.name}"></label>
+          <label><span>Nome fantasia</span><input name="tradeName" value="${client.tradeName || client.name}"></label>
+          <label><span>CNPJ</span><input name="cnpj" value="${client.cnpj}"></label>
+          <label><span>Cidade/UF</span><input name="city" value="${client.city}"></label>
+          <label><span>Segmento</span><input name="segment" value="${client.segment}"></label>
+          <label><span>Regime</span><select name="taxRegime"><option ${client.taxRegime === "Simples Nacional" ? "selected" : ""}>Simples Nacional</option><option ${client.taxRegime === "Lucro Presumido" ? "selected" : ""}>Lucro Presumido</option></select></label>
+          <label><span>Plano contratado</span><select name="planId">${MBI.services.plans.list().map((plan) => `<option value="${plan.id}" ${plan.id === client.planId ? "selected" : ""}>${plan.name}</option>`).join("")}</select></label>
+          <label><span>Status</span><select name="status"><option ${client.status === "Onboarding" ? "selected" : ""}>Onboarding</option><option ${client.status === "Ativo" ? "selected" : ""}>Ativo</option><option ${client.status === "Pausado" ? "selected" : ""}>Pausado</option><option ${client.status === "Risco" ? "selected" : ""}>Risco</option></select></label>
+          <label><span>Maturidade</span><select name="maturity"><option ${client.maturity === "Fiscal basico" ? "selected" : ""}>Fiscal basico</option><option ${client.maturity === "Financeiro integrado" ? "selected" : ""}>Financeiro integrado</option><option ${client.maturity === "CFO validado" ? "selected" : ""}>CFO validado</option><option ${client.maturity === "Onboarding" ? "selected" : ""}>Onboarding</option></select></label>
+          <label><span>Confianca</span><select name="confidence"><option ${client.confidence === "Baixa" ? "selected" : ""}>Baixa</option><option ${client.confidence === "Media" ? "selected" : ""}>Media</option><option ${client.confidence === "Alta" ? "selected" : ""}>Alta</option></select></label>
+          <label><span>Responsavel legal</span><input name="owner" value="${client.owner}"></label>
+          <label><span>E-mail</span><input name="email" value="${client.email}"></label>
+          <label><span>WhatsApp</span><input name="phone" value="${client.phone}"></label>
+          <label><span>Consultor MB</span><input name="consultant" value="${client.consultant}"></label>
+          <label><span>Analista MB</span><input name="analyst" value="${client.analyst}"></label>
+          <label><span>Proxima revisao MB</span><input type="date" name="nextReview" value="${client.nextReview || currentDateValue()}"></label>
+        </div>
+      </form>
+    `;
+  }
+
+  function newClient() {
+    return `
+      <form class="grid grid-2" data-form="admin-create-client">
+        <article class="panel"><div class="panel-header"><div><h3>Dados cadastrais</h3><p>Cadastro operacional da empresa cliente.</p></div></div><div class="form-section two"><label><span>Razão social</span><input name="name" required placeholder="Razão social"></label><label><span>Nome fantasia</span><input name="tradeName" placeholder="Nome fantasia"></label><label><span>CNPJ</span><input name="cnpj" required placeholder="00.000.000/0001-00"></label><label><span>Cidade/UF</span><input name="city" placeholder="Cidade/UF"></label><label><span>Segmento</span><input name="segment" placeholder="Segmento"></label><label><span>Regime</span><select name="taxRegime"><option>Simples Nacional</option><option>Lucro Presumido</option></select></label></div></article>
+        <article class="panel"><div class="panel-header"><div><h3>Contrato e operação</h3><p>Plano, responsáveis e primeiro acesso.</p></div></div><div class="form-section two"><label><span>Responsável</span><input name="owner" placeholder="Responsável legal"></label><label><span>E-mail</span><input name="email" type="email" placeholder="cliente@empresa.com.br"></label><label><span>WhatsApp</span><input name="phone" placeholder="(00) 00000-0000"></label><label><span>Plano</span><select name="planId">${MBI.services.plans.list().map((plan) => `<option value="${plan.id}">${plan.name}</option>`).join("")}</select></label><label><span>Consultor</span><input name="consultant" placeholder="Consultor MB"></label><label><span>Analista</span><input name="analyst" placeholder="Analista MB"></label></div><button class="btn btn-primary" style="margin-top:14px" type="submit">${MBI.ui.icon("save")} Cadastrar cliente</button></article>
+      </form>
+    `;
+  }
+
+  function plans() {
+    const plans = MBI.services.plans.list();
+    return `
+      <form class="grid" data-form="update-plan-prices">
+        <article class="panel"><div class="panel-header"><div><h3>Valores dos planos</h3><p>Preços editáveis pela equipe MB.</p></div><button class="btn btn-primary" type="submit">${MBI.ui.icon("save")} Salvar preços</button></div><div class="plan-admin-grid">${plans.map((plan) => `<div class="plan-admin-card"><span class="status-pill ${plan.color}">${plan.name}</span><h3 style="margin-top:12px">${plan.tagline}</h3><label><span>Valor mensal</span><input type="number" name="price_${plan.id}" value="${plan.price}" step="50"></label><div class="module-chips">${plan.modules.map((module) => `<span class="chip is-on">${module}</span>`).join("")}</div></div>`).join("")}</div></article>
+        <article class="panel"><div class="panel-header"><div><h3>Matriz de permissões</h3><p>Regra de liberação por plano.</p></div></div>${MBI.ui.table(["Módulo", "Contabilidade", "Financeiro IA", "CFO", "Regra"], MBI.services.plans.matrix())}</article>
+      </form>
+    `;
+  }
+
+  function publicationCenter() {
+    const client = MBI.services.clients.current();
+    const plan = MBI.services.plans.get(client.planId);
+    const data = MBI.services.finance.get(client.id);
+    const db = MBI.storage.getDatabase();
+    const tasks = db.tasks.filter((task) => task.clientId === client.id);
+    const approvals = db.approvals.filter((approval) => approval.clientId === client.id);
+    const docs = MBI.services.documents.listByClient(client.id);
+    const imports = MBI.services.imports.list(client.id);
+    const periods = MBI.services.finance.listPeriods(client.id);
+    const competenceOptions = data.competences?.length ? data.competences : MBI.services.finance.listCompetences(client.id);
+    const today = new Date().toISOString().slice(0, 10);
+
+    return `
+      <section class="publish-flow">
+        <aside class="publish-guide panel">
+          <div class="panel-header"><div><h3>Onde a MB inclui as informações</h3><p>Este é o painel central para alimentar o portal do cliente.</p></div>${MBI.ui.pill(plan.name)}</div>
+          <form data-form="select-admin-client" class="inline-selector">
+            <label><span>Cliente em operação</span><select name="clientId">${MBI.services.clients.list().map((item) => `<option value="${item.id}" ${item.id === client.id ? "selected" : ""}>${item.name}</option>`).join("")}</select></label>
+            <button class="btn btn-primary" type="submit">${MBI.ui.icon("refresh-cw")} Trocar</button>
+          </form>
+          <div class="flow-map">
+            <div><strong>1. Indicadores</strong><span>Atualiza dashboard, fiscal, folha, caixa e score.</span></div>
+            <div><strong>2. Copiloto</strong><span>Cria pendências, ações e próximos passos.</span></div>
+            <div><strong>3. IA e pareceres</strong><span>Gera análises para aprovação antes do cliente ver.</span></div>
+            <div><strong>4. Importações</strong><span>Carrega DRE, caixa, OFX, CSV, XML e bases de outros sistemas.</span></div>
+          </div>
+          <div class="brief-actions">
+            <button class="btn btn-ghost" type="button" data-route="#/admin/documentos">${MBI.ui.icon("folder-up")} Publicar documento</button>
+            <button class="btn btn-soft" type="button" data-action="focus-admin-imports">${MBI.ui.icon("database-zap")} Ir para importações</button>
+          </div>
+        </aside>
+
+        <div class="publish-main">
+          <section class="grid grid-4">
+            ${MBI.ui.metric("Faturamento", MBI.ui.money(data.revenue), "Dashboard", "Atualiza a leitura principal do cliente.", "blue")}
+            ${MBI.ui.metric("Caixa", MBI.ui.money(data.cash), "Financeiro", "Base para fluxo de caixa e capacidade de investimento.", "teal")}
+            ${MBI.ui.metric("Pendências", String(tasks.length), "Copiloto", "Ações abertas aparecem como acompanhamento operacional.", "amber")}
+            ${MBI.ui.metric("Aprovações", String(approvals.length), "Governança", "Insights só devem ser liberados após revisão MB.", "brand")}
+          </section>
+
+          <section class="grid grid-2" style="margin-top:14px">
+            <form class="panel competence-selector" data-form="select-competence">
+              <input type="hidden" name="clientId" value="${client.id}">
+              <label><span>Competência em edição</span><select name="competence">${competenceOptions.map((item) => `<option value="${item.value}" ${item.value === data.competence ? "selected" : ""}>${item.label}</option>`).join("")}</select></label>
+              <button class="btn btn-primary" type="submit">${MBI.ui.icon("calendar-check")} Carregar período</button>
+            </form>
+            <article class="panel">
+              <div class="panel-header"><div><h3>Período atual</h3><p>Todos os campos abaixo salvam na competência selecionada.</p></div>${MBI.ui.pill(data.competenceLabel || data.competence)}</div>
+              ${MBI.ui.table(["Indicador", "Valor"], [["Receita", MBI.ui.money(data.revenue || 0)], ["Despesas", MBI.ui.money(data.expenses || 0)], ["Resultado", MBI.ui.money(data.result || 0)], ["Caixa", MBI.ui.money(data.cash || 0)]])}
+            </article>
+          </section>
+
+          <section class="panel" style="margin-top:14px">
+            <div class="panel-header">
+              <div><h3>Períodos registrados</h3><p>Histórico financeiro salvo para este cliente. Clique em editar para reabrir uma competência anterior.</p></div>
+              ${MBI.ui.pill(`${periods.length} período(s)`)}
+            </div>
+            ${periods.length ? MBI.ui.table(["Competência", "Faturamento", "Despesas", "Resultado", "Caixa", "Margem", "Ação"], periods.map((row) => [row.label, MBI.ui.money(row.revenue), MBI.ui.money(row.expenses), MBI.ui.money(row.result), MBI.ui.money(row.cash), `${row.margin}%`, `<button class="btn btn-soft btn-mini" type="button" data-action="edit-finance-period" data-client-id="${client.id}" data-competence="${row.competence}">${MBI.ui.icon("pencil")} Editar</button>`])) : `<div class="empty-lock">${MBI.ui.icon("calendar")}<h3>Nenhum período registrado</h3><p>Salve os primeiros indicadores para criar o histórico mensal.</p></div>`}
+          </section>
+
+          <form class="panel" data-form="update-finance" style="margin-top:14px">
+            <input type="hidden" name="clientId" value="${client.id}">
+            <div class="form-section two" style="margin-bottom:12px">
+              <label><span>Competencia dos dados</span><input type="month" name="competence" value="${data.competence || currentMonthValue()}"></label>
+              <label><span>Proxima revisao MB</span><input type="date" name="nextReview" value="${client.nextReview || currentDateValue()}"></label>
+            </div>
+            <div class="panel-header">
+              <div><h3>1. Alimentar dashboard financeiro, fiscal e trabalhista</h3><p>Esses dados aparecem na Inteligência Financeira do cliente conforme plano e maturidade.</p></div>
+              <button class="btn btn-primary" type="submit">${MBI.ui.icon("save")} Salvar indicadores</button>
+            </div>
+            <div class="form-section">
+              <label><span>Faturamento</span><input name="revenue" type="number" value="${data.revenue || 0}"></label>
+              <label><span>Despesas</span><input name="expenses" type="number" value="${data.expenses || 0}"></label>
+              <label><span>Impostos / DAS</span><input name="taxes" type="number" value="${data.taxes || 0}"></label>
+              <label><span>Folha</span><input name="payroll" type="number" value="${data.payroll || 0}"></label>
+              <label><span>Caixa atual</span><input name="cash" type="number" value="${data.cash || 0}"></label>
+              <label><span>MB Financial Score</span><input name="score" type="number" value="${data.score || 0}"></label>
+              <label><span>MB Operational Score</span><input name="operationalScore" type="number" value="${data.operationalScore || 0}"></label>
+              <label><span>Fôlego de caixa (dias)</span><input name="runway" type="number" value="${data.runway || 0}"></label>
+              <label><span>Capacidade de investimento</span><input name="investmentCapacity" type="number" value="${data.investmentCapacity || 0}"></label>
+              <label><span>Meta de margem MB (%)</span><input name="marginTarget" type="number" value="${data.marginTarget || 20}"></label>
+              <label><span>NCG / capital de giro (dias)</span><input name="workingCapitalDays" type="number" value="${data.workingCapitalDays || 45}"></label>
+            </div>
+            <div class="panel-subtitle" style="margin-top:16px"><strong>DRE gerencial</strong><span>Linhas informadas pela equipe MB para alimentar a DRE profissional.</span></div>
+            <div class="form-section">
+              <label><span>Custos diretos / CMV</span><input name="directCosts" type="number" value="${data.directCosts || 0}"></label>
+              <label><span>Despesas administrativas</span><input name="adminExpenses" type="number" value="${data.adminExpenses || 0}"></label>
+              <label><span>Despesas comerciais</span><input name="salesExpenses" type="number" value="${data.salesExpenses || 0}"></label>
+              <label><span>Despesas financeiras</span><input name="financialExpenses" type="number" value="${data.financialExpenses || 0}"></label>
+            </div>
+            <div class="panel-subtitle" style="margin-top:16px"><strong>Fluxo de caixa</strong><span>Campos para construir a DFC gerencial por competencia.</span></div>
+            <div class="form-section">
+              <label><span>Saldo inicial</span><input name="openingBalance" type="number" value="${data.openingBalance || 0}"></label>
+              <label><span>Recebimentos</span><input name="receipts" type="number" value="${data.receipts || data.revenue || 0}"></label>
+              <label><span>Pagamentos</span><input name="payments" type="number" value="${data.payments || Math.max((data.expenses || 0) - (data.taxes || 0), 0)}"></label>
+              <label><span>Impostos pagos</span><input name="cashTaxes" type="number" value="${data.cashTaxes || data.taxes || 0}"></label>
+              <label><span>Saldo final</span><input name="closingBalance" type="number" value="${data.closingBalance || data.cash || 0}"></label>
+            </div>
+            <div class="form-section two" style="margin-top:12px">
+              <label><span>Confiança dos dados</span><select name="confidence"><option ${client.confidence === "Baixa" ? "selected" : ""}>Baixa</option><option ${client.confidence === "Media" ? "selected" : ""}>Media</option><option ${client.confidence === "Alta" ? "selected" : ""}>Alta</option></select></label>
+              <label><span>Análise MB para o dashboard</span><textarea name="insight">${data.insights?.[0] || ""}</textarea></label>
+            </div>
+          </form>
+
+          <section class="grid grid-2" id="admin-imports" style="margin-top:14px">
+            <form class="panel" data-form="admin-import" enctype="multipart/form-data">
+              <input type="hidden" name="clientId" value="${client.id}">
+              <div class="panel-header"><div><h3>4. Importações gerenciais</h3><p>Arquivos internos usados para alimentar DRE, fluxo de caixa, fiscal, folha ou bases de outros sistemas.</p></div><button class="btn btn-primary" type="submit">${MBI.ui.icon("upload")} Carregar base</button></div>
+              <label class="upload-zone"><input class="sr-only" type="file" name="file" required>${MBI.ui.icon("database-zap")}<div><strong>Selecionar arquivo de origem</strong><p>DRE padrão MB, fluxo de caixa, OFX, CSV, Excel, XML, PDF ou exportação de ERP.</p></div></label>
+              <div class="form-section two" style="margin-top:14px">
+                <label><span>Nome exibido</span><input name="fileName" placeholder="Preenchido ao selecionar o arquivo"></label>
+                <label><span>Tipo de importação</span><select name="type"><option>DRE padrão MB</option><option>Fluxo de caixa padrão MB</option><option>OFX bancário</option><option>CSV financeiro</option><option>Excel gerencial</option><option>XML fiscal</option><option>PDF / relatório</option><option>Exportação ERP</option></select></label>
+                <label><span>Competência</span><input type="month" name="competence" value="${data.competence || currentMonthValue()}"></label>
+                <label><span>Status</span><select name="status"><option>Aguardando validação MB</option><option>Validado</option><option>Erro de layout</option><option>Substituído</option></select></label>
+                <label><span>Resultado esperado</span><input name="result" value="Atualizar dados gerenciais do portal"></label>
+              </div>
+            </form>
+            <article class="panel">
+              <div class="panel-header"><div><h3>Bases importadas</h3><p>Histórico de arquivos internos usados para montar indicadores e relatórios.</p></div>${MBI.ui.pill(`${imports.length} arquivo(s)`)}</div>
+              ${MBI.ui.table(["Arquivo", "Tipo", "Competência", "Status", "Resultado"], imports.map((row) => [row.fileName, row.type, row.competence || "-", MBI.ui.pill(row.status), row.result]))}
+            </article>
+          </section>
+
+          <section class="grid grid-2" style="margin-top:14px">
+            <form class="panel" data-form="create-task">
+              <input type="hidden" name="clientId" value="${client.id}">
+              <div class="panel-header"><div><h3>2. Criar pendência ou próxima ação</h3><p>Aparece no copiloto do cliente e na operação MB.</p></div><button class="btn btn-primary" type="submit">${MBI.ui.icon("plus")} Criar ação</button></div>
+              <div class="form-section two">
+                <label><span>Título</span><input name="title" value="Carregar extrato bancário recebido" required></label>
+                <label><span>Responsável</span><select name="owner"><option>MB</option><option>${client.consultant}</option><option>${client.analyst}</option><option>Cliente</option></select></label>
+                <label><span>Prioridade</span><select name="priority"><option>Alta</option><option>Media</option><option>Baixa</option></select></label>
+                <label><span>Prazo</span><input name="due" type="date" value="${today}"></label>
+                <label><span>Status</span><select name="status"><option>Pendente</option><option>Aguardando cliente</option><option>Em andamento</option><option>Concluído</option></select></label>
+                <label><span>Origem</span><select name="origin"><option>MB</option><option>IA MB</option><option>Cliente</option></select></label>
+              </div>
+            </form>
+
+            <form class="panel" data-form="create-approval">
+              <input type="hidden" name="clientId" value="${client.id}">
+              <input type="hidden" name="competence" value="${data.competence || currentMonthValue()}">
+              <div class="panel-header"><div><h3>3. Criar análise IA/MB para aprovação</h3><p>O cliente só deve receber após aprovação humana.</p></div><button class="btn btn-primary" type="submit">${MBI.ui.icon("shield-check")} Enviar à aprovação</button></div>
+              <div class="form-section two">
+                <label><span>Título</span><input name="title" value="Análise executiva do mês" required></label>
+                <label><span>Confiança</span><select name="confidence"><option>Alta</option><option>Media</option><option>Baixa</option></select></label>
+                <label><span>Status inicial</span><select name="status"><option>Aguardando aprovação</option><option>Editar antes de liberar</option></select></label>
+                <label><span>Texto da análise</span><textarea name="text">A empresa apresenta evolução positiva, mas precisa revisar despesas recorrentes antes de ampliar investimentos.</textarea></label>
+              </div>
+            </form>
+          </section>
+
+          <section class="grid grid-2" style="margin-top:14px">
+            <article class="panel"><div class="panel-header"><div><h3>Dados já publicados</h3><p>Resumo do que alimenta o portal do cliente.</p></div></div>${MBI.ui.table(["Área", "Volume", "Status"], [["Documentos", String(docs.length), docs.length ? MBI.ui.pill("Publicado") : MBI.ui.pill("Pendente")], ["Importações", String(imports.length), imports.at(-1)?.status || "Sem importação"], ["Ações", String(tasks.length), tasks.length ? MBI.ui.pill("Em acompanhamento") : MBI.ui.pill("Sem pendências")], ["Insights", String(approvals.length), approvals.at(-1)?.status || "Sem análise"]])}</article>
+            <article class="panel"><div class="panel-header"><div><h3>Como aparece para o cliente</h3><p>Mapa rápido entre cadastro MB e portal.</p></div></div>${MBI.ui.table(["Você preenche", "Cliente vê", "Tela"], [["Faturamento, despesas e caixa", "Indicadores e gráficos", "Inteligência"], ["DAS, guias e relatórios", "Arquivos para download", "Documentos"], ["Pendência ou ação", "Copiloto e prioridade", "Inteligência"], ["Insight aprovado", "Análise IA/MB", "Inteligência"]])}</article>
+          </section>
+        </div>
+      </section>
+    `;
+  }
+
+  function clientData() {
+    const client = MBI.services.clients.current();
+    const data = MBI.services.finance.get(client.id);
+    return `
+      <section class="grid grid-2">
+        ${clientSelector()}
+        <form class="panel" data-form="update-client-profile">
+          <input type="hidden" name="clientId" value="${client.id}">
+          <div class="panel-header"><div><h3>Ficha operacional</h3><p>Status, plano, maturidade e responsáveis da MB.</p></div><button class="btn btn-primary" type="submit">${MBI.ui.icon("save")} Salvar ficha</button></div>
+          <div class="form-section two">
+            <label><span>Razão social</span><input name="name" value="${client.name}"></label>
+            <label><span>Nome fantasia</span><input name="tradeName" value="${client.tradeName || client.name}"></label>
+            <label><span>CNPJ</span><input name="cnpj" value="${client.cnpj}"></label>
+            <label><span>Cidade/UF</span><input name="city" value="${client.city}"></label>
+            <label><span>Segmento</span><input name="segment" value="${client.segment}"></label>
+            <label><span>Regime</span><select name="taxRegime"><option ${client.taxRegime === "Simples Nacional" ? "selected" : ""}>Simples Nacional</option><option ${client.taxRegime === "Lucro Presumido" ? "selected" : ""}>Lucro Presumido</option></select></label>
+            <label><span>Plano</span><select name="planId">${MBI.services.plans.list().map((plan) => `<option value="${plan.id}" ${plan.id === client.planId ? "selected" : ""}>${plan.name}</option>`).join("")}</select></label>
+            <label><span>Status</span><select name="status"><option ${client.status === "Onboarding" ? "selected" : ""}>Onboarding</option><option ${client.status === "Ativo" ? "selected" : ""}>Ativo</option><option ${client.status === "Pausado" ? "selected" : ""}>Pausado</option><option ${client.status === "Risco" ? "selected" : ""}>Risco</option></select></label>
+            <label><span>Maturidade</span><select name="maturity"><option ${client.maturity === "Fiscal basico" ? "selected" : ""}>Fiscal basico</option><option ${client.maturity === "Financeiro integrado" ? "selected" : ""}>Financeiro integrado</option><option ${client.maturity === "CFO validado" ? "selected" : ""}>CFO validado</option><option ${client.maturity === "Onboarding" ? "selected" : ""}>Onboarding</option></select></label>
+            <label><span>Confiança</span><select name="confidence"><option ${client.confidence === "Baixa" ? "selected" : ""}>Baixa</option><option ${client.confidence === "Media" ? "selected" : ""}>Media</option><option ${client.confidence === "Alta" ? "selected" : ""}>Alta</option></select></label>
+            <label><span>Responsável legal</span><input name="owner" value="${client.owner}"></label>
+            <label><span>E-mail</span><input name="email" value="${client.email}"></label>
+            <label><span>WhatsApp</span><input name="phone" value="${client.phone}"></label>
+            <label><span>Consultor MB</span><input name="consultant" value="${client.consultant}"></label>
+            <label><span>Analista MB</span><input name="analyst" value="${client.analyst}"></label>
+          </div>
+        </form>
+        <form class="panel" data-form="update-finance">
+          <input type="hidden" name="clientId" value="${client.id}">
+          <div class="panel-header"><div><h3>Alimentar informações do cliente</h3><p>Dados publicados no dashboard após validação MB.</p></div><button class="btn btn-primary" type="submit">${MBI.ui.icon("save")} Salvar dados</button></div>
+          <div class="form-section two"><label><span>Faturamento</span><input name="revenue" type="number" value="${data.revenue}"></label><label><span>Despesas</span><input name="expenses" type="number" value="${data.expenses}"></label><label><span>Impostos</span><input name="taxes" type="number" value="${data.taxes}"></label><label><span>Folha</span><input name="payroll" type="number" value="${data.payroll}"></label><label><span>Caixa</span><input name="cash" type="number" value="${data.cash}"></label><label><span>Score</span><input name="score" type="number" value="${data.score}"></label></div>
+          <label style="margin-top:12px"><span>Análise MB</span><textarea name="insight">${data.insights?.[0] || ""}</textarea></label>
+        </form>
+      </section>
+    `;
+  }
+
+  function documents() {
+    const client = MBI.services.clients.current();
+    const filters = sessionFilters("adminDocuments");
+    const docs = MBI.services.documents.listByClient(client.id)
+      .filter((doc) => !filters.category || filters.category === "Todas" || doc.category === filters.category)
+      .filter((doc) => !filters.status || filters.status === "Todos" || doc.status === filters.status)
+      .filter((doc) => !filters.competence || String(doc.competence || doc.due || "").startsWith(filters.competence))
+      .sort((a, b) => String(b.competence || b.due || "").localeCompare(String(a.competence || a.due || "")));
+    return `
+      <section class="grid grid-2">
+        ${clientSelector()}
+        <form class="panel" data-form="publish-document" enctype="multipart/form-data">
+          <input type="hidden" name="clientId" value="${client.id}">
+          <div class="panel-header"><div><h3>Publicar documento</h3><p>Envio principal realizado pela equipe MB com arquivo salvo no Storage.</p></div></div>
+          <label class="upload-zone"><input class="sr-only" type="file" name="file" required>${MBI.ui.icon("file-up")}<div><strong>Selecionar arquivo para o cliente</strong><p>DAS, guias, folha, relatórios, certidões, contratos e comprovantes. Limite atual: 25 MB.</p></div></label>
+          <input type="hidden" name="status" value="Disponivel">
+          <div class="form-section two" style="margin-top:14px"><label><span>Descricao para o cliente</span><input name="name" placeholder="Ex.: DAS Maio/2026, Folha, Contrato social"></label><label><span>Categoria</span><select name="category"><option>Fiscal</option><option>Trabalhista</option><option>Contábil</option><option>Financeiro</option><option>Societário</option><option>Contratos</option><option>Certidões</option></select></label><label><span>Tipo</span><input name="type" value="DAS"></label><label><span>Competência</span><input type="month" name="competence" value="${currentMonthValue()}"></label><label><span>Vencimento</span><input type="date" name="dueDate" value="${currentDateValue()}"></label><label><span>Status</span><input value="Publicado diretamente ao cliente" readonly></label><label><span>Visibilidade</span><select name="visibility"><option>Cliente</option><option>Somente MB</option></select></label></div>
+          <button class="btn btn-primary" style="margin-top:14px" type="submit">${MBI.ui.icon("upload")} Publicar documento</button>
+        </form>
+      </section>
+      <section class="panel" style="margin-top:14px">
+        <div class="panel-header"><div><h3>Documentos do cliente</h3><p>Historico publicado com filtros por categoria, status e competencia.</p></div></div>
+        <form class="filter-row" data-form="document-filters">
+          <input type="hidden" name="scope" value="admin">
+          <select name="category"><option>Todas</option>${["Fiscal", "Trabalhista", "Contábil", "Financeiro", "Societário", "Contratos", "Certidões"].map((item) => `<option ${filters.category === item ? "selected" : ""}>${item}</option>`).join("")}</select>
+          <select name="status"><option>Todos</option>${["Disponivel", "Pendente", "Pago", "Vencido"].map((item) => `<option ${filters.status === item ? "selected" : ""}>${item}</option>`).join("")}</select>
+          <input type="month" name="competence" value="${filters.competence || ""}">
+          <button class="btn btn-primary" type="submit">${MBI.ui.icon("filter")} Aplicar</button>
+        </form>
+        ${MBI.ui.table(["Descricao", "Arquivo original", "Categoria", "Status", "Competencia", "Vencimento", "Visibilidade", "Acoes"], docs.map((doc) => [doc.description || doc.name || "-", doc.fileName || doc.originalFileName || doc.name || "-", doc.category, MBI.ui.pill(doc.status), doc.competence || "-", doc.dueDate || doc.due || "-", doc.visibility, `<button class="btn btn-soft btn-mini" type="button" data-action="document-download" data-document-id="${doc.id}">${MBI.ui.icon("download")} Baixar</button> <button class="btn btn-ghost btn-mini" type="button" data-action="delete-document" data-document-id="${doc.id}">${MBI.ui.icon("trash-2")} Excluir</button>`]))}
+      </section>
+    `;
+  }
+
+  function imports() {
+    const client = MBI.services.clients.current();
+    return `
+      <section class="grid grid-2">
+        ${clientSelector()}
+        <form class="panel" data-form="admin-import" enctype="multipart/form-data"><input type="hidden" name="clientId" value="${client.id}"><div class="panel-header"><div><h3>Registrar importação</h3><p>Fluxo interno da MB para arquivos financeiros e fiscais.</p></div></div><label class="upload-zone"><input class="sr-only" type="file" name="file" required>${MBI.ui.icon("database-zap")}<div><strong>Importar dados para ${client.name}</strong><p>Excel, CSV, OFX, XML ou PDF. O arquivo fica no Storage e entra na fila de validação.</p></div></label><div class="form-section two" style="margin-top:14px"><label><span>Nome exibido</span><input name="fileName" placeholder="Preenchido ao selecionar o arquivo"></label><label><span>Tipo</span><select name="type"><option>OFX</option><option>CSV</option><option>Excel</option><option>XML</option><option>PDF</option></select></label><label><span>Competência</span><input type="month" name="competence" value="${currentMonthValue()}"></label><label><span>Status</span><select name="status"><option>Aguardando validação MB</option><option>Validado</option><option>Erro de colunas</option></select></label><label><span>Resultado</span><input name="result" value="Aguardando processamento"></label></div><button class="btn btn-primary" style="margin-top:14px" type="submit">${MBI.ui.icon("upload")} Carregar arquivo</button></form>
+      </section>
+      <section class="panel" style="margin-top:14px">${MBI.ui.table(["Cliente", "Arquivo", "Tipo", "Status", "Resultado"], MBI.services.imports.list().map((row) => [MBI.services.clients.get(row.clientId)?.name || row.clientId, row.fileName, row.type, MBI.ui.pill(row.status), row.result]))}</section>
+    `;
+  }
+
+  function users() {
+    return `
+      <section class="grid grid-2">
+        <article class="panel"><div class="panel-header"><div><h3>Usuários</h3><p>Equipe MB e acessos de cliente.</p></div></div>${MBI.ui.table(["Nome", "Tipo", "Perfil", "E-mail", "Status", "Acoes"], MBI.services.users.list().map((user) => [user.name, user.type === "mb" ? "MB" : "Cliente", user.role, user.email, MBI.ui.pill(user.status), `<button class="btn btn-soft btn-mini" type="button" data-action="edit-user" data-user-id="${user.id}">Editar</button> <button class="btn btn-ghost btn-mini" type="button" data-action="deactivate-user" data-user-id="${user.id}">Desativar</button>`]))}</article>
+        <form class="panel" data-form="create-user"><div class="panel-header"><div><h3>Criar usuário</h3><p>Acesso real local para teste.</p></div></div><div class="form-section two"><label><span>Tipo</span><select name="type"><option value="client">Cliente</option><option value="mb">MB</option></select></label><label><span>Cliente</span><select name="clientId">${MBI.services.clients.list().map((client) => `<option value="${client.id}">${client.name}</option>`).join("")}</select></label><label><span>Nome</span><input name="name" value="Novo usuário"></label><label><span>E-mail</span><input name="email" value="usuario@empresa.com.br"></label><label><span>Senha</span><input name="password" value="123456"></label><label><span>Perfil</span><input name="role" value="Somente leitura"></label></div><button class="btn btn-primary" style="margin-top:14px" type="submit">${MBI.ui.icon("user-plus")} Criar usuário</button></form>
+      </section>
+    `;
+  }
+
+  function approvals() {
+    const db = MBI.storage.getDatabase();
+    const rows = db.approvals;
+    return `
+      <section class="panel approval-intro">
+        <div class="panel-header">
+          <div><h3>Aprovações de IA e relatórios</h3><p>Revise, edite e decida o que será liberado ao portal do cliente.</p></div>
+          <button class="btn btn-primary" type="button" data-route="#/admin/alimentar-portal">${MBI.ui.icon("plus")} Criar nova análise</button>
+        </div>
+        <div class="process-strip compact">
+          <article class="process-step"><div>${MBI.ui.icon("brain")}</div><strong>IA/MB gera</strong>${MBI.ui.pill("Rascunho")}<span>Análise preliminar.</span></article>
+          <article class="process-step"><div>${MBI.ui.icon("pencil")}</div><strong>Equipe revisa</strong>${MBI.ui.pill("Governança")}<span>Edita, aprova ou rejeita.</span></article>
+          <article class="process-step"><div>${MBI.ui.icon("send")}</div><strong>Cliente recebe</strong>${MBI.ui.pill("Liberado")}<span>Somente conteúdo aprovado.</span></article>
+        </div>
+      </section>
+      <section class="approval-grid" style="margin-top:14px">
+        ${rows.map((row) => approvalCard(row)).join("") || `<article class="panel empty-lock">${MBI.ui.icon("shield-check")}<h3>Nenhuma análise em fila</h3><p>Crie uma nova análise em Alimentar portal.</p></article>`}
+      </section>
+    `;
+  }
+
+  function approvalCard(row) {
+    const client = MBI.services.clients.get(row.clientId);
+    return `
+      <form class="panel approval-card" data-form="approval-review">
+        <input type="hidden" name="approvalId" value="${row.id}">
+        <div class="panel-header">
+          <div><h3>${row.title}</h3><p>${client?.name || row.clientId} · ${row.confidence || "Media"} confiança</p></div>
+          ${MBI.ui.pill(row.status || "Aguardando aprovação")}
+        </div>
+        <label><span>Texto que será liberado ao cliente</span><textarea name="text">${row.text || ""}</textarea></label>
+        <div class="form-section two" style="margin-top:12px">
+          <label><span>Decisão MB</span><select name="status"><option ${row.status === "Aprovado" ? "selected" : ""}>Aprovado</option><option ${row.status === "Editar antes de liberar" ? "selected" : ""}>Editar antes de liberar</option><option ${row.status === "Rejeitado" ? "selected" : ""}>Rejeitado</option><option ${row.status === "Aguardando aprovação" || row.status === "Aguardando aprovacao" ? "selected" : ""}>Aguardando aprovação</option></select></label>
+          <label><span>Observação interna da revisão</span><textarea name="reviewNotes">${row.reviewNotes || ""}</textarea></label>
+        </div>
+        <div class="approval-meta">
+          <span>${MBI.ui.icon("database")} Fonte: dados financeiros, documentos e validação MB</span>
+          <span>${MBI.ui.icon("user-check")} Responsável: ${row.owner || "MB"}</span>
+        </div>
+        <button class="btn btn-primary" style="margin-top:12px" type="submit">${MBI.ui.icon("save")} Salvar revisão</button>
+      </form>
+    `;
+  }
+
+  function audit() {
+    return `<section class="panel"><div class="panel-header"><div><h3>Trilha de auditoria</h3><p>Registro local de ações relevantes.</p></div></div><div class="audit-list">${MBI.services.audit.list().map((row) => `<div class="audit-item"><time>${row.at}</time><div><strong>${row.action}</strong><span>${row.user} · ${row.target} · ${row.result}</span></div></div>`).join("")}</div></section>`;
+  }
+
+  function reports() {
+    const db = MBI.storage.getDatabase();
+    const byPlan = MBI.services.plans.list().map((plan) => {
+      const count = db.clients.filter((client) => client.planId === plan.id).length;
+      const revenue = count * Number(plan.price || 0);
+      return [plan.name, String(count), MBI.ui.money(revenue), count ? "Ativo" : "Sem clientes"];
+    });
+    const byRisk = db.clients.map((client) => {
+      const imports = MBI.services.imports.list(client.id);
+      const openTasks = db.tasks.filter((task) => task.clientId === client.id && !task.status?.includes("Concl")).length;
+      const risk = client.confidence === "Baixa" || client.status === "Onboarding" || openTasks > 0 ? "Atenção" : "Saudável";
+      return [client.name, MBI.services.plans.get(client.planId)?.name || client.planId, client.confidence, String(openTasks), MBI.ui.pill(risk), imports.at(-1)?.status || "Sem importação"];
+    });
+    const productivity = MBI.services.users.list("mb").map((user) => {
+      const tasks = db.tasks.filter((task) => task.owner === user.name || task.owner?.includes(user.name.split(" ")[0]));
+      const approvals = db.approvals.filter((item) => item.owner === user.name);
+      return [user.name, user.role, String(tasks.length), String(approvals.length), MBI.ui.pill(tasks.length || approvals.length ? "Com fila" : "Livre")];
+    });
+    const documentsByClient = db.clients.map((client) => {
+      const docs = MBI.services.documents.listByClient(client.id);
+      return [client.name, String(docs.length), docs.filter((doc) => doc.status?.includes("Pendente")).length || "0", docs.at(-1)?.name || "Sem documentos"];
+    });
+
+    return `
+      <section class="panel" style="margin-bottom:14px">
+        <div class="panel-header"><div><h3>Indicadores MB</h3><p>Visao interna para carteira, receita recorrente, risco, produtividade e documentos. Use os botoes para exportar bases de acompanhamento.</p></div></div>
+        <div class="button-row">
+          <button class="btn btn-soft" type="button" data-action="export-operational-report" data-report="plans">${MBI.ui.icon("download")} Carteira por plano</button>
+          <button class="btn btn-soft" type="button" data-action="export-operational-report" data-report="risk">${MBI.ui.icon("download")} Risco de cancelamento</button>
+          <button class="btn btn-soft" type="button" data-action="export-operational-report" data-report="users">${MBI.ui.icon("download")} Equipe</button>
+          <button class="btn btn-soft" type="button" data-action="export-operational-report" data-report="documents">${MBI.ui.icon("download")} Documentos</button>
+        </div>
+      </section>
+      <section class="grid grid-2">
+        <article class="panel"><div class="panel-header"><div><h3>Carteira por plano</h3><p>Distribuição comercial e receita recorrente estimada.</p></div></div>${MBI.ui.table(["Plano", "Clientes", "MRR estimado", "Status"], byPlan)}</article>
+        <article class="panel"><div class="panel-header"><div><h3>Risco de cancelamento</h3><p>Clientes com baixa confiança, onboarding ou tarefas abertas.</p></div></div>${MBI.ui.table(["Cliente", "Plano", "Confiança", "Pendências", "Risco", "Última importação"], byRisk)}</article>
+        <article class="panel"><div class="panel-header"><div><h3>Produtividade da equipe</h3><p>Filas por operador MB.</p></div></div>${MBI.ui.table(["Operador", "Perfil", "Tarefas", "Aprovações", "Status"], productivity)}</article>
+        <article class="panel"><div class="panel-header"><div><h3>Status de documentos</h3><p>Publicações, pendências e histórico por cliente.</p></div></div>${MBI.ui.table(["Cliente", "Total", "Pendentes", "Último documento"], documentsByClient)}</article>
+      </section>
+    `;
+  }
+
+  MBI.pages.admin = { render };
+})();

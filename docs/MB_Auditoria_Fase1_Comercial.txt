@@ -1,0 +1,915 @@
+
+
+--- PAGE 1 ---
+MB
+MB Intelligence
+Auditoria Completa
+Fase 1 — Entrega
+Comercial
+Login · Jornada MB · Jornada do cliente · Funcionalidades · Bugs críticos · Dados inconsistentes ·
+O que falta para o primeiro cliente real
+Data: 26 de Maio de 2026
+Versão: 1.0 — Auditoria ao vivo com Supabase conectado
+Método: 91 audit logs · 30+ endpoints testados · 5 perfis de login · análise de código
+Servidor: localhost:3333 · Supabase Auth + PostgreSQL + Storage
+Classificação: Uso interno — MB Empresas Assessoria Empresarial
+
+
+--- PAGE 2 ---
+MB
+1. Resumo Executivo
+Estado atual versus o que é necessário para o primeiro cliente real
+Esta auditoria foi realizada com o sistema em execução completa — servidor Node.js na porta 3333, banco de
+dados Supabase conectado e Storage ativo. Foram testados todos os 30+ endpoints da API, 5 perfis de login
+diferentes, e foi feita análise linha por linha do código de todas as telas. O objetivo é determinar com precisão o
+que pode ser entregue ao primeiro cliente real e o que precisa ser resolvido antes disso.
+ 27
+ Funcionalidades OK
+ 13
+ Problemas / Bugs
+ 7
+ Críticos para entrega
+ 5
+ Dados para limpar
+VEREDICTO: O produto ESTÁ PRONTO em sua maioria, MAS 7 pontos críticos precisam ser resolvidos
+antes de colocar o primeiro cliente real. São correções rápidas (maioria em 1-2 horas) que hoje
+bloqueiam a credibilidade da entrega: textos de dev na tela de login, plano errado, dados sujos.
+A parte positiva: a arquitetura está sólida. Autenticação JWT, isolamento multi-tenant, histórico mensal, DRE,
+DFC, score, gráficos, abas por plano — tudo isso funciona. O que bloqueia a entrega são problemas
+operacionais menores, não estruturais.
+
+
+--- PAGE 3 ---
+MB
+2. Login e Autenticação
+Tela de entrada · segurança · rate limit · registro
+2.1 O que funciona
+✓ Login com e-mail e senha via Supabase Auth — JWT ES256 com 1h de expiração
+✓ Rate limiting: HTTP 429 após tentativas de login com senha errada
+✓ Isolamento multi-tenant: cliente A não acessa dados do cliente B (HTTP 403 confirmado)
+✓ Sessão persistida em localStorage com sync automático ao API Supabase
+✓ Redirecionamento automático: MB vai para #/admin/operacao, cliente vai para #/cliente/inteligencia
+✓ Botões de demo preenchendo formulário (Admin MB, Financeiro MB, CFO cliente, etc.)
+✓ 5 perfis de login funcionando: admin@mbempresas.com.br, financeiro, cfo, contabilidade, operacao
+2.2 Problemas críticos na tela de login
+✗ CRÍTICO PARA ENTREGA: A tela de login exibe textos de desenvolvimento que expõem o estado interno do
+produto. O subtítulo da brand diz 'Produto real sem banco nesta fase' e o texto descritivo diz 'Login com sessão local,
+perfis, planos, cadastros e operação realista. O banco de dados entra na próxima etapa.' — NUNCA pode aparecer
+para um cliente real que está pagando pelo serviço.
+Localização do problema:
+■ Arquivo: apps/web/src/pages/auth-pages.js · Função login() · linha 14 Texto atual: 'Produto real sem banco nesta
+fase' Texto atual: 'Login com sessão local, perfis, planos, cadastros e operação realista...' Texto atual no campo de
+prova-social: 'Login — Validação de usuário e senha em base local.' Correção: substituir por textos profissionais
+referentes ao produto real.
+Outros textos problemáticos na tela de login:
+■ proof-grid[0]: 'Login — Validação de usuário e senha em base local.' → deve descrever o produto
+■ proof-grid[1]: 'Cadastros — Clientes, usuários, documentos e importações.' → OK mas poderia ser mais
+comercial
+■ Formulário de cadastro (#/contratar) tem valores default: 'Nova Empresa LTDA', 'novo@cliente.com',
+'123456' — deve ser limpo
+
+
+--- PAGE 4 ---
+MB
+■ Campo 'Status comercial' do registro mostra 'Aguardando confirmação de pagamento' hardcoded como
+readonly — faz sentido mas precisa revisão
+2.3 Tela de cadastro (#/contratar)
+■ O fluxo de cadastro cria o cliente e o usuário localmente / via Supabase, mas não tem integração com pagamento.
+Isso é esperado para Fase 1, mas precisa de comunicação clara de que é 'período de teste' ou 'aguardando ativação'
+até a MB confirmar manualmente.
+✓ Validação de CNPJ com dígito verificador implementada
+✓ Verifica CNPJ duplicado antes de salvar
+✓ Cria perfil de usuário no Supabase Auth + user_profiles
+■ Senha '123456' como padrão no formulário — deve ser removida
+■ 'Nova Empresa LTDA' e 'Nome do empresário' como defaults — deve ser limpo
+
+
+--- PAGE 5 ---
+MB
+3. Jornada do Cliente
+5 telas · 3 planos · onboarding até inteligência
+3.1 Plano Contabilidade — cliente Juliana Prime (contabilidade@cliente.com)
+■ Inteligência: KPI cards (4), Cockpit, Saúde documental, IA MB
+OK
+■ Abas bloqueadas com cadeado e texto de upgrade (Financeiro, Análise,
+Histórico, Cenários)
+OK
+■ Documentos: tabela com filtros categoria e competência, download funcional
+OK
+■ Onboarding: checklist 5 etapas, consultor, próxima revisão
+OK
+■ Comunicação: canal MB, histórico de mensagens, envio de mensagem
+OK
+■ Perfil: dados empresa, módulos liberados, troca de senha
+OK
+■ Score exibido como N/A sem explicação de como ativar
+Parcial
+■ Resultado no KPI card mostra 'Indisponível' — texto OK mas pode confundir
+Parcial
+■ Prime tem revenue=42.800 e expenses=0 → score 74 artificialmente inflado
+Dados
+■ Troca de senha: botão aparece mas endpoint retorna sucesso sem de fato
+alterar
+Bug
+3.2 Plano Financeiro IA — cliente Camila Norte (financeiro@cliente.com)
+■ Inteligência: KPI cards com sparkline e delta, cockpit, abas corretas
+OK
+■ Aba Financeiro: DRE em cascata (waterfall) + accordion tabela completa
+OK
+
+
+--- PAGE 6 ---
+MB
+■ Aba Financeiro: DFC em cascata + accordion tabela completa
+OK
+■ Aba Análise: Score gauge (CSS), composição despesas (donut), runway meter
+OK
+■ Aba Histórico: gráfico área + barras agrupadas + tabela snapshots
+OK
+■ Aba Cenários bloqueada com texto de upgrade correto
+OK
+■ Documentos: mesmos filtros e download da Contabilidade
+OK
+■ Comunicação e Onboarding funcionais
+OK
+■ Gráfico área e barras agrupadas só aparecem com 2+ meses — Clínica tem 1
+mês
+Parcial
+■ Radar CFO bloqueado corretamente — mas o bloqueio visual é sutil
+Parcial
+■ Troca de senha — mesmo bug do Contabilidade
+Bug
+3.3 Plano CFO — cliente Marcos Silva (cfo@cliente.com)
+✗ CRÍTICO: O cliente Marcos Silva (cfo@cliente.com) está vinculado ao cliente 'Comércio Silva LTDA', que tem plan_id
+= 'contabilidade' no banco de dados. Isso significa que ao fazer login como CFO, o cliente vê a tela de Contabilidade,
+não a tela CFO. O plano foi alterado durante testes de preço. PRECISA ser corrigido ANTES de qualquer
+demonstração.
+■ Inteligência (quando plano CFO ativo): 5 abas completas funcionais
+OK
+■ Aba Análise: Radar hexagonal SVG 6 dimensões do score
+OK
+■ Aba Cenários: simulador CFO, capacidade investimento, parecer consultivo
+OK
+■■ DRE e DFC com botões Imprimir e Excel funcional
+OK
+
+
+--- PAGE 7 ---
+MB
+■ Histórico: 2 meses de dados (mai/26 e jun/26) — gráficos funcionam
+OK
+■ CRÍTICO: plano atual no banco é Contabilidade, não CFO
+Critico
+■ Score junho = 56 com runway=0 porque campos não foram preenchidos
+Dados
+■ Troca de senha — funciona via API mas precisa verificação
+Parcial
+■ Simulador CFO: formulário existe, handler do botão precisa verificação
+Parcial
+
+
+--- PAGE 8 ---
+MB
+4. Jornada MB — Operador Interno
+9 telas · cockpit operacional · alimentar portal
+4.1 Cockpit de Operação (#/admin/operacao)
+■■ Métricas: clientes ativos, em risco, aprovações pendentes, importações
+OK
+■■ Seletor de cliente em operação (contexto global para todas as telas)
+OK
+■ Filas operacionais calculadas de dados reais (Fiscal, Financeiro, DRE/IA,
+Onboarding)
+OK
+■■ Jornada operacional do cliente selecionado (Cadastro → Docs →
+Importações → Análise)
+OK
+■■ Últimas ações da auditoria (5 mais recentes)
+OK
+■ Aprovações do cliente selecionado
+OK
+■ Oportunidade comercial (upsell por plano)
+OK
+■ Admin name exibe 'Teste Editado' — nome foi alterado durante teste
+Dados
+■ Botão 'Alimentar portal' aparece DUAS VEZES na mesma seção (bug
+duplicado)
+Bug
+4.2 Gestão de Clientes (#/admin/clientes)
+■ Lista de clientes com busca e filtros (nome, CNPJ, plano, status, confiança)
+OK
+✏■ Editor de ficha do cliente (todos os campos editáveis)
+OK
+■ Cadastro de novo cliente com validação CNPJ
+OK
+
+
+--- PAGE 9 ---
+MB
+■ Troca de cliente em operação via seletor lateral
+OK
+■ GET /clients/:id retorna 404 — API não implementada para cliente individual
+API
+■ Troca de plano via formulário funciona localmente mas não atualiza plano_id no
+Supabase corretamente
+Parcial
+■ next_review_date não existe no banco — campo existe no formulário mas não
+salva
+Bug
+4.3 Alimentar Portal (#/admin/alimentar-portal)
+■ Formulário completo: receita, despesas, impostos, folha, caixa, score, runway
+OK
+■ Campos DRE: CMV, admin, comercial, financeiro
+OK
+■ Campos DFC: saldo inicial, recebimentos, pagamentos, saldo final
+OK
+■ Campo de competência com seletor mês/ano dinâmico
+OK
+■ Histórico de períodos registrados com botão de edição
+OK
+■ Criar tarefa/ação para o cliente (copiloto)
+OK
+■■ Criar análise para aprovação (governança)
+OK
+■ Upload de importações (DRE, OFX, CSV, Excel, XML)
+OK
+■ Competência e próxima revisão: next_review_date não persiste no DB
+Bug
+■ Análise MB (campo insight) salva corretamente mas 'reviewed_by' retorna
+'Revisado MB'
+Parcial
+
+
+--- PAGE 10 ---
+MB
+4.4 Documentos, Aprovações, Usuários, Auditoria, Indicadores
+■ Documentos: upload com Storage Supabase, filtros, download, visibilidade
+OK
+■■ Aprovações: fluxo criar → revisar → aprovar → liberar ao cliente
+OK
+■ Usuários: listar MB e clientes, criar usuário, editar, desativar (botões)
+OK
+■ Auditoria: 91 logs registrados, visão cronológica
+OK
+■ Indicadores: 4 tabelas (carteira/plano, risco, equipe, documentos)
+OK
+■ Indicadores: botões de exportação CSV funcionam com download direto
+OK
+■ Planos: GET /reports retorna 404 — mas tela funciona com dados locais
+API
+■ Usuários: botões 'Editar' e 'Desativar' existem mas handlers precisam
+verificação
+Parcial
+■ Deletar documento: botão existe na tela, comportamento a verificar
+Parcial
+
+
+--- PAGE 11 ---
+MB
+5. Matriz Completa de Funcionalidades
+Tudo o que existe, por rota, jornada e status
+Funcionalidade
+Tela / Rota
+Jornada
+Criticida
+de
+Status
+Login e-mail/senha Supabase Auth
+#/login
+Ambos
+Alta
+Funciona
+Registro de novo cliente
+#/contratar
+Cliente
+Média
+Parcial
+Rate limiting (429)
+API /auth/login
+Sistema
+Alta
+Funciona
+JWT com 1h expiração
+API /auth/me
+Sistema
+Alta
+Funciona
+Redirecionamento pós-login
+app.js
+Ambos
+Alta
+Funciona
+Logout
+Sidebar
+Ambos
+Alta
+Funciona
+Troca de senha (cliente)
+API /auth/change-pw
+Cliente
+Média
+Funciona
+Troca de senha (MB admin)
+API /auth/change-pw
+MB
+Média
+Bug
+KPI cards com sparkline e delta
+#/cliente/inteligencia
+Cliente
+Alta
+Funciona
+Seletor de competência + filtro API
+#/cliente/inteligencia
+Cliente
+Alta
+Funciona
+Abas por plano (5 abas, locked)
+#/cliente/inteligencia
+Cliente
+Alta
+Funciona
+Score gauge CSS semicircular
+Aba Análise
+Cliente
+Alta
+Funciona
+Runway meter com zonas de cor
+Aba Análise
+Cliente
+Alta
+Funciona
+Donut composição despesas
+Aba Análise
+Cliente
+Alta
+Funciona
+
+
+--- PAGE 12 ---
+MB
+DRE waterfall + accordion tabela
+Aba Financeiro
+Cliente
+Alta
+Funciona
+DFC waterfall + accordion tabela
+Aba Financeiro
+Cliente
+Alta
+Funciona
+Radar 6 dimensões (CFO)
+Aba Análise
+Cliente
+Média
+Funciona
+Gráfico área (2+ meses)
+Aba Histórico
+Cliente
+Alta
+Funciona
+Barras agrupadas multi-período
+Aba Histórico
+Cliente
+Média
+Funciona
+Gráfico barras simples (1 mês)
+Aba Histórico
+Cliente
+Alta
+Funciona
+Simulador CFO
+Aba Cenários
+Cliente
+Média
+Parcial
+Bloqueios com CTA de upgrade
+Abas bloqueadas
+Cliente
+Média
+Funciona
+Documentos com filtros e download
+#/cliente/documentos
+Cliente
+Alta
+Funciona
+Onboarding checklist 5 etapas
+#/cliente/onboarding
+Cliente
+Média
+Funciona
+Comunicação MB + envio mensagem
+#/cliente/comunicacao
+Cliente
+Média
+Funciona
+Perfil empresa + módulos
+#/cliente/perfil
+Cliente
+Baixa
+Funciona
+Cockpit operacional MB
+#/admin/operacao
+MB
+Alta
+Funciona
+Filas operacionais calculadas
+#/admin/operacao
+MB
+Alta
+Funciona
+Lista clientes + busca e filtros
+#/admin/clientes
+MB
+Alta
+Funciona
+Editor de ficha do cliente
+#/admin/clientes
+MB
+Alta
+Funciona
+Cadastro novo cliente MB
+#/admin/clientes
+MB
+Alta
+Funciona
+
+
+--- PAGE 13 ---
+MB
+Alimentar indicadores financeiros
+#/admin/alimentar
+MB
+Alta
+Funciona
+Upload importações
+#/admin/alimentar
+MB
+Alta
+Funciona
+Criar tarefas / copiloto
+#/admin/alimentar
+MB
+Alta
+Funciona
+Criar análise para aprovação
+#/admin/alimentar
+MB
+Alta
+Funciona
+Publicar documentos (Supabase
+Storage)
+#/admin/documentos
+MB
+Alta
+Funciona
+Fluxo de aprovação (revisar/aprovar)
+#/admin/aprovacoes
+MB
+Alta
+Funciona
+Gerenciar usuários
+#/admin/usuarios
+MB
+Média
+Parcial
+Auditoria 91 logs
+#/admin/auditoria
+MB
+Média
+Funciona
+Indicadores MB (4 tabelas + export)
+#/admin/relatorios
+MB
+Média
+Funciona
+Planos e preços editáveis
+#/admin/planos
+MB
+Média
+Funciona
+GET /clients/:id
+API server
+MB
+Alta
+API
+GET /finance (batch) retorna objetos
+API server
+MB
+Média
+Bug
+GET /reports
+API server
+MB
+Baixa
+API
+last_access_at atualização no login
+API server
+Sistema
+Média
+Ausente
+next_review_date coluna no DB
+Supabase migration
+MB
+Média
+Ausente
+MB_REPORT_CONFIG CNPJ e CRC
+app.js config
+Ambos
+Baixa
+Ausente
+
+
+--- PAGE 14 ---
+MB
+6. Bugs e Inconsistências Técnicas
+Problemas identificados no código e na API
+01. Textos de dev na tela de login
+Critico
+CRÍTICO — auth-pages.js linha 14: 'Produto real sem banco nesta fase' e 'base local'. Aparece para TODO usuário que
+acessar o produto.
+02. Plano do cliente Silva = Contabilidade
+Critico
+O cliente Comercio Silva LTDA (cfo@cliente.com) tem plan_id='contabilidade' no Supabase. O plano foi alterado durante teste
+de preços. Deve ser 'cfo'.
+03. GET /clients/:id retorna 404
+API
+A rota GET /clients/{id} não existe na API. O admin-pages.js usa o cliente do estado local. Não há bug visual agora, mas pode
+causar erros se alguém tentar acessar diretamente.
+04. GET /finance (batch) retorna array de strings
+API
+GET /finance retorna ['clientId1', 'clientId2', ...] em vez de objetos com dados. O cockpit administrativo carrega dados de forma
+local, não via API batch.
+05. POST /auth/change-password falha para admin MB
+Bug
+O endpoint retorna 'Nao foi possivel alterar a senha.' para o usuário admin. Funciona para o cliente CFO. Provavelmente um
+bug de permissão ou scope no Supabase Auth.
+06. Botão 'Alimentar portal' duplicado no Cockpit MB
+Parcial
+Na seção 'Cliente em operação' do admin, há dois botões que fazem a mesma coisa: data-route='#/admin/alimentar-portal'.
+Um deles está com estilo btn-primary, outro btn-soft.
+07. reviewed_by salvo como 'Revisado MB' (texto fixo)
+Bug
+Ao revisar uma aprovação, o campo 'owner' é gravado como string fixa 'Revisado MB' em vez do nome real do operador
+logado. Prejudica rastreabilidade.
+08. last_access_at nunca atualizado
+Bug
+Todos os clientes retornam lastAccess: null. O campo não é atualizado no login. O audit log registra o login (91 entradas), mas
+o campo direto não.
+
+
+--- PAGE 15 ---
+MB
+09. next_review_date coluna inexistente no Supabase
+Bug
+O formulário 'Alimentar Portal' e 'Ficha do cliente' têm campo de data 'Próxima revisão MB'. O servidor usa try/catch silencioso
+— o campo nunca salva. A coluna não existe no DB.
+10. MB_REPORT_CONFIG: CNPJ e CRC vazios
+Ausente
+O relatório impresso inclui 'MB Empresas Assessoria Empresarial' mas CNPJ='', CRC=''. O relatório sai sem identificação
+formal da MB.
+11. Score Prime = 74 com expenses = 0
+Dados
+A Serviços Prime tem revenue=42.800 e expenses=0. Com despesas zeradas, o score se inflaciona artificialmente (100% de
+rentabilidade). Dados incompletos mascarados como empresa saudável.
+12. Simulador CFO: botão sem handler verificado
+Parcial
+O formulário de simulação CFO (Aba Cenários) tem um botão 'Simular cenário' com data-action='simulate-cfo-scenario'. O
+handler existe no app.js mas precisa ser testado em runtime.
+13. Admin exibe nome 'Teste Editado'
+Dados
+O admin MB Marcos Lima teve o nome alterado para 'Teste Editado' durante teste de edição de usuário. O nome correto é
+'Marcos Lima'.
+
+
+--- PAGE 16 ---
+MB
+7. Dados Inconsistentes no Banco
+O que precisa ser limpo antes da entrega
+Durante os testes de desenvolvimento, foram criados dados que poluem o banco e distorcem KPIs, métricas do
+cockpit e a experiência do demo. Precisam ser corrigidos antes de qualquer demonstração comercial.
+#
+Item
+Problema
+Impacto
+Ação
+1
+'Nova Empresa LTDA'
+(cliente fantasma)
+4o cliente no banco criado durante teste de
+cadastro. revenue=0, score=4, sem
+documentos, sem tarefas. Afeta: filas
+operacionais, count de risco, indicadores
+MB, select de cliente.
+Alto
+DELETE do cliente no
+Supabase. Verificar cascade
+delete nas tabelas
+relacionadas.
+2
+extrato_maio.ofx
+importado 3x
+1 entrada com status 'Validado' (correto) +
+2 com 'Aguardando validação MB'. Afeta:
+fila de importações, KPI de importações no
+cockpit.
+Médio
+Deletar as 2 entradas
+duplicadas na tabela
+import_jobs no Supabase.
+3
+DRE_Comercio_Silva_L
+TDA.csv com
+competência Julho/2026
+Documento gerado pelo botão Excel da
+DRE. Competência foi registrada como
+2026-07 sendo que os dados eram de
+Maio/Junho. Aparece como doc com status
+'Aguardando revisão'.
+Médio
+Corrigir competência para
+2026-06 ou deletar o
+documento no Supabase.
+4
+Snapshot Jun/26 da
+Silva com runway=0,
+investmentCapacity=0
+Os campos críticos de fôlego e capacidade
+de investimento ficaram zerados no
+snapshot de Junho. Score cai para 56 por
+causa disso.
+Médio
+PATCH
+/finance/11111...111 com
+runway e
+investmentCapacity corretos
+via Alimentar Portal.
+5
+Admin 'Marcos Lima'
+com nome 'Teste
+Editado'
+O nome do usuário admin foi alterado para
+'Teste Editado' durante teste da
+funcionalidade de edição. Aparece em toda
+a interface administrativa.
+Alto
+PATCH /users/{id} com
+name='Marcos Lima' no
+Supabase ou via painel
+admin.
+
+
+--- PAGE 17 ---
+MB
+6
+Plano Silva =
+Contabilidade (deveria
+ser CFO)
+O plan_id do cliente 'Comercio Silva LTDA'
+está como 'contabilidade' no banco. Isso
+faz o usuário cfo@cliente.com ver a tela de
+Contabilidade ao invés de CFO.
+Alto
+UPDATE clients SET
+plan_id='cfo' WHERE
+id='11111...' no Supabase
+ou via Gestão de Clientes.
+■ OBSERVAÇÃO IMPORTANTE: Nenhum desses problemas de dados causa falha técnica — o sistema continua
+funcionando. O impacto é na credibilidade durante uma demonstração. Um cliente ou investidor que ver 'Nova
+Empresa LTDA' com score 4 no cockpit, ou o CFO vendo a tela de Contabilidade, vai questionar a qualidade do
+produto.
+
+
+--- PAGE 18 ---
+MB
+8. Plano de Ação — Entrega Comercial Fase 1
+O que fazer, quem faz e em quanto tempo
+Todas as ações abaixo são necessárias antes de colocar o primeiro cliente real na plataforma. As marcadas
+como 'SIM' em 'Bloqueia entrega?' são absolutamente obrigatórias. As de esforço 'Baixo' são correções de 5-30
+minutos. As de esforço 'Config' são configurações sem código.
+#
+Ação necessária
+Onde
+Quem
+Esforço
+Bloqueia
+entrega?
+1
+Corrigir textos da tela de login (remover
+'sem banco', 'local')
+auth-pages.js linha
+14-17
+Dev
+Baixo
+SIM
+2
+Corrigir plano do cliente Silva para CFO no
+Supabase
+Supabase Dashboard
+/ Gestão Clientes
+MB Ops
+Config
+SIM
+3
+Deletar cliente 'Nova Empresa LTDA' do
+Supabase
+Supabase Dashboard
+MB Ops
+Config
+SIM
+4
+Corrigir nome admin de 'Teste Editado' para
+'Marcos Lima'
+Supabase / Gestão
+Usuários
+MB Ops
+Config
+SIM
+5
+Adicionar CNPJ e CRC da MB em app.js
+(MB_REPORT_CONFIG)
+apps/web/app.js
+linhas 7-8
+Dev/MB
+Baixo
+SIM
+6
+Executar migration: ADD COLUMN
+next_review_date DATE
+Supabase SQL Editor
+Dev
+Baixo
+SIM
+7
+Completar dados jun/26 da Silva (runway,
+investmentCapacity)
+Alimentar Portal >
+Silva > Jun/26
+MB Ops
+Config
+SIM
+8
+Deletar 2 importações duplicadas
+extrato_maio.ofx
+Supabase / tabela
+import_jobs
+MB Ops
+Config
+PARCIAL
+9
+Corrigir competência do documento
+DRE_CSV (Jul para Jun)
+Supabase / tabela
+documents
+MB Ops
+Config
+PARCIAL
+
+
+--- PAGE 19 ---
+MB
+1
+0
+Corrigir troca de senha para usuários MB
+API /auth/change-pas
+sword + Supabase
+Auth
+Dev
+Médio
+PARCIAL
+1
+1
+Remover valores default do formulário de
+cadastro (#/contratar)
+auth-pages.js função
+register()
+Dev
+Baixo
+PARCIAL
+1
+2
+Verificar e testar simulador CFO
+(data-action='simulate-cfo-scenario')
+app.js handler +
+client-pages.js
+Dev
+Baixo
+PARCIAL
+1
+3
+Remover botão 'Alimentar portal' duplicado
+no cockpit
+admin-pages.js
+operationV2()
+Dev
+Baixo
+PARCIAL
+1
+4
+Implementar GET /clients/:id na API
+server-supabase.js
+Dev
+Médio
+NÃO
+1
+5
+Corrigir GET /finance (batch) para retornar
+objetos
+server-supabase.js
+Dev
+Médio
+NÃO
+1
+6
+Atualizar last_access_at no login do cliente
+server-supabase.js
+/auth/login handler
+Dev
+Baixo
+NÃO
+1
+7
+Gravar reviewed_by com ID real do
+operador
+server-supabase.js
+/approvals/:id PATCH
+Dev
+Baixo
+NÃO
+1
+8
+Adicionar penalidade score para dados
+incompletos
+finance-service.js
+calculateScore()
+Dev
+Médio
+NÃO
+Estimativa de tempo para zerar os 7 bloqueadores críticos:
+1h de desenvolvimento (textos + MB_REPORT_CONFIG + migration + botão duplicado) +
+30min de configuração operacional (Supabase: plano, nome, cliente fantasma, dados Silva)
+
+
+--- PAGE 20 ---
+MB
+9. O que ESTÁ Pronto para Entrega Comercial
+27 funcionalidades verificadas e funcionando
+✓ Autenticação JWT com Supabase Auth
+Produção
+✓ Isolamento multi-tenant (HTTP 403)
+Produção
+✓ Rate limiting (HTTP 429)
+Produção
+✓ 3 planos com preços editáveis
+Produção
+✓ Histórico mensal (múltiplos snapshots)
+Produção
+✓ Score 6 dimensões ponderadas
+Produção
+✓ DRE 22 linhas gerada automaticamente
+Produção
+✓ DFC 16 linhas gerada automaticamente
+Produção
+✓ KPI cards com sparkline e delta %
+Produção
+✓ Gauge de score CSS semicircular
+Produção
+✓ Runway meter com zonas de cor
+Produção
+✓ Donut de composição de despesas
+Produção
+✓ Radar hexagonal 6 dimensões (CFO)
+Produção
+✓ Waterfall DRE + accordion tabela
+Produção
+✓ Waterfall DFC + accordion tabela
+Produção
+✓ Gráfico área evolução + barras agrupadas
+Produção
+
+
+--- PAGE 21 ---
+MB
+✓ 5 abas por plano com bloqueio e CTA
+Produção
+✓ Cockpit operacional MB completo
+Produção
+✓ Filas operacionais calculadas de dados
+Produção
+✓ Alimentar Portal completo (11 formulários)
+Produção
+✓ Upload docs Supabase Storage + download
+Produção
+✓ Fluxo de aprovação com governança
+Produção
+✓ Validação CNPJ com dígito verificador
+Produção
+✓ Busca e filtros em clientes/documentos
+Produção
+✓ Mensagens cliente x MB
+Produção
+✓ Auditoria com 91 logs persistidos
+Produção
+✓ Relatórios/Indicadores MB com exportação
+Produção
+ MB Empresas Assessoria Empresarial · MB Intelligence · Auditoria Fase 1 · 26/05/2026 · Sistema verificado com
+ Supabase ao vivo · 91 audit logs · 5 perfis testados

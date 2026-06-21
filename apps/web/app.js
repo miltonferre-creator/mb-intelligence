@@ -1,0 +1,952 @@
+(function () {
+  window.MBI = window.MBI || {};
+
+  const root = document.getElementById("root");
+  let toastMessage = "";
+  const MB_REPORT_CONFIG = Object.assign({
+    companyName: "MB Empresas Assessoria Empresarial",
+    cnpj: "",
+    crc: ""
+  }, window.MB_REPORT_CONFIG || {});
+
+  function route() {
+    return window.location.hash || "#/login";
+  }
+
+  function navigate(nextRoute) {
+    window.location.hash = nextRoute;
+  }
+
+  function defaultRouteForSession(session) {
+    return session?.type === "mb" ? "#/admin/operacao" : "#/cliente/inteligencia";
+  }
+
+  function showToast(message) {
+    toastMessage = message;
+    render();
+    window.setTimeout(() => {
+      toastMessage = "";
+      const toast = document.querySelector(".toast");
+      if (toast) toast.remove();
+    }, 2800);
+  }
+
+  function render() {
+    const currentRoute = route();
+    const session = MBI.auth.currentSession();
+
+    if (!session) {
+      root.innerHTML = currentRoute === "#/contratar" ? MBI.pages.auth.register() : MBI.pages.auth.login();
+      root.insertAdjacentHTML("beforeend", MBI.ui.toast(toastMessage));
+      refreshIcons();
+      return;
+    }
+
+    if (currentRoute === "#/login" || currentRoute === "#/contratar") {
+      navigate(defaultRouteForSession(session));
+      return;
+    }
+
+    if (session.type === "mb") {
+      root.innerHTML = MBI.pages.admin.render(currentRoute);
+    } else {
+      root.innerHTML = MBI.pages.client.render(currentRoute);
+    }
+
+    root.insertAdjacentHTML("beforeend", MBI.ui.toast(toastMessage));
+    refreshIcons();
+  }
+
+  function refreshIcons() {
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  function formData(form) {
+    return Object.fromEntries(new FormData(form).entries());
+  }
+
+  function busyText(form) {
+    const labels = {
+      login: "Entrando...",
+      "register-client": "Criando cadastro...",
+      "admin-create-client": "Cadastrando cliente...",
+      "update-plan-prices": "Salvando valores...",
+      "update-finance": "Atualizando indicadores...",
+      "create-task": "Criando pendencia...",
+      "create-approval": "Enviando para aprovacao...",
+      "approval-review": "Salvando revisao...",
+      "publish-document": "Enviando documento...",
+      "admin-import": "Carregando arquivo...",
+      "create-user": "Criando usuario...",
+      "change-password": "Alterando senha...",
+      message: "Enviando mensagem..."
+    };
+    return labels[form.dataset.form] || "Processando...";
+  }
+
+  function setFormBusy(form, busy) {
+    const buttons = [...form.querySelectorAll("button[type='submit']")];
+    if (busy) {
+      form.dataset.busy = "true";
+      form.classList.add("is-busy");
+      form.setAttribute("aria-busy", "true");
+      buttons.forEach((button) => {
+        button.dataset.originalHtml = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = `<span class="spinner" aria-hidden="true"></span>${busyText(form)}`;
+      });
+      let status = form.querySelector("[data-form-status]");
+      if (!status) {
+        status = document.createElement("div");
+        status.className = "form-status";
+        status.dataset.formStatus = "true";
+        form.appendChild(status);
+      }
+      status.textContent = busyText(form);
+      return;
+    }
+    delete form.dataset.busy;
+    form.classList.remove("is-busy");
+    form.removeAttribute("aria-busy");
+    buttons.forEach((button) => {
+      button.disabled = false;
+      if (button.dataset.originalHtml) button.innerHTML = button.dataset.originalHtml;
+      delete button.dataset.originalHtml;
+    });
+    form.querySelector("[data-form-status]")?.remove();
+  }
+
+  function formatBytes(value) {
+    const size = Number(value || 0);
+    if (size >= 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`;
+    if (size >= 1024) return `${Math.round(size / 1024)} KB`;
+    return `${size} bytes`;
+  }
+
+  function safeDownloadName(value, fallback = "Documento_MB") {
+    const base = String(value || fallback)
+      .replace(/\.[a-z0-9]{2,8}$/i, "")
+      .replace(/[\\/:*?"<>|]+/g, " ")
+      .trim()
+      .replace(/\s+/g, "_");
+    return base || fallback;
+  }
+
+  function openLocalFileDb() {
+    return new Promise((resolve, reject) => {
+      if (!window.indexedDB) return resolve(null);
+      const request = indexedDB.open("mbi.document.files.v1", 1);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains("files")) db.createObjectStore("files", { keyPath: "id" });
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async function putLocalDocumentFile(documentId, file) {
+    if (!file) return;
+    const db = await openLocalFileDb();
+    if (!db) return;
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction("files", "readwrite");
+      tx.objectStore("files").put({
+        id: String(documentId),
+        file,
+        fileName: file.name,
+        mimeType: file.type || "application/octet-stream",
+        size: file.size,
+        updatedAt: new Date().toISOString()
+      });
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+  }
+
+  async function getLocalDocumentFile(documentId) {
+    const db = await openLocalFileDb();
+    if (!db) return null;
+    const record = await new Promise((resolve, reject) => {
+      const tx = db.transaction("files", "readonly");
+      const request = tx.objectStore("files").get(String(documentId));
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+    db.close();
+    return record;
+  }
+
+  async function deleteLocalDocumentFile(documentId) {
+    const db = await openLocalFileDb();
+    if (!db) return;
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction("files", "readwrite");
+      tx.objectStore("files").delete(String(documentId));
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+  }
+
+  function triggerBlobDownload(fileName, blob) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName || "Documento_MB";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function triggerTextDownload(fileName, content) {
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    triggerBlobDownload(fileName, blob);
+  }
+
+  async function publishDocumentLocal(form, data) {
+    const file = form.querySelector("input[type='file'][name='file']")?.files?.[0] || null;
+    const document = MBI.services.documents.create({
+      ...data,
+      file,
+      fileName: file?.name || data.name,
+      originalFileName: file?.name || data.name,
+      mimeType: file?.type,
+      size: file?.size
+    });
+    await putLocalDocumentFile(document.id, file);
+    return document;
+  }
+
+  async function localDocumentDownload(documentId) {
+    const db = MBI.storage.getDatabase();
+    const doc = (db.documents || []).find((item) => String(item.id) === String(documentId));
+    if (!doc) throw new Error("Documento nao encontrado no ambiente local.");
+    const stored = await getLocalDocumentFile(documentId);
+    if (stored?.file) {
+      triggerBlobDownload(stored.fileName || doc.fileName || doc.name, stored.file);
+      showToast("Arquivo original baixado.");
+      return;
+    }
+    const client = MBI.services.clients.get(doc.clientId);
+    const lines = [
+      "MB Intelligence - Registro local de documento",
+      "",
+      `Cliente: ${client?.name || doc.clientId || "-"}`,
+      `Descricao: ${doc.description || doc.name || "-"}`,
+      `Arquivo original: ${doc.fileName || doc.originalFileName || doc.name || "Documento MB"}`,
+      `Categoria: ${doc.category || "-"}`,
+      `Competencia: ${doc.competence || "-"}`,
+      `Vencimento: ${doc.dueDate || doc.due || "-"}`,
+      `Status: ${doc.status || "-"}`,
+      `Visibilidade: ${doc.visibility || "Cliente"}`,
+      "",
+      "Observacao:",
+      "Este arquivo foi gerado pelo modo local da plataforma. Em producao, o download abre o arquivo original enviado pela equipe MB no Supabase Storage."
+    ];
+    triggerTextDownload(`${safeDownloadName(doc.fileName || doc.name)}.txt`, lines.join("\n"));
+    showToast("Arquivo original nao foi localizado no modo local; baixei o registro do documento.");
+  }
+
+  async function remoteDocumentDownload(documentId) {
+    const result = await MBI.api.request(`/documents/${documentId}/download`);
+    if (!result?.url) throw new Error("Link de download nao encontrado.");
+    try {
+      const response = await fetch(result.url);
+      if (!response.ok) throw new Error("Storage indisponivel.");
+      const blob = await response.blob();
+      triggerBlobDownload(result.fileName || "Documento_MB", blob);
+    } catch (error) {
+      window.open(result.url, "_blank", "noopener");
+    }
+    showToast("Link de download gerado.");
+  }
+
+  async function downloadDocument(documentId) {
+    const session = MBI.auth.currentSession();
+    if (!session?.token) {
+      localDocumentDownload(documentId);
+      return;
+    }
+
+    try {
+      await remoteDocumentDownload(documentId);
+    } catch (error) {
+      if (error.apiUnavailable) {
+        localDocumentDownload(documentId);
+        return;
+      }
+      const expired = error.status === 401 || /sess[aã]o|expirad/i.test(error.message || "");
+      if (expired) {
+        if (!session.refreshToken) {
+          localDocumentDownload(documentId);
+          return;
+        }
+        showToast("Sessao expirada. Entre novamente para baixar documentos reais.");
+        return;
+      }
+      throw error;
+    }
+  }
+
+  function normalizeCnpj(value) {
+    return String(value || "").replace(/\D/g, "");
+  }
+
+  function isValidCnpj(value) {
+    const cnpj = normalizeCnpj(value);
+    if (cnpj.length !== 14 || /^(\d)\1+$/.test(cnpj)) return false;
+    const calc = (factors) => {
+      const sum = factors.reduce((total, factor, index) => total + Number(cnpj[index]) * factor, 0);
+      const rest = sum % 11;
+      return rest < 2 ? 0 : 11 - rest;
+    };
+    return calc([5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]) === Number(cnpj[12])
+      && calc([6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]) === Number(cnpj[13]);
+  }
+
+  function assertValidCnpj(data, currentClientId = null) {
+    if (!isValidCnpj(data.cnpj)) throw new Error("CNPJ invalido. Verifique os digitos antes de cadastrar.");
+    const duplicated = MBI.services.clients.list().find((client) => normalizeCnpj(client.cnpj) === normalizeCnpj(data.cnpj) && String(client.id) !== String(currentClientId || ""));
+    if (duplicated) throw new Error("Ja existe um cliente cadastrado com este CNPJ.");
+  }
+
+  async function remoteOrLocal(remoteFn, localFn) {
+    const session = MBI.auth.currentSession();
+    if (session?.token) {
+      try {
+        const result = await remoteFn();
+        await MBI.sync.refreshIfPossible();
+        return result;
+      } catch (error) {
+        if (!error.apiUnavailable) throw error;
+      }
+    }
+    return localFn();
+  }
+
+  async function handleSubmit(event) {
+    const form = event.target.closest("form[data-form]");
+    if (!form) return;
+    event.preventDefault();
+    if (form.dataset.busy === "true") return;
+    const requiredFile = form.querySelector("input[type='file'][required]");
+    if (requiredFile && !requiredFile.files?.length) {
+      showToast("Selecione um arquivo antes de carregar.");
+      return;
+    }
+    if (!form.reportValidity()) return;
+    const data = formData(form);
+    setFormBusy(form, true);
+
+    try {
+      if (form.dataset.form === "login") {
+        const session = await MBI.auth.login(data);
+        navigate(defaultRouteForSession(session));
+        return;
+      }
+
+      if (form.dataset.form === "register-client") {
+        assertValidCnpj(data);
+        await MBI.auth.registerClient(data);
+        navigate("#/cliente/onboarding");
+        return;
+      }
+
+      if (form.dataset.form === "select-competence") {
+        MBI.services.finance.setSelectedCompetence(data.clientId, data.competence);
+        if (MBI.auth.currentSession()?.token) {
+          const finance = await MBI.api.request(`/finance/${data.clientId}?competence=${encodeURIComponent(data.competence)}`);
+          MBI.storage.updateDatabase((db) => {
+            db.financials[data.clientId] = { ...(db.financials[data.clientId] || {}), ...(finance.data || {}) };
+          });
+        }
+        showToast(`Competencia ${MBI.services.finance.monthLabel(data.competence)} selecionada.`);
+        return;
+      }
+
+      if (form.dataset.form === "admin-client-filters") {
+        const session = MBI.auth.currentSession();
+        session.uiFilters = { ...(session.uiFilters || {}), adminClients: data };
+        MBI.storage.setSession(session);
+        showToast("Filtros da carteira aplicados.");
+        return;
+      }
+
+      if (form.dataset.form === "document-filters") {
+        const session = MBI.auth.currentSession();
+        const key = data.scope === "admin" ? "adminDocuments" : "clientDocuments";
+        session.uiFilters = { ...(session.uiFilters || {}), [key]: data };
+        MBI.storage.setSession(session);
+        showToast("Filtros de documentos aplicados.");
+        return;
+      }
+
+      if (form.dataset.form === "select-admin-client") {
+        MBI.services.clients.setCurrentClient(data.clientId);
+        showToast("Cliente em operação atualizado.");
+        return;
+      }
+
+      if (form.dataset.form === "admin-create-client") {
+        assertValidCnpj(data);
+        const client = await remoteOrLocal(
+          async () => (await MBI.api.request("/clients", { method: "POST", body: data })).data,
+          () => MBI.services.clients.create(data)
+        );
+        MBI.services.clients.setCurrentClient(client.id);
+        showToast("Cliente cadastrado e selecionado para operação.");
+        return;
+      }
+
+      if (form.dataset.form === "update-plan-prices") {
+        await remoteOrLocal(
+          async () => {
+            for (const plan of MBI.services.plans.list()) {
+              await MBI.api.request(`/plans/${plan.id}`, {
+                method: "PATCH",
+                body: { price: data[`price_${plan.id}`] }
+              });
+            }
+          },
+          () => MBI.services.plans.list().forEach((plan) => MBI.services.plans.updatePrice(plan.id, data[`price_${plan.id}`]))
+        );
+        showToast("Valores dos planos atualizados.");
+        return;
+      }
+
+      if (form.dataset.form === "update-finance") {
+        await remoteOrLocal(
+          async () => MBI.api.request(`/finance/${data.clientId}`, { method: "PATCH", body: data }),
+          () => MBI.services.finance.update(data.clientId, data)
+        );
+        showToast("Indicadores do cliente atualizados.");
+        return;
+      }
+
+      if (form.dataset.form === "create-task") {
+        await remoteOrLocal(
+          async () => MBI.api.request("/tasks", { method: "POST", body: data }),
+          () => MBI.storage.updateDatabase((db) => {
+            db.tasks.push({
+              id: MBI.storage.nowId("tsk"),
+              clientId: data.clientId,
+              title: data.title,
+              priority: data.priority || "Media",
+              owner: data.owner || "MB",
+              due: data.due || "Sem prazo",
+              status: data.status || "Pendente",
+              origin: data.origin || "MB"
+            });
+          })
+        );
+        form.reset();
+        showToast("Pendencia criada para acompanhamento.");
+        return;
+      }
+
+      if (form.dataset.form === "create-approval") {
+        await remoteOrLocal(
+          async () => MBI.api.request("/approvals", { method: "POST", body: data }),
+          () => MBI.storage.updateDatabase((db) => {
+            db.approvals.push({
+              id: MBI.storage.nowId("apr"),
+              clientId: data.clientId,
+              title: data.title,
+              text: data.text,
+              confidence: data.confidence || "Media",
+              owner: MBI.auth.currentUser()?.name || "MB",
+              status: data.status || "Aguardando aprovacao"
+            });
+          })
+        );
+        showToast("Analise criada e enviada para governanca MB.");
+        return;
+      }
+
+      if (form.dataset.form === "approval-review") {
+        await remoteOrLocal(
+          async () => MBI.api.request(`/approvals/${data.approvalId}`, {
+            method: "PATCH",
+            body: {
+              status: data.status,
+              text: data.text,
+              reviewNotes: data.reviewNotes
+            }
+          }),
+          () => MBI.storage.updateDatabase((db) => {
+            const approval = db.approvals.find((item) => item.id === data.approvalId);
+            if (approval) {
+              approval.status = data.status;
+              approval.text = data.text;
+              approval.reviewNotes = data.reviewNotes;
+              approval.owner = MBI.auth.currentUser()?.name || approval.owner;
+            }
+          })
+        );
+        showToast("Revisao de IA salva pela equipe MB.");
+        return;
+      }
+
+      if (form.dataset.form === "update-client-profile") {
+        assertValidCnpj(data, data.clientId);
+        await remoteOrLocal(
+          async () => MBI.api.request(`/clients/${data.clientId}`, { method: "PATCH", body: data }),
+          () => MBI.services.clients.updateProfile(data.clientId, data)
+        );
+        showToast("Ficha operacional do cliente atualizada.");
+        return;
+      }
+
+      if (form.dataset.form === "publish-document") {
+        const uploadData = new FormData(form);
+        await remoteOrLocal(
+          async () => MBI.api.request("/documents", { method: "POST", body: uploadData }),
+          () => publishDocumentLocal(form, data)
+        );
+        showToast("Documento publicado no portal do cliente.");
+        return;
+      }
+
+      if (form.dataset.form === "admin-import") {
+        const uploadData = new FormData(form);
+        await remoteOrLocal(
+          async () => MBI.api.request("/imports", { method: "POST", body: uploadData }),
+          () => MBI.services.imports.create(data)
+        );
+        showToast("Importação registrada para validação MB.");
+        return;
+      }
+
+      if (form.dataset.form === "create-user") {
+        await remoteOrLocal(
+          async () => MBI.api.request("/users", { method: "POST", body: data }),
+          () => MBI.services.users.create(data)
+        );
+        showToast("Usuário criado com acesso local.");
+        return;
+      }
+
+      if (form.dataset.form === "change-password") {
+        if (data.newPassword !== data.confirmPassword) throw new Error("A confirmacao da senha nao confere.");
+        await remoteOrLocal(
+          async () => MBI.api.request("/auth/change-password", { method: "POST", body: data }),
+          () => MBI.storage.updateDatabase((db) => {
+            const user = db.users.find((item) => item.id === MBI.auth.currentUser()?.id);
+            if (user) user.password = data.newPassword;
+          })
+        );
+        form.reset();
+        showToast("Senha atualizada com sucesso.");
+        return;
+      }
+
+      if (form.dataset.form === "message") {
+        await remoteOrLocal(
+          async () => MBI.api.request("/messages", { method: "POST", body: data }),
+          () => MBI.storage.updateDatabase((db) => {
+            db.messages.push({
+              id: MBI.storage.nowId("msg"),
+              clientId: data.clientId,
+              from: MBI.auth.currentUser()?.type === "mb" ? "MB" : "Cliente",
+              text: data.text,
+              at: new Date().toLocaleString("pt-BR")
+            });
+          })
+        );
+        showToast("Mensagem registrada.");
+      }
+    } catch (error) {
+      showToast(error.message || "Não foi possível concluir a ação.");
+    } finally {
+      setFormBusy(form, false);
+    }
+  }
+
+  async function handleClick(event) {
+    const routeButton = event.target.closest("[data-route]");
+    if (routeButton) {
+      navigate(routeButton.dataset.route);
+      return;
+    }
+
+    const fillLogin = event.target.closest("[data-fill-login]");
+    if (fillLogin) {
+      const form = fillLogin.closest("form");
+      const email = document.querySelector("input[name='email']");
+      const password = document.querySelector("input[name='password']");
+      const clientSelect = document.querySelector("select[name='clientId']");
+      const demoClient = document.querySelector("input[name='demoClientId']");
+      const demoMode = document.querySelector("input[name='demoMode']");
+      if (email) email.value = fillLogin.dataset.fillLogin;
+      if (password) password.value = "123456";
+      if (clientSelect && fillLogin.dataset.demoClientId) clientSelect.value = fillLogin.dataset.demoClientId;
+      if (demoClient) demoClient.value = fillLogin.dataset.demoClientId || "";
+      if (demoMode) demoMode.value = fillLogin.dataset.demoMode || "";
+      form?.requestSubmit();
+      return;
+    }
+
+    const action = event.target.closest("[data-action]");
+    if (!action) return;
+
+    if (action.dataset.action === "logout") {
+      await MBI.auth.logout();
+      navigate("#/login");
+      render();
+      return;
+    }
+
+    if (action.dataset.action === "focus-admin-imports") {
+      document.getElementById("admin-imports")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+
+    if (action.dataset.action === "set-intelligence-tab") {
+      const session = MBI.auth.currentSession();
+      session.uiFilters = { ...(session.uiFilters || {}), intelligenceTab: action.dataset.tab || "overview" };
+      MBI.storage.setSession(session);
+      render();
+      return;
+    }
+
+    if (action.dataset.action === "simulate-cfo-scenario") {
+      const form = action.closest(".scenario-simulator");
+      const output = form?.querySelector("[data-scenario-output]");
+      if (!form || !output) return;
+      const revenue = Number(form.dataset.revenue || 0);
+      const expenses = Number(form.dataset.expenses || 0);
+      const cash = Number(form.dataset.cash || 0);
+      const growth = Number(form.querySelector("[name='revenueGrowth']")?.value || 0) / 100;
+      const reduction = Number(form.querySelector("[name='expenseReduction']")?.value || 0) / 100;
+      const investment = Number(form.querySelector("[name='investment']")?.value || 0);
+      const projectedRevenue = revenue * (1 + growth);
+      const projectedExpenses = expenses * (1 - reduction);
+      const projectedResult = projectedRevenue - projectedExpenses;
+      const projectedCash = cash + projectedResult - investment;
+      output.innerHTML = `<strong>Resultado projetado: ${MBI.ui.money(projectedResult)}</strong><span>Caixa estimado após investimento: ${MBI.ui.money(projectedCash)}. ${projectedCash >= 0 ? "Cenário preserva caixa positivo." : "Cenário exige revisão antes de executar."}</span>`;
+      return;
+    }
+
+    if (action.dataset.action === "edit-finance-period") {
+      const clientId = action.dataset.clientId;
+      const competence = action.dataset.competence;
+      MBI.services.finance.setSelectedCompetence(clientId, competence);
+      if (MBI.auth.currentSession()?.token) {
+        try {
+          const finance = await MBI.api.request(`/finance/${clientId}?competence=${encodeURIComponent(competence)}`);
+          MBI.storage.updateDatabase((db) => {
+            db.financials[clientId] = { ...(db.financials[clientId] || {}), ...(finance.data || {}) };
+          });
+        } catch (error) {}
+      }
+      navigate("#/admin/alimentar-portal");
+      showToast(`Periodo ${MBI.services.finance.monthLabel(competence)} carregado para edicao.`);
+      return;
+    }
+
+    if (action.dataset.action === "set-client") {
+      MBI.services.clients.setCurrentClient(action.dataset.clientId);
+      showToast("Cliente selecionado para operação.");
+      render();
+      return;
+    }
+
+    if (action.dataset.action === "edit-user") {
+      const user = MBI.services.users.list().find((item) => item.id === action.dataset.userId);
+      if (!user) return;
+      const name = window.prompt("Nome do usuario:", user.name);
+      if (name === null) return;
+      const role = window.prompt("Perfil do usuario:", user.role);
+      if (role === null) return;
+      await remoteOrLocal(
+        async () => MBI.api.request(`/users/${user.id}`, { method: "PATCH", body: { name, role } }),
+        () => MBI.services.users.update(user.id, { name, role })
+      );
+      showToast("Usuario atualizado.");
+      return;
+    }
+
+    if (action.dataset.action === "deactivate-user") {
+      if (!window.confirm("Desativar este usuario sem excluir o historico?")) return;
+      await remoteOrLocal(
+        async () => MBI.api.request(`/users/${action.dataset.userId}`, { method: "PATCH", body: { status: "Inativo" } }),
+        () => MBI.services.users.deactivate(action.dataset.userId)
+      );
+      showToast("Usuario desativado.");
+      return;
+    }
+
+    if (action.dataset.action === "export-operational-report") {
+      exportOperationalReport(action.dataset.report);
+      return;
+    }
+
+    if (action.dataset.action === "print-report") {
+      printReport(action.dataset.report);
+      return;
+    }
+
+    if (action.dataset.action === "export-report") {
+      exportReport(action.dataset.report);
+      return;
+    }
+
+    if (action.dataset.action === "document-download") {
+      const original = action.innerHTML;
+      try {
+        action.disabled = true;
+        action.innerHTML = `<span class="spinner" aria-hidden="true"></span>Gerando link...`;
+        await downloadDocument(action.dataset.documentId);
+      } catch (error) {
+        showToast(error.message || "Não foi possível gerar o download.");
+      } finally {
+        action.disabled = false;
+        action.innerHTML = original;
+      }
+      return;
+    }
+
+    if (action.dataset.action === "delete-document") {
+      if (!window.confirm("Excluir este documento do portal do cliente?")) return;
+      const original = action.innerHTML;
+      try {
+        action.disabled = true;
+        action.innerHTML = `<span class="spinner" aria-hidden="true"></span>Excluindo...`;
+        await remoteOrLocal(
+          async () => MBI.api.request(`/documents/${action.dataset.documentId}`, { method: "DELETE" }),
+          async () => {
+            MBI.services.documents.remove(action.dataset.documentId);
+            await deleteLocalDocumentFile(action.dataset.documentId);
+          }
+        );
+        await deleteLocalDocumentFile(action.dataset.documentId);
+        showToast("Documento excluido do portal.");
+      } catch (error) {
+        showToast(error.message || "Nao foi possivel excluir o documento.");
+      } finally {
+        action.disabled = false;
+        action.innerHTML = original;
+      }
+      return;
+    }
+
+    if (action.dataset.action === "approval-status") {
+      const status = action.dataset.status;
+      const approvalId = action.dataset.approvalId;
+      const notes = window.prompt("Observação da revisão MB:", status === "Aprovado" ? "Insight aprovado para liberação ao cliente." : "Insight não deve ser liberado ao cliente neste formato.");
+      if (notes === null) return;
+      const original = action.innerHTML;
+      try {
+        action.disabled = true;
+        action.innerHTML = `<span class="spinner" aria-hidden="true"></span>Salvando...`;
+        await remoteOrLocal(
+          async () => MBI.api.request(`/approvals/${approvalId}`, { method: "PATCH", body: { status, reviewNotes: notes } }),
+          () => MBI.storage.updateDatabase((db) => {
+            const approval = db.approvals.find((item) => item.id === approvalId);
+            if (approval) {
+              approval.status = status;
+              approval.reviewNotes = notes;
+              approval.owner = MBI.auth.currentUser()?.name || approval.owner;
+            }
+          })
+        );
+        showToast(`Insight ${status.toLowerCase()} pela MB.`);
+      } catch (error) {
+        showToast(error.message || "Não foi possível revisar o insight.");
+      } finally {
+        action.disabled = false;
+        action.innerHTML = original;
+      }
+      return;
+    }
+
+    showToast("Ação registrada localmente.");
+  }
+
+  function handleChange(event) {
+    const input = event.target.closest("input[type='file']");
+    if (!input) return;
+    const file = input.files?.[0];
+    const zone = input.closest(".upload-zone");
+    if (!zone) return;
+
+    zone.classList.toggle("has-file", Boolean(file));
+    let feedback = zone.querySelector(".upload-feedback");
+    if (!feedback) {
+      feedback = document.createElement("span");
+      feedback.className = "upload-feedback";
+      zone.appendChild(feedback);
+    }
+    feedback.textContent = file ? `Arquivo selecionado: ${file.name} (${formatBytes(file.size)})` : "Nenhum arquivo selecionado.";
+
+    const form = input.closest("form");
+    const nameInput = form?.querySelector("input[name='fileName'], input[name='name']");
+    if (file && nameInput && (!nameInput.value || /extrato_maio|DAS Junho|arquivo|documento/i.test(nameInput.value))) {
+      nameInput.value = file.name;
+    }
+  }
+
+  function printReport(type) {
+    const client = MBI.services.clients.current();
+    const data = MBI.services.finance.get(client.id);
+    const title = type === "dre" ? "DRE Gerencial" : "Fluxo de Caixa";
+    const rows = normalizeReportRows(type === "dre" ? data.dre : data.cashBridge);
+    const issuedAt = new Date();
+    const competenceLabel = data.competenceLabel || MBI.services.finance.monthLabel(data.competence || MBI.services.finance.selectedCompetence(client.id));
+    const registry = [MB_REPORT_CONFIG.cnpj ? `CNPJ: ${MB_REPORT_CONFIG.cnpj}` : "", MB_REPORT_CONFIG.crc || ""].filter(Boolean).join(" · ");
+    const docNumber = `MBI-${issuedAt.getFullYear()}${String(issuedAt.getMonth() + 1).padStart(2, "0")}-${client.id}-${type}`.toUpperCase();
+    const report = window.open("", "_blank");
+    report.document.write(`
+      <html lang="pt-BR">
+        <head>
+          <title>${title} - ${client.name}</title>
+          <style>
+            :root{--brand:#5b070b;--ink:#111318;--muted:#667085;--line:#dfe4ea;--soft:#f5f6f8}
+            body{font-family:Arial,sans-serif;margin:34px;color:var(--ink);font-size:13px}
+            header{display:grid;grid-template-columns:150px 1fr;gap:22px;border-bottom:4px solid var(--brand);padding-bottom:18px;margin-bottom:22px}
+            header img{width:132px}
+            h1{margin:0;font-size:26px;color:var(--brand)} p{color:var(--muted);margin:5px 0}
+            .meta{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0 20px}
+            .meta div{border:1px solid var(--line);padding:10px;background:var(--soft)}
+            .meta strong{display:block;color:var(--muted);font-size:10px;text-transform:uppercase}
+            table{width:100%;border-collapse:collapse;margin-top:12px}
+            th,td{border:1px solid var(--line);padding:9px;text-align:left;vertical-align:top}
+            th{background:var(--brand);color:#fff;font-size:11px;text-transform:uppercase}
+            tr.section td{background:#f3e9ea;color:var(--brand);font-weight:700}
+            tr.subtotal td,tr.total td{font-weight:700;background:#f7f7f7}
+            tr.total td{border-top:2px solid var(--brand)}
+            .note{margin-top:18px;border-left:4px solid var(--brand);padding:12px 14px;background:var(--soft)}
+            .signatures{display:grid;grid-template-columns:1fr 1fr;gap:44px;margin-top:48px}
+            .signature{border-top:1px solid var(--ink);padding-top:8px;text-align:center}
+            footer{position:fixed;bottom:18px;left:34px;right:34px;border-top:1px solid var(--line);padding-top:8px;color:var(--muted);font-size:10px;display:flex;justify-content:space-between;gap:20px}
+          </style>
+        </head>
+        <body>
+          <header>
+            <img src="assets/mb-logo-premium.svg" alt="MB Assessoria Empresarial" onerror="this.replaceWith(document.createTextNode('${MB_REPORT_CONFIG.companyName}'))">
+            <div>
+              <h1>${title}</h1>
+              <p>Relatório gerencial emitido pela plataforma MB Intelligence</p>
+              <p>${escapeHtml(MB_REPORT_CONFIG.companyName)}${registry ? ` · ${escapeHtml(registry)}` : ""}</p>
+            </div>
+          </header>
+          <section class="meta">
+            <div><strong>Cliente</strong>${escapeHtml(client.name)}</div>
+            <div><strong>CNPJ</strong>${escapeHtml(client.cnpj || "Não informado")}</div>
+            <div><strong>Documento</strong>${docNumber}</div>
+            <div><strong>Competência</strong>${escapeHtml(competenceLabel)}</div>
+            <div><strong>Consultor MB</strong>${escapeHtml(client.consultant || "MB")}</div>
+            <div><strong>Emissão</strong>${issuedAt.toLocaleString("pt-BR")}</div>
+          </section>
+          <table><thead><tr><th>Descrição</th><th>Valor</th><th>Referência</th><th>Status</th></tr></thead><tbody>${rows.map((row) => `<tr class="${row.type || ""}"><td>${escapeHtml(row.label)}</td><td>${row.type === "section" ? "" : row.isIndicator ? `${Math.round(row.amount || 0)} dias` : MBI.ui.money(row.amount)}</td><td>${escapeHtml(row.reference || row.percent || "")}</td><td>${escapeHtml(row.status || row.variation || "")}</td></tr>`).join("")}</tbody></table>
+          <section class="note"><strong>Análise MB</strong><p>${escapeHtml(data.insights?.[0] || "Relatório emitido com base nos dados disponíveis e revisados pela MB.")}</p><p>Este relatório é de uso gerencial e não substitui demonstrações contábeis formais quando exigidas por legislação específica.</p></section>
+          <section class="signatures">
+            <div class="signature"><strong>Responsável Técnico / Consultor MB</strong><br>${escapeHtml(client.consultant || "MB Empresas Assessoria")}<br>CRC: __________________</div>
+            <div class="signature"><strong>Responsável pela empresa</strong><br>${escapeHtml(client.owner || "Cliente")}<br>Data: ____/____/______</div>
+          </section>
+          <footer><span>Documento gerado pela plataforma MB Intelligence</span><span>${docNumber}</span></footer>
+          <script>window.print();<\/script>
+        </body>
+      </html>
+    `);
+    report.document.close();
+  }
+
+  function exportReport(type) {
+    const client = MBI.services.clients.current();
+    const data = MBI.services.finance.get(client.id);
+    const title = type === "dre" ? "DRE Gerencial" : "Fluxo de Caixa";
+    const competenceLabel = data.competenceLabel || MBI.services.finance.monthLabel(data.competence || MBI.services.finance.selectedCompetence(client.id));
+    const rows = [
+      ["Relatorio", title, "", ""],
+      ["Cliente", client.name, "", ""],
+      ["CNPJ", client.cnpj || "Nao informado", "", ""],
+      ["Competencia", competenceLabel, "", ""],
+      ["Gerado em", new Date().toLocaleString("pt-BR"), "", ""],
+      [],
+      ["Descricao", "Valor", "Referencia", "Status"],
+      ...normalizeReportRows(type === "dre" ? data.dre : data.cashBridge).map((row) => [row.label, row.isIndicator ? `${Math.round(row.amount || 0)} dias` : row.amount, row.reference || row.percent || "", row.status || row.variation || ""])
+    ];
+    const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(";")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${type === "dre" ? "DRE" : "Fluxo_Caixa"}_${client.name.replace(/\s+/g, "_")}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showToast("Arquivo CSV/Excel gerado.");
+  }
+
+  function exportOperationalReport(type) {
+    const db = MBI.storage.getDatabase();
+    const rowsByType = {
+      plans: [
+        ["Plano", "Clientes", "MRR estimado", "Status"],
+        ...MBI.services.plans.list().map((plan) => {
+          const count = db.clients.filter((client) => client.planId === plan.id).length;
+          return [plan.name, count, count * Number(plan.price || 0), count ? "Ativo" : "Sem clientes"];
+        })
+      ],
+      risk: [
+        ["Cliente", "Plano", "Confianca", "Pendencias", "Risco"],
+        ...db.clients.map((client) => {
+          const tasks = db.tasks.filter((task) => task.clientId === client.id && !String(task.status || "").includes("Concl")).length;
+          const risk = client.confidence === "Baixa" || client.status === "Onboarding" || tasks ? "Atencao" : "Saudavel";
+          return [client.name, MBI.services.plans.get(client.planId)?.name || client.planId, client.confidence, tasks, risk];
+        })
+      ],
+      users: [
+        ["Operador", "Perfil", "Status"],
+        ...MBI.services.users.list("mb").map((user) => [user.name, user.role, user.status])
+      ],
+      documents: [
+        ["Cliente", "Documento", "Categoria", "Competencia", "Status"],
+        ...db.documents.map((doc) => [MBI.services.clients.get(doc.clientId)?.name || doc.clientId, doc.name, doc.category, doc.competence || doc.due || "", doc.status])
+      ]
+    };
+    const rows = rowsByType[type] || rowsByType.plans;
+    const csv = rows.map((row) => row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(";")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `MB_Intelligence_Relatorio_Operacional_${type || "carteira"}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showToast("Relatorio operacional exportado.");
+  }
+
+  function normalizeReportRows(rows) {
+    return (rows || []).map((row) => {
+      if (!Array.isArray(row)) return { ...row, isIndicator: row.type === "indicator" };
+      return { label: row[0], amount: row[1], reference: row[2], type: row[2], status: row[3] || "" };
+    });
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
+  }
+
+  window.addEventListener("hashchange", render);
+  document.addEventListener("submit", handleSubmit);
+  document.addEventListener("click", handleClick);
+  document.addEventListener("change", handleChange);
+
+  async function boot() {
+    MBI.storage.getDatabase();
+    if (MBI.auth.currentSession()?.token) {
+      await MBI.sync.refreshIfPossible();
+    }
+    render();
+  }
+
+  boot();
+})();
