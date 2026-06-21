@@ -52,7 +52,7 @@
       ...local,
       version: local.version || MBI.seed.version,
       plans: plans.data?.length ? plans.data : local.plans,
-      clients: clients.data?.length ? clients.data : local.clients,
+      clients: clients.data?.length ? clients.data : (local.clients?.length ? local.clients : MBI.seed.clients),
       users: mergeUsers(local.users, users.data, me.user),
       documents: documents.data || [],
       imports: imports.data || [],
