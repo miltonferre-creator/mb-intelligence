@@ -791,6 +791,7 @@ textarea:focus {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
   margin-bottom: 14px;
 }
 
@@ -2347,6 +2348,13 @@ textarea:focus {
   }
 
   .content { padding: 16px; }
+
+  /* Topbar nao pode estourar a largura no celular */
+  .topbar { flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+  .topbar h1 { font-size: 20px; }
+  .topbar p { font-size: 12px; }
+  .topbar-left { min-width: 0; flex: 1 1 auto; }
+  .topbar-actions { flex: 0 0 auto; }
 
   /* Sidebar vira gaveta off-canvas: escondida, abre por cima com o botao */
   .sidebar {

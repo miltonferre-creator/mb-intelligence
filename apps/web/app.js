@@ -466,6 +466,7 @@
           async () => MBI.api.request(`/finance/${data.clientId}`, { method: "PATCH", body: data }),
           () => MBI.services.finance.update(data.clientId, data)
         );
+        if (inModal) dismissModal();
         showToast("Indicadores do cliente atualizados.");
         return;
       }
@@ -658,6 +659,7 @@
     if (action.dataset.action === "edit-finance-period") {
       const clientId = action.dataset.clientId;
       const competence = action.dataset.competence;
+      MBI.services.clients.setCurrentClient(clientId);
       MBI.services.finance.setSelectedCompetence(clientId, competence);
       if (MBI.auth.currentSession()?.token) {
         try {
@@ -667,8 +669,7 @@
           });
         } catch (error) {}
       }
-      navigate("#/admin/alimentar-portal");
-      showToast(`Periodo ${MBI.services.finance.monthLabel(competence)} carregado para edicao.`);
+      openModal(MBI.pages.admin.buildModal("finance", { competence }));
       return;
     }
 

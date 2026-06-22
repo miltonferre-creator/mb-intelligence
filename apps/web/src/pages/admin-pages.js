@@ -265,6 +265,19 @@
       if (!user) return null;
       return { title: `Editar — ${user.name}`, subtitle: "Nome, perfil e status do acesso.", icon: "pencil", body: userModalBody(user) };
     }
+    if (kind === "finance") {
+      const client = MBI.services.clients.current();
+      if (!client) return null;
+      const data = MBI.services.finance.get(client.id);
+      const editing = !!ds.competence;
+      return {
+        title: `${editing ? "Editar" : "Lançar"} dados — ${client.name}`,
+        subtitle: "Resultado, margem, score e fôlego são calculados pela MB.",
+        icon: "panel-top",
+        size: "lg",
+        body: financeModalBody(client, data, ds.competence)
+      };
+    }
     return null;
   }
 
@@ -278,24 +291,16 @@
     `;
   }
 
-  function publicationCenter() {
-    const client = MBI.services.clients.current();
-    const data = MBI.services.finance.get(client.id);
-    const periods = MBI.services.finance.listPeriods(client.id);
-    const comp = data.competence || currentMonthValue();
-    const today = new Date().toISOString().slice(0, 10);
-    const conf = (v) => client.confidence === v ? "selected" : "";
-
+  function financeModalBody(client, data, competence) {
+    const comp = competence || data.competence || currentMonthValue();
+    const confValue = data.confidence || client.confidence;
+    const conf = (v) => confValue === v ? "selected" : "";
     return `
-      <form class="panel" data-form="update-finance">
+      <form data-form="update-finance">
         <input type="hidden" name="clientId" value="${MBI.ui.escape(client.id)}">
-        <div class="panel-header">
-          <div><h3>Dados financeiros &middot; ${MBI.ui.escape(client.name)}</h3><p>Preencha os numeros do mes. Resultado, margem, score e folego sao calculados pela MB.</p></div>
-          <button class="btn btn-primary" type="submit">${MBI.ui.icon("save")} Salvar dados</button>
-        </div>
         <div class="form-section two" style="margin-bottom:12px">
-          <label><span>Competencia dos dados</span><input type="month" name="competence" value="${comp}"></label>
-          <label><span>Proxima revisao MB</span><input type="date" name="nextReview" value="${client.nextReview || currentDateValue()}"></label>
+          <label><span>Competência dos dados</span><input type="month" name="competence" value="${comp}"></label>
+          <label><span>Próxima revisão MB</span><input type="date" name="nextReview" value="${client.nextReview || currentDateValue()}"></label>
         </div>
         <div class="form-section">
           ${MBI.ui.moneyField("Faturamento", "revenue", data.revenue)}
@@ -303,15 +308,15 @@
           ${MBI.ui.moneyField("Impostos / DAS", "taxes", data.taxes)}
           ${MBI.ui.moneyField("Folha", "payroll", data.payroll)}
           ${MBI.ui.moneyField("Caixa atual", "cash", data.cash)}
-          <label><span>Confianca dos dados</span><select name="confidence"><option ${conf("Baixa")}>Baixa</option><option ${conf("Media")}>Media</option><option ${conf("Alta")}>Alta</option></select></label>
+          <label><span>Confiança dos dados</span><select name="confidence"><option ${conf("Baixa")}>Baixa</option><option ${conf("Media")}>Media</option><option ${conf("Alta")}>Alta</option></select></label>
         </div>
         <div class="op-stats" style="margin-top:14px">
           <div><span>Resultado (calc.)</span><strong>${MBI.ui.money(data.result || 0)}</strong></div>
           <div><span>Margem (calc.)</span><strong>${data.margin || 0}%</strong></div>
           <div><span>Score MB (calc.)</span><strong>${data.score || 0}/100</strong></div>
-          <div><span>Folego (calc.)</span><strong>${data.runway || 0} dias</strong></div>
+          <div><span>Fôlego (calc.)</span><strong>${data.runway || 0} dias</strong></div>
         </div>
-        <label style="display:block;margin-top:14px"><span>Analise MB para o dashboard</span><textarea name="insight" placeholder="Leitura executiva do mes (opcional).">${MBI.ui.escape(data.insights?.[0] || "")}</textarea></label>
+        <label style="display:block;margin-top:14px"><span>Análise MB para o dashboard</span><textarea name="insight" placeholder="Leitura executiva do mês (opcional).">${MBI.ui.escape(data.insights?.[0] || "")}</textarea></label>
         <details class="report-detail" style="margin-top:14px">
           <summary>Detalhamento opcional &mdash; DRE, fluxo de caixa e metas</summary>
           <div class="panel-subtitle" style="margin-top:14px"><strong>DRE gerencial</strong></div>
@@ -329,17 +334,41 @@
             ${MBI.ui.moneyField("Impostos pagos", "cashTaxes", data.cashTaxes || data.taxes)}
             ${MBI.ui.moneyField("Saldo final", "closingBalance", data.closingBalance || data.cash)}
           </div>
-          <div class="panel-subtitle" style="margin-top:14px"><strong>Parametros MB</strong></div>
+          <div class="panel-subtitle" style="margin-top:14px"><strong>Parâmetros MB</strong></div>
           <div class="form-section two">
             <label><span>Meta de margem (%)</span><input name="marginTarget" type="number" value="${data.marginTarget || 20}"></label>
             <label><span>NCG / capital de giro (dias)</span><input name="workingCapitalDays" type="number" value="${data.workingCapitalDays || 45}"></label>
           </div>
         </details>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" type="button" data-action="modal-close">Cancelar</button>
+          <button class="btn btn-primary" type="submit">${MBI.ui.icon("save")} Salvar dados</button>
+        </div>
       </form>
+    `;
+  }
 
-      <section class="panel" style="margin-top:14px">
-        <div class="panel-header"><div><h3>Periodos registrados</h3><p>Historico salvo. Clique em editar para reabrir um mes.</p></div>${MBI.ui.pill(`${periods.length} periodo(s)`)}</div>
-        ${periods.length ? MBI.ui.table(["Competencia", "Faturamento", "Despesas", "Resultado", "Caixa", "Margem", "Acao"], periods.map((row) => [MBI.ui.escape(row.label), MBI.ui.money(row.revenue), MBI.ui.money(row.expenses), MBI.ui.money(row.result), MBI.ui.money(row.cash), `${row.margin}%`, `<button class="btn btn-soft btn-mini" type="button" data-action="edit-finance-period" data-client-id="${MBI.ui.escape(client.id)}" data-competence="${MBI.ui.escape(row.competence)}">${MBI.ui.icon("pencil")} Editar</button>`])) : `<div class="empty-lock">${MBI.ui.icon("calendar")}<h3>Nenhum periodo registrado</h3><p>Salve os primeiros indicadores para criar o historico.</p></div>`}
+  function publicationCenter() {
+    const client = MBI.services.clients.current();
+    const data = MBI.services.finance.get(client.id);
+    const periods = MBI.services.finance.listPeriods(client.id);
+    const comp = data.competence || currentMonthValue();
+    const today = new Date().toISOString().slice(0, 10);
+
+    return `
+      <div class="op-stats" style="margin-bottom:14px">
+        <div><span>Resultado &middot; mês atual</span><strong>${MBI.ui.money(data.result || 0)}</strong></div>
+        <div><span>Margem</span><strong>${data.margin || 0}%</strong></div>
+        <div><span>Score MB</span><strong>${data.score || 0}/100</strong></div>
+        <div><span>Fôlego de caixa</span><strong>${data.runway || 0} dias</strong></div>
+      </div>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div><h3>Dados financeiros &middot; ${MBI.ui.escape(client.name)}</h3><p>Histórico de competências. O formulário abre só quando você lança ou edita um mês.</p></div>
+          <div class="panel-header-actions">${MBI.ui.pill(`${periods.length} período(s)`)}<button class="btn btn-primary btn-mini" type="button" data-action="open-modal" data-modal="finance">${MBI.ui.icon("plus")} Lançar dados do mês</button></div>
+        </div>
+        ${periods.length ? MBI.ui.table(["Competência", "Faturamento", "Despesas", "Resultado", "Caixa", "Margem", "Ações"], periods.map((row) => [MBI.ui.escape(row.label), MBI.ui.money(row.revenue), MBI.ui.money(row.expenses), MBI.ui.money(row.result), MBI.ui.money(row.cash), `${row.margin}%`, `<button class="btn btn-soft btn-mini" type="button" data-action="edit-finance-period" data-client-id="${MBI.ui.escape(client.id)}" data-competence="${MBI.ui.escape(row.competence)}">${MBI.ui.icon("pencil")} Editar</button>`])) : `<div class="empty-lock">${MBI.ui.icon("calendar")}<h3>Nenhum período registrado</h3><p>Clique em "Lançar dados do mês" para criar o primeiro histórico.</p></div>`}
       </section>
 
       <details class="report-detail" style="margin-top:14px">
