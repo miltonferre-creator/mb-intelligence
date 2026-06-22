@@ -11,7 +11,6 @@
           </div>
           <div class="section-title">
             <h2>Entrar</h2>
-            <p>Acesse seu portal ou a administração da MB.</p>
           </div>
           <form class="login-form" data-form="login">
             <div class="form-grid">

@@ -250,156 +250,106 @@
 
   function publicationCenter() {
     const client = MBI.services.clients.current();
-    const plan = MBI.services.plans.get(client.planId);
     const data = MBI.services.finance.get(client.id);
-    const db = MBI.storage.getDatabase();
-    const tasks = db.tasks.filter((task) => task.clientId === client.id);
-    const approvals = db.approvals.filter((approval) => approval.clientId === client.id);
-    const docs = MBI.services.documents.listByClient(client.id);
-    const imports = MBI.services.imports.list(client.id);
     const periods = MBI.services.finance.listPeriods(client.id);
-    const competenceOptions = data.competences?.length ? data.competences : MBI.services.finance.listCompetences(client.id);
+    const comp = data.competence || currentMonthValue();
     const today = new Date().toISOString().slice(0, 10);
+    const conf = (v) => client.confidence === v ? "selected" : "";
 
     return `
-      <section class="publish-flow">
-        <aside class="publish-guide panel">
-          <div class="panel-header"><div><h3>Onde a MB inclui as informações</h3><p>Este é o painel central para alimentar o portal do cliente.</p></div>${MBI.ui.pill(plan.name)}</div>
-          <div class="flow-map">
-            <div><strong>1. Indicadores</strong><span>Atualiza dashboard, fiscal, folha, caixa e score.</span></div>
-            <div><strong>2. Copiloto</strong><span>Cria pendências, ações e próximos passos.</span></div>
-            <div><strong>3. IA e pareceres</strong><span>Gera análises para aprovação antes do cliente ver.</span></div>
-            <div><strong>4. Importações</strong><span>Carrega DRE, caixa, OFX, CSV, XML e bases de outros sistemas.</span></div>
-          </div>
-          <div class="brief-actions">
-            <button class="btn btn-ghost" type="button" data-route="#/admin/documentos">${MBI.ui.icon("folder-up")} Publicar documento</button>
-            <button class="btn btn-soft" type="button" data-action="focus-admin-imports">${MBI.ui.icon("database-zap")} Ir para importações</button>
-          </div>
-        </aside>
-
-        <div class="publish-main">
-          <section class="grid grid-4">
-            ${MBI.ui.metric("Faturamento", MBI.ui.money(data.revenue), "Dashboard", "Atualiza a leitura principal do cliente.", "blue")}
-            ${MBI.ui.metric("Caixa", MBI.ui.money(data.cash), "Financeiro", "Base para fluxo de caixa e capacidade de investimento.", "teal")}
-            ${MBI.ui.metric("Pendências", String(tasks.length), "Copiloto", "Ações abertas aparecem como acompanhamento operacional.", "amber")}
-            ${MBI.ui.metric("Aprovações", String(approvals.length), "Governança", "Insights só devem ser liberados após revisão MB.", "brand")}
-          </section>
-
-          <section class="grid grid-2" style="margin-top:14px">
-            <form class="panel competence-selector" data-form="select-competence">
-              <input type="hidden" name="clientId" value="${client.id}">
-              <label><span>Competência em edição</span><select name="competence">${competenceOptions.map((item) => `<option value="${item.value}" ${item.value === data.competence ? "selected" : ""}>${item.label}</option>`).join("")}</select></label>
-              <button class="btn btn-primary" type="submit">${MBI.ui.icon("calendar-check")} Carregar período</button>
-            </form>
-            <article class="panel">
-              <div class="panel-header"><div><h3>Período atual</h3><p>Todos os campos abaixo salvam na competência selecionada.</p></div>${MBI.ui.pill(data.competenceLabel || data.competence)}</div>
-              ${MBI.ui.table(["Indicador", "Valor"], [["Receita", MBI.ui.money(data.revenue || 0)], ["Despesas", MBI.ui.money(data.expenses || 0)], ["Resultado", MBI.ui.money(data.result || 0)], ["Caixa", MBI.ui.money(data.cash || 0)]])}
-            </article>
-          </section>
-
-          <section class="panel" style="margin-top:14px">
-            <div class="panel-header">
-              <div><h3>Períodos registrados</h3><p>Histórico financeiro salvo para este cliente. Clique em editar para reabrir uma competência anterior.</p></div>
-              ${MBI.ui.pill(`${periods.length} período(s)`)}
-            </div>
-            ${periods.length ? MBI.ui.table(["Competência", "Faturamento", "Despesas", "Resultado", "Caixa", "Margem", "Ação"], periods.map((row) => [row.label, MBI.ui.money(row.revenue), MBI.ui.money(row.expenses), MBI.ui.money(row.result), MBI.ui.money(row.cash), `${row.margin}%`, `<button class="btn btn-soft btn-mini" type="button" data-action="edit-finance-period" data-client-id="${client.id}" data-competence="${row.competence}">${MBI.ui.icon("pencil")} Editar</button>`])) : `<div class="empty-lock">${MBI.ui.icon("calendar")}<h3>Nenhum período registrado</h3><p>Salve os primeiros indicadores para criar o histórico mensal.</p></div>`}
-          </section>
-
-          <form class="panel" data-form="update-finance" style="margin-top:14px">
-            <input type="hidden" name="clientId" value="${client.id}">
-            <div class="form-section two" style="margin-bottom:12px">
-              <label><span>Competencia dos dados</span><input type="month" name="competence" value="${data.competence || currentMonthValue()}"></label>
-              <label><span>Proxima revisao MB</span><input type="date" name="nextReview" value="${client.nextReview || currentDateValue()}"></label>
-            </div>
-            <div class="panel-header">
-              <div><h3>1. Alimentar dashboard financeiro, fiscal e trabalhista</h3><p>Esses dados aparecem na Inteligência Financeira do cliente conforme plano e maturidade.</p></div>
-              <button class="btn btn-primary" type="submit">${MBI.ui.icon("save")} Salvar indicadores</button>
-            </div>
-            <div class="form-section">
-              <label><span>Faturamento</span><input name="revenue" type="number" value="${data.revenue || 0}"></label>
-              <label><span>Despesas</span><input name="expenses" type="number" value="${data.expenses || 0}"></label>
-              <label><span>Impostos / DAS</span><input name="taxes" type="number" value="${data.taxes || 0}"></label>
-              <label><span>Folha</span><input name="payroll" type="number" value="${data.payroll || 0}"></label>
-              <label><span>Caixa atual</span><input name="cash" type="number" value="${data.cash || 0}"></label>
-              <label><span>MB Financial Score</span><input name="score" type="number" value="${data.score || 0}"></label>
-              <label><span>MB Operational Score</span><input name="operationalScore" type="number" value="${data.operationalScore || 0}"></label>
-              <label><span>Fôlego de caixa (dias)</span><input name="runway" type="number" value="${data.runway || 0}"></label>
-              <label><span>Capacidade de investimento</span><input name="investmentCapacity" type="number" value="${data.investmentCapacity || 0}"></label>
-              <label><span>Meta de margem MB (%)</span><input name="marginTarget" type="number" value="${data.marginTarget || 20}"></label>
-              <label><span>NCG / capital de giro (dias)</span><input name="workingCapitalDays" type="number" value="${data.workingCapitalDays || 45}"></label>
-            </div>
-            <div class="panel-subtitle" style="margin-top:16px"><strong>DRE gerencial</strong><span>Linhas informadas pela equipe MB para alimentar a DRE profissional.</span></div>
-            <div class="form-section">
-              <label><span>Custos diretos / CMV</span><input name="directCosts" type="number" value="${data.directCosts || 0}"></label>
-              <label><span>Despesas administrativas</span><input name="adminExpenses" type="number" value="${data.adminExpenses || 0}"></label>
-              <label><span>Despesas comerciais</span><input name="salesExpenses" type="number" value="${data.salesExpenses || 0}"></label>
-              <label><span>Despesas financeiras</span><input name="financialExpenses" type="number" value="${data.financialExpenses || 0}"></label>
-            </div>
-            <div class="panel-subtitle" style="margin-top:16px"><strong>Fluxo de caixa</strong><span>Campos para construir a DFC gerencial por competencia.</span></div>
-            <div class="form-section">
-              <label><span>Saldo inicial</span><input name="openingBalance" type="number" value="${data.openingBalance || 0}"></label>
-              <label><span>Recebimentos</span><input name="receipts" type="number" value="${data.receipts || data.revenue || 0}"></label>
-              <label><span>Pagamentos</span><input name="payments" type="number" value="${data.payments || Math.max((data.expenses || 0) - (data.taxes || 0), 0)}"></label>
-              <label><span>Impostos pagos</span><input name="cashTaxes" type="number" value="${data.cashTaxes || data.taxes || 0}"></label>
-              <label><span>Saldo final</span><input name="closingBalance" type="number" value="${data.closingBalance || data.cash || 0}"></label>
-            </div>
-            <div class="form-section two" style="margin-top:12px">
-              <label><span>Confiança dos dados</span><select name="confidence"><option ${client.confidence === "Baixa" ? "selected" : ""}>Baixa</option><option ${client.confidence === "Media" ? "selected" : ""}>Media</option><option ${client.confidence === "Alta" ? "selected" : ""}>Alta</option></select></label>
-              <label><span>Análise MB para o dashboard</span><textarea name="insight">${data.insights?.[0] || ""}</textarea></label>
-            </div>
-          </form>
-
-          <section class="grid grid-2" id="admin-imports" style="margin-top:14px">
-            <form class="panel" data-form="admin-import" enctype="multipart/form-data">
-              <input type="hidden" name="clientId" value="${client.id}">
-              <div class="panel-header"><div><h3>4. Importações gerenciais</h3><p>Arquivos internos usados para alimentar DRE, fluxo de caixa, fiscal, folha ou bases de outros sistemas.</p></div><button class="btn btn-primary" type="submit">${MBI.ui.icon("upload")} Carregar base</button></div>
-              <label class="upload-zone"><input class="sr-only" type="file" name="file" required>${MBI.ui.icon("database-zap")}<div><strong>Selecionar arquivo de origem</strong><p>DRE padrão MB, fluxo de caixa, OFX, CSV, Excel, XML, PDF ou exportação de ERP.</p></div></label>
-              <div class="form-section two" style="margin-top:14px">
-                <label><span>Nome exibido</span><input name="fileName" placeholder="Preenchido ao selecionar o arquivo"></label>
-                <label><span>Tipo de importação</span><select name="type"><option>DRE padrão MB</option><option>Fluxo de caixa padrão MB</option><option>OFX bancário</option><option>CSV financeiro</option><option>Excel gerencial</option><option>XML fiscal</option><option>PDF / relatório</option><option>Exportação ERP</option></select></label>
-                <label><span>Competência</span><input type="month" name="competence" value="${data.competence || currentMonthValue()}"></label>
-                <label><span>Status</span><select name="status"><option>Aguardando validação MB</option><option>Validado</option><option>Erro de layout</option><option>Substituído</option></select></label>
-                <label><span>Resultado esperado</span><input name="result" value="Atualizar dados gerenciais do portal"></label>
-              </div>
-            </form>
-            <article class="panel">
-              <div class="panel-header"><div><h3>Bases importadas</h3><p>Histórico de arquivos internos usados para montar indicadores e relatórios.</p></div>${MBI.ui.pill(`${imports.length} arquivo(s)`)}</div>
-              ${MBI.ui.table(["Arquivo", "Tipo", "Competência", "Status", "Resultado"], imports.map((row) => [MBI.ui.escape(row.fileName), MBI.ui.escape(row.type), MBI.ui.escape(row.competence || "-"), MBI.ui.pill(row.status), MBI.ui.escape(row.result)]))}
-            </article>
-          </section>
-
-          <section class="grid grid-2" style="margin-top:14px">
-            <form class="panel" data-form="create-task">
-              <input type="hidden" name="clientId" value="${client.id}">
-              <div class="panel-header"><div><h3>2. Criar pendência ou próxima ação</h3><p>Aparece no copiloto do cliente e na operação MB.</p></div><button class="btn btn-primary" type="submit">${MBI.ui.icon("plus")} Criar ação</button></div>
-              <div class="form-section two">
-                <label><span>Título</span><input name="title" value="Carregar extrato bancário recebido" required></label>
-                <label><span>Responsável</span><select name="owner"><option>MB</option><option>${MBI.ui.escape(client.consultant)}</option><option>${MBI.ui.escape(client.analyst)}</option><option>Cliente</option></select></label>
-                <label><span>Prioridade</span><select name="priority"><option>Alta</option><option>Media</option><option>Baixa</option></select></label>
-                <label><span>Prazo</span><input name="due" type="date" value="${today}"></label>
-                <label><span>Status</span><select name="status"><option>Pendente</option><option>Aguardando cliente</option><option>Em andamento</option><option>Concluído</option></select></label>
-                <label><span>Origem</span><select name="origin"><option>MB</option><option>IA MB</option><option>Cliente</option></select></label>
-              </div>
-            </form>
-
-            <form class="panel" data-form="create-approval">
-              <input type="hidden" name="clientId" value="${client.id}">
-              <input type="hidden" name="competence" value="${data.competence || currentMonthValue()}">
-              <div class="panel-header"><div><h3>3. Criar análise IA/MB para aprovação</h3><p>O cliente só deve receber após aprovação humana.</p></div><button class="btn btn-primary" type="submit">${MBI.ui.icon("shield-check")} Enviar à aprovação</button></div>
-              <div class="form-section two">
-                <label><span>Título</span><input name="title" value="Análise executiva do mês" required></label>
-                <label><span>Confiança</span><select name="confidence"><option>Alta</option><option>Media</option><option>Baixa</option></select></label>
-                <label><span>Status inicial</span><select name="status"><option>Aguardando aprovação</option><option>Editar antes de liberar</option></select></label>
-                <label><span>Texto da análise</span><textarea name="text">A empresa apresenta evolução positiva, mas precisa revisar despesas recorrentes antes de ampliar investimentos.</textarea></label>
-              </div>
-            </form>
-          </section>
-
-          <section class="grid grid-2" style="margin-top:14px">
-            <article class="panel"><div class="panel-header"><div><h3>Dados já publicados</h3><p>Resumo do que alimenta o portal do cliente.</p></div></div>${MBI.ui.table(["Área", "Volume", "Status"], [["Documentos", String(docs.length), docs.length ? MBI.ui.pill("Publicado") : MBI.ui.pill("Pendente")], ["Importações", String(imports.length), imports.at(-1)?.status || "Sem importação"], ["Ações", String(tasks.length), tasks.length ? MBI.ui.pill("Em acompanhamento") : MBI.ui.pill("Sem pendências")], ["Insights", String(approvals.length), approvals.at(-1)?.status || "Sem análise"]])}</article>
-            <article class="panel"><div class="panel-header"><div><h3>Como aparece para o cliente</h3><p>Mapa rápido entre cadastro MB e portal.</p></div></div>${MBI.ui.table(["Você preenche", "Cliente vê", "Tela"], [["Faturamento, despesas e caixa", "Indicadores e gráficos", "Inteligência"], ["DAS, guias e relatórios", "Arquivos para download", "Documentos"], ["Pendência ou ação", "Copiloto e prioridade", "Inteligência"], ["Insight aprovado", "Análise IA/MB", "Inteligência"]])}</article>
-          </section>
+      <form class="panel" data-form="update-finance">
+        <input type="hidden" name="clientId" value="${MBI.ui.escape(client.id)}">
+        <div class="panel-header">
+          <div><h3>Dados financeiros &middot; ${MBI.ui.escape(client.name)}</h3><p>Preencha os numeros do mes. Resultado, margem, score e folego sao calculados pela MB.</p></div>
+          <button class="btn btn-primary" type="submit">${MBI.ui.icon("save")} Salvar dados</button>
         </div>
+        <div class="form-section two" style="margin-bottom:12px">
+          <label><span>Competencia dos dados</span><input type="month" name="competence" value="${comp}"></label>
+          <label><span>Proxima revisao MB</span><input type="date" name="nextReview" value="${client.nextReview || currentDateValue()}"></label>
+        </div>
+        <div class="form-section">
+          <label><span>Faturamento</span><input name="revenue" type="number" value="${data.revenue || 0}"></label>
+          <label><span>Despesas</span><input name="expenses" type="number" value="${data.expenses || 0}"></label>
+          <label><span>Impostos / DAS</span><input name="taxes" type="number" value="${data.taxes || 0}"></label>
+          <label><span>Folha</span><input name="payroll" type="number" value="${data.payroll || 0}"></label>
+          <label><span>Caixa atual</span><input name="cash" type="number" value="${data.cash || 0}"></label>
+          <label><span>Confianca dos dados</span><select name="confidence"><option ${conf("Baixa")}>Baixa</option><option ${conf("Media")}>Media</option><option ${conf("Alta")}>Alta</option></select></label>
+        </div>
+        <div class="op-stats" style="margin-top:14px">
+          <div><span>Resultado (calc.)</span><strong>${MBI.ui.money(data.result || 0)}</strong></div>
+          <div><span>Margem (calc.)</span><strong>${data.margin || 0}%</strong></div>
+          <div><span>Score MB (calc.)</span><strong>${data.score || 0}/100</strong></div>
+          <div><span>Folego (calc.)</span><strong>${data.runway || 0} dias</strong></div>
+        </div>
+        <label style="display:block;margin-top:14px"><span>Analise MB para o dashboard</span><textarea name="insight" placeholder="Leitura executiva do mes (opcional).">${MBI.ui.escape(data.insights?.[0] || "")}</textarea></label>
+        <details class="report-detail" style="margin-top:14px">
+          <summary>Detalhamento opcional &mdash; DRE, fluxo de caixa e metas</summary>
+          <div class="panel-subtitle" style="margin-top:14px"><strong>DRE gerencial</strong></div>
+          <div class="form-section">
+            <label><span>Custos diretos / CMV</span><input name="directCosts" type="number" value="${data.directCosts || 0}"></label>
+            <label><span>Despesas administrativas</span><input name="adminExpenses" type="number" value="${data.adminExpenses || 0}"></label>
+            <label><span>Despesas comerciais</span><input name="salesExpenses" type="number" value="${data.salesExpenses || 0}"></label>
+            <label><span>Despesas financeiras</span><input name="financialExpenses" type="number" value="${data.financialExpenses || 0}"></label>
+          </div>
+          <div class="panel-subtitle" style="margin-top:14px"><strong>Fluxo de caixa</strong></div>
+          <div class="form-section">
+            <label><span>Saldo inicial</span><input name="openingBalance" type="number" value="${data.openingBalance || 0}"></label>
+            <label><span>Recebimentos</span><input name="receipts" type="number" value="${data.receipts || data.revenue || 0}"></label>
+            <label><span>Pagamentos</span><input name="payments" type="number" value="${data.payments || Math.max((data.expenses || 0) - (data.taxes || 0), 0)}"></label>
+            <label><span>Impostos pagos</span><input name="cashTaxes" type="number" value="${data.cashTaxes || data.taxes || 0}"></label>
+            <label><span>Saldo final</span><input name="closingBalance" type="number" value="${data.closingBalance || data.cash || 0}"></label>
+          </div>
+          <div class="panel-subtitle" style="margin-top:14px"><strong>Parametros MB</strong></div>
+          <div class="form-section two">
+            <label><span>Meta de margem (%)</span><input name="marginTarget" type="number" value="${data.marginTarget || 20}"></label>
+            <label><span>NCG / capital de giro (dias)</span><input name="workingCapitalDays" type="number" value="${data.workingCapitalDays || 45}"></label>
+          </div>
+        </details>
+      </form>
+
+      <section class="panel" style="margin-top:14px">
+        <div class="panel-header"><div><h3>Periodos registrados</h3><p>Historico salvo. Clique em editar para reabrir um mes.</p></div>${MBI.ui.pill(`${periods.length} periodo(s)`)}</div>
+        ${periods.length ? MBI.ui.table(["Competencia", "Faturamento", "Despesas", "Resultado", "Caixa", "Margem", "Acao"], periods.map((row) => [MBI.ui.escape(row.label), MBI.ui.money(row.revenue), MBI.ui.money(row.expenses), MBI.ui.money(row.result), MBI.ui.money(row.cash), `${row.margin}%`, `<button class="btn btn-soft btn-mini" type="button" data-action="edit-finance-period" data-client-id="${MBI.ui.escape(client.id)}" data-competence="${MBI.ui.escape(row.competence)}">${MBI.ui.icon("pencil")} Editar</button>`])) : `<div class="empty-lock">${MBI.ui.icon("calendar")}<h3>Nenhum periodo registrado</h3><p>Salve os primeiros indicadores para criar o historico.</p></div>`}
+      </section>
+
+      <section class="grid grid-3" style="margin-top:14px">
+        <form class="panel" data-form="admin-import" enctype="multipart/form-data">
+          <input type="hidden" name="clientId" value="${MBI.ui.escape(client.id)}">
+          <input type="hidden" name="status" value="Aguardando validacao MB">
+          <input type="hidden" name="result" value="Atualizar dados do portal">
+          <div class="panel-header"><div><h3>Importar arquivo</h3><p>DRE, fluxo, OFX, CSV, Excel, XML.</p></div></div>
+          <label class="upload-zone"><input class="sr-only" type="file" name="file" required>${MBI.ui.icon("database-zap")}<div><strong>Selecionar arquivo</strong><p>Entra na fila de validacao da MB.</p></div></label>
+          <div class="form-section two" style="margin-top:12px">
+            <label><span>Nome exibido</span><input name="fileName" placeholder="Preenchido ao selecionar"></label>
+            <label><span>Tipo</span><select name="type"><option>DRE padrao MB</option><option>Fluxo de caixa</option><option>OFX bancario</option><option>CSV financeiro</option><option>Excel gerencial</option><option>XML fiscal</option><option>PDF / relatorio</option></select></label>
+            <label><span>Competencia</span><input type="month" name="competence" value="${comp}"></label>
+          </div>
+          <button class="btn btn-primary" style="margin-top:12px" type="submit">${MBI.ui.icon("upload")} Carregar</button>
+        </form>
+
+        <form class="panel" data-form="create-task">
+          <input type="hidden" name="clientId" value="${MBI.ui.escape(client.id)}">
+          <div class="panel-header"><div><h3>Criar tarefa</h3><p>Vira pendencia no portal do cliente.</p></div></div>
+          <div class="form-section">
+            <label><span>Titulo</span><input name="title" required placeholder="Ex.: Enviar extrato bancario"></label>
+            <label><span>Responsavel</span><select name="owner"><option>MB</option><option>Cliente</option></select></label>
+            <label><span>Prioridade</span><select name="priority"><option>Alta</option><option>Media</option><option>Baixa</option></select></label>
+            <label><span>Prazo</span><input name="due" type="date" value="${today}"></label>
+          </div>
+          <button class="btn btn-primary" style="margin-top:12px" type="submit">${MBI.ui.icon("plus")} Criar tarefa</button>
+        </form>
+
+        <form class="panel" data-form="create-approval">
+          <input type="hidden" name="clientId" value="${MBI.ui.escape(client.id)}">
+          <input type="hidden" name="competence" value="${comp}">
+          <div class="panel-header"><div><h3>Criar analise IA/MB</h3><p>Cliente so ve apos aprovacao.</p></div></div>
+          <div class="form-section">
+            <label><span>Titulo</span><input name="title" required placeholder="Ex.: Analise do mes"></label>
+            <label><span>Confianca</span><select name="confidence"><option>Alta</option><option>Media</option><option>Baixa</option></select></label>
+            <label><span>Texto da analise</span><textarea name="text" placeholder="Escreva a leitura executiva..."></textarea></label>
+          </div>
+          <button class="btn btn-primary" style="margin-top:12px" type="submit">${MBI.ui.icon("shield-check")} Enviar a aprovacao</button>
+        </form>
       </section>
     `;
   }

@@ -2780,11 +2780,11 @@ button.workflow-step:hover { border-color: var(--brand-3); }
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 22px;
-  margin: -30px -30px 2px;
+  padding: 16px;
+  margin: -30px -30px 6px;
   background: linear-gradient(135deg, var(--brand), var(--brand-2));
 }
-.login-brandbar img { width: auto; height: 40px; max-width: 88%; }
+.login-brandbar img { width: auto; height: 30px; max-width: 78%; }
 .login-solo-card .section-title { text-align: center; }
 .login-solo-btn { width: 100%; justify-content: center; }
 .login-solo-card .login-footer-links { justify-content: center; }
