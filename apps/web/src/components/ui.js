@@ -15,6 +15,54 @@
     return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(Number(value || 0));
   }
 
+  // ===== Moeda em formularios: digitacao estilo calculadora (centavos) =====
+  function moneyFromCents(cents) {
+    const n = (Number(cents) || 0) / 100;
+    const fixed = n.toFixed(2);
+    const parts = fixed.split(".");
+    const int = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    return int + "," + parts[1];
+  }
+
+  function moneyParse(value) {
+    if (typeof value === "number") return value;
+    const raw = String(value == null ? "" : value).replace(/[^\d,.-]/g, "");
+    if (!raw) return 0;
+    const normalized = raw.replace(/\.(?=\d{3}(\D|$))/g, "").replace(",", ".");
+    const n = Number(normalized);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function moneyInputValue(value) {
+    return moneyFromCents(Math.round(moneyParse(value) * 100));
+  }
+
+  function moneyField(label, name, value, opts) {
+    opts = opts || {};
+    const input = `<div class="money-wrap"><span class="money-prefix">R$</span><input class="money-input" data-money inputmode="decimal" name="${name}" value="${moneyInputValue(value || 0)}" autocomplete="off"${opts.required ? " required" : ""}></div>`;
+    return label ? `<label><span>${label}</span>${input}</label>` : input;
+  }
+
+  // ===== Modal/dialog: abre por acao, fecha no X ou no backdrop =====
+  function modal(config) {
+    config = config || {};
+    const size = config.size ? ` modal-${config.size}` : "";
+    return `
+      <div class="modal-overlay" data-modal-overlay>
+        <div class="modal-card${size}" role="dialog" aria-modal="true" aria-label="${escape(config.title || "")}">
+          <header class="modal-head">
+            <div>
+              ${config.icon ? `<span class="modal-icon">${icon(config.icon)}</span>` : ""}
+              <div><h3>${escape(config.title || "")}</h3>${config.subtitle ? `<p>${escape(config.subtitle)}</p>` : ""}</div>
+            </div>
+            <button class="modal-x" type="button" data-action="modal-close" aria-label="Fechar">${icon("x")}</button>
+          </header>
+          <div class="modal-body">${config.body || ""}</div>
+        </div>
+      </div>
+    `;
+  }
+
   function statusClass(value) {
     const text = String(value || "").toLowerCase();
     if (text.includes("erro") || text.includes("venc") || text.includes("pendente") || text.includes("aguard")) return "status-danger";
@@ -408,5 +456,5 @@
     return message ? `<div class="toast">${message}</div>` : "";
   }
 
-  MBI.ui = { icon, escape, money, pill, metric, kpi, table, bars, lineChart, execLineChart, groupedBars, scoreGauge, runway, donut, waterfall, radar, dreTable, shell, nav, toast, statusClass };
+  MBI.ui = { icon, escape, money, moneyFromCents, moneyParse, moneyInputValue, moneyField, modal, pill, metric, kpi, table, bars, lineChart, execLineChart, groupedBars, scoreGauge, runway, donut, waterfall, radar, dreTable, shell, nav, toast, statusClass };
 })();

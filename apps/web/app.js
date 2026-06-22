@@ -3,6 +3,27 @@
 
   const root = document.getElementById("root");
   let toastMessage = "";
+  let activeModal = null;
+
+  function openModal(modal) {
+    if (!modal) return;
+    activeModal = modal;
+    document.body.classList.add("modal-open");
+    render();
+  }
+
+  // Fecha sem re-render (usado quando o render ja vira por showToast)
+  function dismissModal() {
+    activeModal = null;
+    document.body.classList.remove("modal-open");
+  }
+
+  function closeModal() {
+    if (!activeModal) return;
+    activeModal = null;
+    document.body.classList.remove("modal-open");
+    render();
+  }
   // TODO: preencher cnpj e crc da MB antes de gerar relatórios para clientes reais
   const MB_REPORT_CONFIG = Object.assign({
     companyName: "MB Assessoria Empresarial",
@@ -65,6 +86,7 @@
     }
 
     root.insertAdjacentHTML("beforeend", MBI.ui.toast(toastMessage));
+    if (activeModal) root.insertAdjacentHTML("beforeend", MBI.ui.modal(activeModal));
     refreshIcons();
   }
 
@@ -348,6 +370,11 @@
     }
     if (!form.reportValidity()) return;
     const data = formData(form);
+    // Campos monetarios (R$) voltam a numero antes de persistir
+    form.querySelectorAll("[data-money]").forEach((el) => {
+      if (el.name) data[el.name] = MBI.ui.moneyParse(el.value);
+    });
+    const inModal = !!form.closest(".modal-overlay");
     setFormBusy(form, true);
 
     try {
@@ -413,6 +440,7 @@
           () => MBI.services.clients.create(data)
         );
         MBI.services.clients.setCurrentClient(client.id);
+        if (inModal) dismissModal();
         showToast("Cliente cadastrado e selecionado para operação.");
         return;
       }
@@ -469,6 +497,7 @@
           async () => MBI.api.request(`/clients/${data.clientId}`, { method: "PATCH", body: data }),
           () => MBI.services.clients.updateProfile(data.clientId, data)
         );
+        if (inModal) dismissModal();
         showToast("Ficha operacional do cliente atualizada.");
         return;
       }
@@ -523,7 +552,20 @@
           async () => MBI.api.request("/users", { method: "POST", body: data }),
           () => MBI.services.users.create(data)
         );
+        if (inModal) dismissModal();
         showToast("Usuário criado com acesso local.");
+        return;
+      }
+
+      if (form.dataset.form === "edit-user") {
+        const patch = { name: data.name, role: data.role };
+        if (data.status) patch.status = data.status;
+        await remoteOrLocal(
+          async () => MBI.api.request(`/users/${data.userId}`, { method: "PATCH", body: patch }),
+          () => MBI.services.users.update(data.userId, patch)
+        );
+        if (inModal) dismissModal();
+        showToast("Usuário atualizado.");
         return;
       }
 
@@ -572,8 +614,24 @@
     }
 
 
+    // Backdrop do modal: clicar fora do card fecha
+    if (activeModal && event.target.matches && event.target.matches("[data-modal-overlay]")) {
+      closeModal();
+      return;
+    }
+
     const action = event.target.closest("[data-action]");
     if (!action) return;
+
+    if (action.dataset.action === "modal-close") {
+      closeModal();
+      return;
+    }
+
+    if (action.dataset.action === "open-modal") {
+      openModal(MBI.pages.admin.buildModal(action.dataset.modal, action.dataset));
+      return;
+    }
 
     if (action.dataset.action === "logout") {
       await MBI.auth.logout();
@@ -639,21 +697,6 @@
       return;
     }
 
-    if (action.dataset.action === "edit-user") {
-      const user = MBI.services.users.list().find((item) => item.id === action.dataset.userId);
-      if (!user) return;
-      const name = window.prompt("Nome do usuario:", user.name);
-      if (name === null) return;
-      const role = window.prompt("Perfil do usuario:", user.role);
-      if (role === null) return;
-      await remoteOrLocal(
-        async () => MBI.api.request(`/users/${user.id}`, { method: "PATCH", body: { name, role } }),
-        () => MBI.services.users.update(user.id, { name, role })
-      );
-      showToast("Usuario atualizado.");
-      return;
-    }
-
     if (action.dataset.action === "deactivate-user") {
       if (!window.confirm("Desativar este usuario sem excluir o historico?")) return;
       await remoteOrLocal(
@@ -714,6 +757,14 @@
     }
 
     showToast("Ação registrada localmente.");
+  }
+
+  function handleInput(event) {
+    const el = event.target;
+    if (!el || !el.classList || !el.classList.contains("money-input")) return;
+    const digits = el.value.replace(/\D/g, "");
+    const cents = digits ? parseInt(digits, 10) : 0;
+    el.value = MBI.ui.moneyFromCents(cents);
   }
 
   function handleChange(event) {
@@ -844,10 +895,14 @@
     return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
   }
 
-  window.addEventListener("hashchange", render);
+  window.addEventListener("hashchange", () => { activeModal = null; document.body.classList.remove("modal-open"); render(); });
   document.addEventListener("submit", handleSubmit);
   document.addEventListener("click", handleClick);
   document.addEventListener("change", handleChange);
+  document.addEventListener("input", handleInput);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && activeModal) closeModal();
+  });
 
   async function boot() {
     try { if (localStorage.getItem("mbi.ui.nav") !== "expanded") document.body.classList.add("nav-collapsed"); } catch (error) {}

@@ -161,15 +161,15 @@
     const rows = filtered.map((client) => {
       const plan = MBI.services.plans.get(client.planId);
       const suspended = client.status === "Pausado";
+      const isCurrent = MBI.services.clients.current()?.id === client.id;
       return [
         MBI.ui.escape(client.name),
         MBI.ui.escape(plan?.name || client.planId),
         MBI.ui.pill(client.status),
         MBI.ui.escape(client.maturity),
-        `<button class="btn btn-soft btn-mini" type="button" data-action="set-client" data-client-id="${MBI.ui.escape(client.id)}">${MBI.ui.icon("pencil")} Operar/Editar</button> <button class="btn btn-ghost btn-mini" type="button" data-action="suspend-client" data-client-id="${MBI.ui.escape(client.id)}">${MBI.ui.icon(suspended ? "play" : "pause")} ${suspended ? "Reativar" : "Suspender"}</button>`
+        `<button class="btn ${isCurrent ? "btn-primary" : "btn-soft"} btn-mini" type="button" data-action="set-client" data-client-id="${MBI.ui.escape(client.id)}">${MBI.ui.icon(isCurrent ? "check" : "play")} ${isCurrent ? "Operando" : "Operar"}</button> <button class="btn btn-soft btn-mini" type="button" data-action="open-modal" data-modal="edit-client" data-client-id="${MBI.ui.escape(client.id)}">${MBI.ui.icon("pencil")} Editar</button> <button class="btn btn-ghost btn-mini" type="button" data-action="suspend-client" data-client-id="${MBI.ui.escape(client.id)}">${MBI.ui.icon(suspended ? "play" : "pause")} ${suspended ? "Reativar" : "Suspender"}</button>`
       ];
     });
-    const current = MBI.services.clients.current();
     return `
       <form class="filter-row" data-form="admin-client-filters" style="margin-bottom:14px">
         <input name="search" placeholder="Buscar por nome, CNPJ ou segmento" value="${MBI.ui.escape(filters.search || "")}">
@@ -178,61 +178,101 @@
         <button class="btn btn-primary" type="submit">${MBI.ui.icon("search")} Filtrar</button>
       </form>
       <section class="panel">
-        <div class="panel-header"><div><h3>Carteira de clientes</h3><p>Operar/editar abre a ficha; suspender pausa o acesso.</p></div>${MBI.ui.pill(`${filtered.length} cliente(s)`)}</div>
-        ${MBI.ui.table(["Cliente", "Plano", "Status", "Maturidade", "Ações"], rows)}
+        <div class="panel-header"><div><h3>Carteira de clientes</h3><p>Operar seleciona o cliente para alimentar dados. Editar abre a ficha.</p></div><div class="panel-header-actions">${MBI.ui.pill(`${filtered.length} cliente(s)`)}<button class="btn btn-primary btn-mini" type="button" data-action="open-modal" data-modal="new-client">${MBI.ui.icon("plus")} Novo cliente</button></div></div>
+        ${filtered.length ? MBI.ui.table(["Cliente", "Plano", "Status", "Maturidade", "Ações"], rows) : `<div class="empty-lock">${MBI.ui.icon("users")}<h3>Nenhum cliente encontrado</h3><p>Ajuste os filtros ou cadastre um novo cliente.</p></div>`}
       </section>
-      <details class="report-detail" style="margin-top:14px"${current ? " open" : ""}>
-        <summary>Editar ficha${current ? ` — ${MBI.ui.escape(current.name)}` : " do cliente em operação"}</summary>
-        ${current ? clientProfileEditor(current) : `<div class="empty-lock">${MBI.ui.icon("user")}<h3>Nenhum cliente em operação</h3><p>Clique em "Operar/Editar" em um cliente da lista.</p></div>`}
-      </details>
-      <details class="report-detail" style="margin-top:14px">
-        <summary>Cadastrar novo cliente</summary>
-        ${newClient()}
-      </details>
     `;
   }
 
-  function clientProfileEditor(client) {
+  // ===== Campos da ficha do cliente (usado dentro do modal de adicionar/editar) =====
+  function clientFormFields(client) {
+    client = client || {};
+    const sel = (a, b) => a === b ? "selected" : "";
+    const plans = MBI.services.plans.list();
     return `
-      <form class="panel" data-form="update-client-profile">
-        <input type="hidden" name="clientId" value="${client.id}">
-        <div class="panel-header"><div><h3>Ficha do cliente</h3><p>Edite cadastro, plano contratado, status, maturidade e responsaveis MB.</p></div><button class="btn btn-primary" type="submit">${MBI.ui.icon("save")} Salvar ficha</button></div>
-        <div class="form-section two">
-          <label><span>Razao social</span><input name="name" value="${MBI.ui.escape(client.name)}"></label>
-          <label><span>Nome fantasia</span><input name="tradeName" value="${MBI.ui.escape(client.tradeName || client.name)}"></label>
-          <label><span>CNPJ</span><input name="cnpj" value="${MBI.ui.escape(client.cnpj)}"></label>
-          <label><span>Cidade/UF</span><input name="city" value="${MBI.ui.escape(client.city)}"></label>
-          <label><span>Segmento</span><input name="segment" value="${MBI.ui.escape(client.segment)}"></label>
-          <label><span>Regime</span><select name="taxRegime"><option ${client.taxRegime === "Simples Nacional" ? "selected" : ""}>Simples Nacional</option><option ${client.taxRegime === "Lucro Presumido" ? "selected" : ""}>Lucro Presumido</option></select></label>
-          <label><span>Plano contratado</span><select name="planId">${MBI.services.plans.list().map((plan) => `<option value="${plan.id}" ${plan.id === client.planId ? "selected" : ""}>${plan.name}</option>`).join("")}</select></label>
-          <label><span>Status</span><select name="status"><option ${client.status === "Onboarding" ? "selected" : ""}>Onboarding</option><option ${client.status === "Ativo" ? "selected" : ""}>Ativo</option><option ${client.status === "Pausado" ? "selected" : ""}>Pausado</option><option ${client.status === "Risco" ? "selected" : ""}>Risco</option></select></label>
-          <label><span>Maturidade</span><select name="maturity"><option ${client.maturity === "Fiscal basico" ? "selected" : ""}>Fiscal basico</option><option ${client.maturity === "Financeiro integrado" ? "selected" : ""}>Financeiro integrado</option><option ${client.maturity === "CFO validado" ? "selected" : ""}>CFO validado</option><option ${client.maturity === "Onboarding" ? "selected" : ""}>Onboarding</option></select></label>
-          <label><span>Confianca</span><select name="confidence"><option ${client.confidence === "Baixa" ? "selected" : ""}>Baixa</option><option ${client.confidence === "Media" ? "selected" : ""}>Media</option><option ${client.confidence === "Alta" ? "selected" : ""}>Alta</option></select></label>
-          <label><span>Responsavel legal</span><input name="owner" value="${MBI.ui.escape(client.owner)}"></label>
-          <label><span>E-mail</span><input name="email" value="${MBI.ui.escape(client.email)}"></label>
-          <label><span>WhatsApp</span><input name="phone" value="${MBI.ui.escape(client.phone)}"></label>
-          <label><span>Consultor MB</span><input name="consultant" value="${MBI.ui.escape(client.consultant)}"></label>
-          <label><span>Analista MB</span><input name="analyst" value="${MBI.ui.escape(client.analyst)}"></label>
-          <label><span>Proxima revisao MB</span><input type="date" name="nextReview" value="${client.nextReview || currentDateValue()}"></label>
+      <div class="form-section two">
+        <label><span>Razão social</span><input name="name" required value="${MBI.ui.escape(client.name || "")}" placeholder="Razão social"></label>
+        <label><span>Nome fantasia</span><input name="tradeName" value="${MBI.ui.escape(client.tradeName || "")}" placeholder="Nome fantasia"></label>
+        <label><span>CNPJ</span><input name="cnpj" required value="${MBI.ui.escape(client.cnpj || "")}" placeholder="00.000.000/0001-00"></label>
+        <label><span>Cidade/UF</span><input name="city" value="${MBI.ui.escape(client.city || "")}" placeholder="Cidade/UF"></label>
+        <label><span>Segmento</span><input name="segment" value="${MBI.ui.escape(client.segment || "")}" placeholder="Segmento"></label>
+        <label><span>Regime</span><select name="taxRegime"><option ${sel(client.taxRegime, "Simples Nacional")}>Simples Nacional</option><option ${sel(client.taxRegime, "Lucro Presumido")}>Lucro Presumido</option></select></label>
+        <label><span>Plano contratado</span><select name="planId">${plans.map((plan) => `<option value="${plan.id}" ${plan.id === client.planId ? "selected" : ""}>${plan.name}</option>`).join("")}</select></label>
+        <label><span>Status</span><select name="status">${["Onboarding", "Ativo", "Pausado", "Risco"].map((s) => `<option ${sel(client.status || "Onboarding", s)}>${s}</option>`).join("")}</select></label>
+        <label><span>Maturidade</span><select name="maturity">${["Onboarding", "Fiscal basico", "Financeiro integrado", "CFO validado"].map((s) => `<option ${sel(client.maturity || "Onboarding", s)}>${s}</option>`).join("")}</select></label>
+        <label><span>Confiança</span><select name="confidence">${["Baixa", "Media", "Alta"].map((s) => `<option ${sel(client.confidence || "Media", s)}>${s}</option>`).join("")}</select></label>
+        <label><span>Responsável legal</span><input name="owner" value="${MBI.ui.escape(client.owner || "")}" placeholder="Responsável legal"></label>
+        <label><span>E-mail</span><input name="email" type="email" value="${MBI.ui.escape(client.email || "")}" placeholder="cliente@empresa.com.br"></label>
+        <label><span>WhatsApp</span><input name="phone" value="${MBI.ui.escape(client.phone || "")}" placeholder="(00) 00000-0000"></label>
+        <label><span>Consultor MB</span><input name="consultant" value="${MBI.ui.escape(client.consultant || "")}" placeholder="Consultor MB"></label>
+        <label><span>Analista MB</span><input name="analyst" value="${MBI.ui.escape(client.analyst || "")}" placeholder="Analista MB"></label>
+        <label><span>Próxima revisão MB</span><input type="date" name="nextReview" value="${client.nextReview || currentDateValue()}"></label>
+      </div>
+    `;
+  }
+
+  function clientModalBody(client) {
+    const editing = !!client;
+    return `
+      <form data-form="${editing ? "update-client-profile" : "admin-create-client"}">
+        ${editing ? `<input type="hidden" name="clientId" value="${MBI.ui.escape(client.id)}">` : ""}
+        ${clientFormFields(client)}
+        <div class="modal-foot">
+          <button class="btn btn-ghost" type="button" data-action="modal-close">Cancelar</button>
+          <button class="btn btn-primary" type="submit">${MBI.ui.icon("save")} ${editing ? "Salvar ficha" : "Cadastrar cliente"}</button>
         </div>
       </form>
     `;
   }
 
-  function newClient() {
+  function userModalBody(user) {
+    const editing = !!user;
+    const sel = (a, b) => a === b ? "selected" : "";
     return `
-      <form class="grid grid-2" data-form="admin-create-client">
-        <article class="panel"><div class="panel-header"><div><h3>Dados cadastrais</h3><p>Cadastro operacional da empresa cliente.</p></div></div><div class="form-section two"><label><span>Razão social</span><input name="name" required placeholder="Razão social"></label><label><span>Nome fantasia</span><input name="tradeName" placeholder="Nome fantasia"></label><label><span>CNPJ</span><input name="cnpj" required placeholder="00.000.000/0001-00"></label><label><span>Cidade/UF</span><input name="city" placeholder="Cidade/UF"></label><label><span>Segmento</span><input name="segment" placeholder="Segmento"></label><label><span>Regime</span><select name="taxRegime"><option>Simples Nacional</option><option>Lucro Presumido</option></select></label></div></article>
-        <article class="panel"><div class="panel-header"><div><h3>Contrato e operação</h3><p>Plano, responsáveis e primeiro acesso.</p></div></div><div class="form-section two"><label><span>Responsável</span><input name="owner" placeholder="Responsável legal"></label><label><span>E-mail</span><input name="email" type="email" placeholder="cliente@empresa.com.br"></label><label><span>WhatsApp</span><input name="phone" placeholder="(00) 00000-0000"></label><label><span>Plano</span><select name="planId">${MBI.services.plans.list().map((plan) => `<option value="${plan.id}">${plan.name}</option>`).join("")}</select></label><label><span>Consultor</span><input name="consultant" placeholder="Consultor MB"></label><label><span>Analista</span><input name="analyst" placeholder="Analista MB"></label></div><button class="btn btn-primary" style="margin-top:14px" type="submit">${MBI.ui.icon("save")} Cadastrar cliente</button></article>
+      <form data-form="${editing ? "edit-user" : "create-user"}">
+        ${editing ? `<input type="hidden" name="userId" value="${MBI.ui.escape(user.id)}">` : ""}
+        <div class="form-section two">
+          ${editing ? "" : `<label><span>Tipo</span><select name="type"><option value="client">Cliente</option><option value="mb">MB</option></select></label>
+          <label><span>Cliente</span><select name="clientId">${MBI.services.clients.list().map((client) => `<option value="${MBI.ui.escape(client.id)}">${MBI.ui.escape(client.name)}</option>`).join("")}</select></label>`}
+          <label><span>Nome</span><input name="name" required value="${MBI.ui.escape((user && user.name) || "")}" placeholder="Nome do usuário"></label>
+          <label><span>Perfil</span><input name="role" value="${MBI.ui.escape((user && user.role) || "")}" placeholder="Ex.: Somente leitura"></label>
+          ${editing ? `<label><span>Status</span><select name="status"><option ${sel(user.status, "Ativo")}>Ativo</option><option ${sel(user.status, "Inativo")}>Inativo</option></select></label>` : `<label><span>E-mail</span><input name="email" type="email" required placeholder="email@empresa.com.br"></label>
+          <label><span>Senha</span><input name="password" type="password" required minlength="8" placeholder="Mínimo 8 caracteres"></label>`}
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" type="button" data-action="modal-close">Cancelar</button>
+          <button class="btn btn-primary" type="submit">${MBI.ui.icon(editing ? "save" : "user-plus")} ${editing ? "Salvar" : "Criar usuário"}</button>
+        </div>
       </form>
     `;
+  }
+
+  function buildModal(kind, ds) {
+    ds = ds || {};
+    if (kind === "new-client") {
+      return { title: "Cadastrar cliente", subtitle: "Dados cadastrais, contrato e responsáveis MB.", icon: "user-plus", size: "lg", body: clientModalBody(null) };
+    }
+    if (kind === "edit-client") {
+      const client = MBI.services.clients.get(ds.clientId);
+      if (!client) return null;
+      return { title: `Editar — ${client.name}`, subtitle: "Ficha operacional do cliente.", icon: "pencil", size: "lg", body: clientModalBody(client) };
+    }
+    if (kind === "new-user") {
+      return { title: "Criar usuário", subtitle: "Acesso da equipe MB ou de um cliente.", icon: "user-plus", body: userModalBody(null) };
+    }
+    if (kind === "edit-user") {
+      const user = MBI.services.users.list().find((item) => item.id === ds.userId);
+      if (!user) return null;
+      return { title: `Editar — ${user.name}`, subtitle: "Nome, perfil e status do acesso.", icon: "pencil", body: userModalBody(user) };
+    }
+    return null;
   }
 
   function plans() {
     const plans = MBI.services.plans.list();
     return `
       <form class="grid" data-form="update-plan-prices">
-        <article class="panel"><div class="panel-header"><div><h3>Valores dos planos</h3><p>Preços editáveis pela equipe MB.</p></div><button class="btn btn-primary" type="submit">${MBI.ui.icon("save")} Salvar preços</button></div><div class="plan-admin-grid">${plans.map((plan) => `<div class="plan-admin-card"><span class="status-pill ${plan.color}">${plan.name}</span><h3 style="margin-top:12px">${plan.tagline}</h3><label><span>Valor mensal</span><input type="number" name="price_${plan.id}" value="${plan.price}" step="50"></label><div class="module-chips">${plan.modules.map((module) => `<span class="chip is-on">${module}</span>`).join("")}</div></div>`).join("")}</div></article>
+        <article class="panel"><div class="panel-header"><div><h3>Valores dos planos</h3><p>Preços editáveis pela equipe MB.</p></div><button class="btn btn-primary" type="submit">${MBI.ui.icon("save")} Salvar preços</button></div><div class="plan-admin-grid">${plans.map((plan) => `<div class="plan-admin-card"><span class="status-pill ${plan.color}">${plan.name}</span><h3 style="margin-top:12px">${plan.tagline}</h3>${MBI.ui.moneyField("Valor mensal", `price_${plan.id}`, plan.price)}<div class="module-chips">${plan.modules.map((module) => `<span class="chip is-on">${module}</span>`).join("")}</div></div>`).join("")}</div></article>
         <article class="panel"><div class="panel-header"><div><h3>Matriz de permissões</h3><p>Regra de liberação por plano.</p></div></div>${MBI.ui.table(["Módulo", "Básico", "Gestão", "Regra"], MBI.services.plans.matrix())}</article>
       </form>
     `;
@@ -258,11 +298,11 @@
           <label><span>Proxima revisao MB</span><input type="date" name="nextReview" value="${client.nextReview || currentDateValue()}"></label>
         </div>
         <div class="form-section">
-          <label><span>Faturamento</span><input name="revenue" type="number" value="${data.revenue || 0}"></label>
-          <label><span>Despesas</span><input name="expenses" type="number" value="${data.expenses || 0}"></label>
-          <label><span>Impostos / DAS</span><input name="taxes" type="number" value="${data.taxes || 0}"></label>
-          <label><span>Folha</span><input name="payroll" type="number" value="${data.payroll || 0}"></label>
-          <label><span>Caixa atual</span><input name="cash" type="number" value="${data.cash || 0}"></label>
+          ${MBI.ui.moneyField("Faturamento", "revenue", data.revenue)}
+          ${MBI.ui.moneyField("Despesas", "expenses", data.expenses)}
+          ${MBI.ui.moneyField("Impostos / DAS", "taxes", data.taxes)}
+          ${MBI.ui.moneyField("Folha", "payroll", data.payroll)}
+          ${MBI.ui.moneyField("Caixa atual", "cash", data.cash)}
           <label><span>Confianca dos dados</span><select name="confidence"><option ${conf("Baixa")}>Baixa</option><option ${conf("Media")}>Media</option><option ${conf("Alta")}>Alta</option></select></label>
         </div>
         <div class="op-stats" style="margin-top:14px">
@@ -276,18 +316,18 @@
           <summary>Detalhamento opcional &mdash; DRE, fluxo de caixa e metas</summary>
           <div class="panel-subtitle" style="margin-top:14px"><strong>DRE gerencial</strong></div>
           <div class="form-section">
-            <label><span>Custos diretos / CMV</span><input name="directCosts" type="number" value="${data.directCosts || 0}"></label>
-            <label><span>Despesas administrativas</span><input name="adminExpenses" type="number" value="${data.adminExpenses || 0}"></label>
-            <label><span>Despesas comerciais</span><input name="salesExpenses" type="number" value="${data.salesExpenses || 0}"></label>
-            <label><span>Despesas financeiras</span><input name="financialExpenses" type="number" value="${data.financialExpenses || 0}"></label>
+            ${MBI.ui.moneyField("Custos diretos / CMV", "directCosts", data.directCosts)}
+            ${MBI.ui.moneyField("Despesas administrativas", "adminExpenses", data.adminExpenses)}
+            ${MBI.ui.moneyField("Despesas comerciais", "salesExpenses", data.salesExpenses)}
+            ${MBI.ui.moneyField("Despesas financeiras", "financialExpenses", data.financialExpenses)}
           </div>
           <div class="panel-subtitle" style="margin-top:14px"><strong>Fluxo de caixa</strong></div>
           <div class="form-section">
-            <label><span>Saldo inicial</span><input name="openingBalance" type="number" value="${data.openingBalance || 0}"></label>
-            <label><span>Recebimentos</span><input name="receipts" type="number" value="${data.receipts || data.revenue || 0}"></label>
-            <label><span>Pagamentos</span><input name="payments" type="number" value="${data.payments || Math.max((data.expenses || 0) - (data.taxes || 0), 0)}"></label>
-            <label><span>Impostos pagos</span><input name="cashTaxes" type="number" value="${data.cashTaxes || data.taxes || 0}"></label>
-            <label><span>Saldo final</span><input name="closingBalance" type="number" value="${data.closingBalance || data.cash || 0}"></label>
+            ${MBI.ui.moneyField("Saldo inicial", "openingBalance", data.openingBalance)}
+            ${MBI.ui.moneyField("Recebimentos", "receipts", data.receipts || data.revenue)}
+            ${MBI.ui.moneyField("Pagamentos", "payments", data.payments || Math.max((data.expenses || 0) - (data.taxes || 0), 0))}
+            ${MBI.ui.moneyField("Impostos pagos", "cashTaxes", data.cashTaxes || data.taxes)}
+            ${MBI.ui.moneyField("Saldo final", "closingBalance", data.closingBalance || data.cash)}
           </div>
           <div class="panel-subtitle" style="margin-top:14px"><strong>Parametros MB</strong></div>
           <div class="form-section two">
@@ -375,17 +415,13 @@
       MBI.ui.escape(user.role),
       MBI.ui.escape(user.email),
       MBI.ui.pill(user.status),
-      `<button class="btn btn-soft btn-mini" type="button" data-action="edit-user" data-user-id="${MBI.ui.escape(user.id)}">${MBI.ui.icon("pencil")} Editar</button> <button class="btn btn-ghost btn-mini" type="button" data-action="deactivate-user" data-user-id="${MBI.ui.escape(user.id)}">${MBI.ui.icon("user-x")} Desativar</button>`
+      `<button class="btn btn-soft btn-mini" type="button" data-action="open-modal" data-modal="edit-user" data-user-id="${MBI.ui.escape(user.id)}">${MBI.ui.icon("pencil")} Editar</button> <button class="btn btn-ghost btn-mini" type="button" data-action="deactivate-user" data-user-id="${MBI.ui.escape(user.id)}">${MBI.ui.icon("user-x")} Desativar</button>`
     ]);
     return `
       <section class="panel">
-        <div class="panel-header"><div><h3>Usuários</h3><p>Equipe MB e acessos de cliente.</p></div>${MBI.ui.pill(`${rows.length} usuário(s)`)}</div>
+        <div class="panel-header"><div><h3>Usuários</h3><p>Equipe MB e acessos de cliente.</p></div><div class="panel-header-actions">${MBI.ui.pill(`${rows.length} usuário(s)`)}<button class="btn btn-primary btn-mini" type="button" data-action="open-modal" data-modal="new-user">${MBI.ui.icon("user-plus")} Novo usuário</button></div></div>
         ${MBI.ui.table(["Nome", "Tipo", "Perfil", "E-mail", "Status", "Ações"], rows)}
       </section>
-      <details class="report-detail" style="margin-top:14px">
-        <summary>Criar usuário</summary>
-        <form class="panel" data-form="create-user" style="margin-top:14px"><div class="form-section two"><label><span>Tipo</span><select name="type"><option value="client">Cliente</option><option value="mb">MB</option></select></label><label><span>Cliente</span><select name="clientId">${MBI.services.clients.list().map((client) => `<option value="${MBI.ui.escape(client.id)}">${MBI.ui.escape(client.name)}</option>`).join("")}</select></label><label><span>Nome</span><input name="name" required placeholder="Nome do usuário"></label><label><span>E-mail</span><input name="email" type="email" required placeholder="email@empresa.com.br"></label><label><span>Senha</span><input name="password" type="password" required minlength="8" placeholder="Mínimo 8 caracteres"></label><label><span>Perfil</span><input name="role" placeholder="Ex.: Somente leitura"></label></div><button class="btn btn-primary" style="margin-top:14px" type="submit">${MBI.ui.icon("user-plus")} Criar usuário</button></form>
-      </details>
     `;
   }
 
@@ -405,5 +441,5 @@
     `;
   }
 
-  MBI.pages.admin = { render };
+  MBI.pages.admin = { render, buildModal };
 })();
