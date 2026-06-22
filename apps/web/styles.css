@@ -2822,20 +2822,25 @@ button.workflow-step:hover { border-color: var(--brand-3); }
 /* ===== Menu lateral recolhivel ===== */
 .topbar-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
 .nav-toggle { flex: 0 0 auto; }
-.nav-collapsed .app-shell { grid-template-columns: 72px minmax(0, 1fr); }
-.nav-collapsed .sidebar { overflow: hidden; padding: 16px 12px; }
-.nav-collapsed .side-brand { justify-content: center; padding: 8px 0 16px; }
-.nav-collapsed .side-brand img,
-.nav-collapsed .side-brand div,
-.nav-collapsed .nav-btn span,
-.nav-collapsed .nav-group,
-.nav-collapsed .side-account span,
-.nav-collapsed .side-account strong,
-.nav-collapsed .side-account .btn span { display: none; }
-.nav-collapsed .side-mono { display: block; }
-.nav-collapsed .nav-btn { justify-content: center; padding: 11px 0; gap: 0; }
-.nav-collapsed .side-account { padding-top: 12px; }
-.nav-collapsed .side-account .btn { justify-content: center; padding: 11px 0; gap: 0; }
+
+/* Recolhimento em rail vale SO no desktop. No mobile a sidebar e gaveta off-canvas
+   (regras no @media max-width:900px) e essas regras nao podem vazar pra la. */
+@media (min-width: 901px) {
+  .nav-collapsed .app-shell { grid-template-columns: 72px minmax(0, 1fr); }
+  .nav-collapsed .sidebar { overflow: hidden; padding: 16px 12px; }
+  .nav-collapsed .side-brand { justify-content: center; padding: 8px 0 16px; }
+  .nav-collapsed .side-brand img,
+  .nav-collapsed .side-brand div,
+  .nav-collapsed .nav-btn span,
+  .nav-collapsed .nav-group,
+  .nav-collapsed .side-account span,
+  .nav-collapsed .side-account strong,
+  .nav-collapsed .side-account .btn span { display: none; }
+  .nav-collapsed .side-mono { display: block; }
+  .nav-collapsed .nav-btn { justify-content: center; padding: 11px 0; gap: 0; }
+  .nav-collapsed .side-account { padding-top: 12px; }
+  .nav-collapsed .side-account .btn { justify-content: center; padding: 11px 0; gap: 0; }
+}
 
 /* ===== Operacao do admin: cabecalho do cliente + stats ===== */
 .admin-op-head {
