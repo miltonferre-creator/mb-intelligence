@@ -144,24 +144,67 @@
     ];
   }
 
+  // Tendencia formatada vs mes anterior. invert=true para indicadores onde subir e ruim.
+  function pctText(value) {
+    const r = Math.round(Number(value || 0) * 10) / 10;
+    return `${r > 0 ? "+" : ""}${String(r).replace(".", ",")}%`;
+  }
+
+  function trendTag(value, invert, label) {
+    if (label) return `<span class="trend-tag is-flat">${label}</span>`;
+    const v = Number(value || 0);
+    if (!v) return `<span class="trend-tag is-flat">estável</span>`;
+    const good = invert ? v < 0 : v > 0;
+    return `<span class="trend-tag ${good ? "is-good" : "is-bad"}">${v > 0 ? "▲" : "▼"} ${pctText(v)}</span>`;
+  }
+
+  // Escolhe o alerta executivo mais importante do mes (1 acao clara).
+  function executiveAlert(data) {
+    const result = Number(data.result || 0);
+    const margin = Number(data.margin || 0);
+    const runway = Number(data.runway || 0);
+    const target = Number(data.marginTarget || 20);
+    if (result < 0) return ["is-bad", `Sua empresa fechou ${data.competenceLabel} com prejuízo de ${MBI.ui.money(Math.abs(result))}. Vale revisar custos e caixa com a MB.`];
+    if (runway && runway < 45) return ["is-warn", `O caixa cobre cerca de ${Math.round(runway)} dias de operação — abaixo da reserva de 45 dias recomendada pela MB.`];
+    if (margin && margin < target) return ["is-warn", `A margem de ${String(margin).replace(".", ",")}% está abaixo da meta de ${target}%. Há espaço para melhorar o resultado.`];
+    return ["is-good", `Indicadores dentro do esperado em ${data.competenceLabel}. Siga acompanhando o fechamento mensal com a MB.`];
+  }
+
+  // Leitura executiva: responde em 5s quanto faturou, lucrou, tem em caixa e o que exige atencao.
+  function executiveBrief(client, data) {
+    if (client.planId === "contabilidade") {
+      return `<div class="brief-copy"><strong>Leitura financeira disponível no Plano Gestão</strong><span>Seu plano acompanha documentos, guias e obrigações fiscais. Para ver faturamento, resultado, margem e caixa com leitura executiva automática, evolua para o Plano Gestão.</span></div>`;
+    }
+    if (!(Number(data.revenue || 0) > 0)) {
+      return `<div class="brief-copy"><strong>Aguardando sua base financeira</strong><span>A MB ainda não carregou os dados de ${data.competenceLabel}. Assim que entrarem, sua leitura executiva — quanto faturou, lucrou e tem em caixa — aparece aqui automaticamente.</span></div>`;
+    }
+    const { current, previous } = currentAndPrevious(client, data);
+    const [tone, alertText] = executiveAlert(data);
+    const since = previous?.label ? ` Comparado a ${previous.label}.` : "";
+    return `
+      <div class="exec-headline">
+        <div class="exec-metric"><span>Faturou</span><strong>${MBI.ui.money(data.revenue)}</strong>${trendTag(delta(current, previous, "revenue"))}</div>
+        <div class="exec-metric"><span>Resultado</span><strong>${MBI.ui.money(data.result)}</strong>${trendTag(delta(current, previous, "result"))}</div>
+        <div class="exec-metric"><span>Em caixa</span><strong>${MBI.ui.money(data.cash)}</strong>${trendTag(delta(current, previous, "cash"))}</div>
+        <div class="exec-metric"><span>Margem</span><strong>${String(data.margin || 0).replace(".", ",")}%</strong>${trendTag(0, false, `${data.runway || 0} dias de fôlego`)}</div>
+      </div>
+      <div class="exec-alert ${tone}">${MBI.ui.icon(tone === "is-good" ? "check-circle" : "alert-triangle")}<span><strong>${tone === "is-good" ? "Situação" : "Atenção"}:</strong> ${alertText}${since}</span></div>
+    `;
+  }
+
   function cockpit(client, data) {
     const plan = MBI.services.plans.get(client.planId);
     const tasks = MBI.storage.getDatabase().tasks.filter((task) => task.clientId === client.id);
     const primaryTask = tasks[0];
-    const executiveText = client.planId === "contabilidade"
-      ? "Acompanhe guias, documentos e obrigacoes. Para analises financeiras, evolua para o Plano Gestao."
-      : client.planId === "gestao"
-        ? "Acompanhe faturamento, fiscal, folha e alertas gerenciais automaticos enquanto a MB valida a base."
-        : "Acompanhe DRE, caixa, score e decisoes executivas com validacao consultiva da MB.";
 
     return `
       <section class="journey-hero">
         <article class="panel executive-brief">
           <div class="panel-header">
-            <div><h3>Cockpit do empresario</h3><p>${plan.name} em acompanhamento pela MB.</p></div>
+            <div><h3>Leitura executiva</h3><p>${MBI.ui.escape(plan.name)} · ${MBI.ui.escape(data.competenceLabel || "competência atual")}.</p></div>
             ${MBI.ui.pill(client.status)}
           </div>
-          <div class="brief-copy"><strong>Resumo MB</strong><span>${executiveText}</span></div>
+          ${executiveBrief(client, data)}
           <div class="brief-actions">
             <button class="btn btn-primary" type="button" data-route="#/cliente/documentos">${MBI.ui.icon("folder-open")} Ver documentos</button>
             <button class="btn btn-ghost" type="button" data-route="#/cliente/comunicacao">${MBI.ui.icon("messages-square")} Falar com a MB</button>
