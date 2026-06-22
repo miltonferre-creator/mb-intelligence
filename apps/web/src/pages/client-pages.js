@@ -530,23 +530,23 @@
       <div class="exec-dash">
       ${competenceSelector(client, data)}
       ${kpiGrid(client, data)}
-      <section class="grid dash-split" style="margin-top:14px">
+      <section class="grid dash-trio" style="margin-top:12px">
         <article class="panel chart">
-          <div class="panel-header"><div><h3>Receita ao longo do tempo</h3><p>Evolução de faturamento, mês a mês.</p></div></div>
+          <div class="panel-header"><div><h3>Receita ao longo do tempo</h3><p>Evolução de faturamento.</p></div></div>
           ${MBI.ui.execLineChart(data.months)}
           <div class="chart-legend"><span><i class="legend-dot brand"></i> Receita</span><span><i class="legend-dot dashed"></i> Tendência</span></div>
         </article>
         <article class="panel">
-          <div class="panel-header"><div><h3>Onde você mais gasta</h3><p>Maiores despesas do período.</p></div></div>
+          <div class="panel-header"><div><h3>Onde você mais gasta</h3><p>Maiores despesas.</p></div></div>
           ${expenseRanking(data)}
         </article>
+        ${scorePanel}
       </section>
-      <section class="grid dash-split" style="margin-top:14px">
+      <section style="margin-top:12px">
         <article class="panel">
           <div class="panel-header"><div><h3>Inteligência MB</h3><p>Leitura executiva da competência.</p></div></div>
           ${executiveBrief(client, data)}
         </article>
-        ${scorePanel}
       </section>
       <details class="report-detail" style="margin-top:14px">
         <summary>Ver relatórios completos — DRE e fluxo de caixa</summary>

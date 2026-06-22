@@ -362,7 +362,8 @@
       <div class="app-shell">
         <aside class="sidebar">
           <div class="side-brand">
-            <img src="assets/mb-logo-premium.svg" alt="MB">
+            <img src="assets/mb-logo-premium.svg" alt="MB Intelligence">
+            <span class="side-mono" aria-hidden="true">MB</span>
             <div><strong>MB Intelligence</strong><span>Produto operacional</span></div>
           </div>
           <nav class="side-menu">${menu}</nav>
@@ -394,7 +395,7 @@
       // Item sem rota vira cabecalho de secao do menu (agrupa o fluxo de trabalho).
       if (!route) return `<span class="nav-group">${label}</span>`;
       return `
-      <button class="nav-btn ${route === activeRoute ? "is-active" : ""}" type="button" data-route="${route}">
+      <button class="nav-btn ${route === activeRoute ? "is-active" : ""}" type="button" data-route="${route}" title="${label}">
         ${icon(iconName)} <span>${label}</span>
       </button>
     `;

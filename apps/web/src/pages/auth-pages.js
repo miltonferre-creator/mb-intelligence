@@ -6,9 +6,8 @@
     return `
       <main class="login-page login-solo">
         <div class="login-solo-card">
-          <div class="brand-lockup">
+          <div class="login-brandbar">
             <img src="assets/mb-logo-premium.svg" alt="MB Assessoria Empresarial">
-            <div><strong>MB Intelligence</strong><span>Portal do cliente MB</span></div>
           </div>
           <div class="section-title">
             <h2>Entrar</h2>

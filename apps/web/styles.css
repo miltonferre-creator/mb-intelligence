@@ -607,8 +607,16 @@ textarea:focus {
 }
 
 .side-brand img {
-  width: 36px;
-  height: 36px;
+  height: 26px;
+  width: auto;
+  max-width: 100%;
+}
+.side-mono {
+  display: none;
+  font-weight: 900;
+  font-size: 22px;
+  letter-spacing: 1px;
+  color: #fff;
 }
 
 .side-brand strong,
@@ -2596,6 +2604,23 @@ button.workflow-step:hover { border-color: var(--brand-3); }
   .dash-split { grid-template-columns: 1fr; }
 }
 
+/* Trio do dashboard (grafico + ranking + score) numa linha so, p/ caber sem rolar */
+.dash-trio {
+  display: grid;
+  grid-template-columns: 1.7fr 1.1fr 1.1fr;
+  gap: 14px;
+  align-items: stretch;
+}
+@media (max-width: 1100px) { .dash-trio { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 700px) { .dash-trio { grid-template-columns: 1fr; } }
+
+/* Versao compacta do dashboard p/ caber na tela */
+.exec-dash { padding: 16px; }
+.exec-dash .kpi-card { min-height: 104px; gap: 4px; padding: 14px; }
+.exec-dash .kpi-value { font-size: clamp(20px, 2.2vw, 28px); }
+.exec-dash .panel { padding: 14px; }
+.exec-dash .panel-header { margin-bottom: 6px; }
+
 /* Preenche o quadro: paineis da linha com altura igual e conteudo curto centralizado */
 .exec-dash .panel { display: flex; flex-direction: column; }
 .exec-dash .panel > .bar-chart,
@@ -2746,12 +2771,19 @@ button.workflow-step:hover { border-color: var(--brand-3); }
   gap: 18px;
   padding: 30px;
   border-radius: 16px;
+  overflow: hidden;
   background: rgba(255, 255, 255, .97);
   box-shadow: 0 30px 80px rgba(0, 0, 0, .45);
 }
-.login-solo-card .brand-lockup { justify-content: center; }
-.login-solo-card .brand-lockup strong { color: var(--ink); }
-.login-solo-card .brand-lockup span { color: var(--muted); }
+.login-brandbar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 22px;
+  margin: -30px -30px 2px;
+  background: linear-gradient(135deg, var(--brand), var(--brand-2));
+}
+.login-brandbar img { width: auto; height: 40px; max-width: 88%; }
 .login-solo-card .section-title { text-align: center; }
 .login-solo-btn { width: 100%; justify-content: center; }
 .login-solo-card .login-footer-links { justify-content: center; }
@@ -2762,12 +2794,14 @@ button.workflow-step:hover { border-color: var(--brand-3); }
 .nav-collapsed .app-shell { grid-template-columns: 72px minmax(0, 1fr); }
 .nav-collapsed .sidebar { overflow: hidden; padding: 16px 12px; }
 .nav-collapsed .side-brand { justify-content: center; padding: 8px 0 16px; }
+.nav-collapsed .side-brand img,
 .nav-collapsed .side-brand div,
 .nav-collapsed .nav-btn span,
 .nav-collapsed .nav-group,
 .nav-collapsed .side-account span,
 .nav-collapsed .side-account strong,
 .nav-collapsed .side-account .btn span { display: none; }
+.nav-collapsed .side-mono { display: block; }
 .nav-collapsed .nav-btn { justify-content: center; padding: 11px 0; gap: 0; }
 .nav-collapsed .side-account { padding-top: 12px; }
 .nav-collapsed .side-account .btn { justify-content: center; padding: 11px 0; gap: 0; }

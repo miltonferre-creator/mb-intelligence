@@ -628,7 +628,7 @@
 
     if (action.dataset.action === "toggle-sidebar") {
       const collapsed = document.body.classList.toggle("nav-collapsed");
-      try { localStorage.setItem("mbi.ui.nav", collapsed ? "collapsed" : ""); } catch (error) {}
+      try { localStorage.setItem("mbi.ui.nav", collapsed ? "collapsed" : "expanded"); } catch (error) {}
       return;
     }
 
@@ -974,7 +974,7 @@
   document.addEventListener("change", handleChange);
 
   async function boot() {
-    try { if (localStorage.getItem("mbi.ui.nav") === "collapsed") document.body.classList.add("nav-collapsed"); } catch (error) {}
+    try { if (localStorage.getItem("mbi.ui.nav") !== "expanded") document.body.classList.add("nav-collapsed"); } catch (error) {}
     MBI.storage.getDatabase();
     if (MBI.auth.currentSession()?.token) {
       await MBI.sync.refreshIfPossible();
