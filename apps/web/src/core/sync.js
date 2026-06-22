@@ -50,9 +50,9 @@
 
     const db = {
       ...local,
-      version: local.version || MBI.seed.version,
-      plans: plans.data?.length ? plans.data : local.plans,
-      clients: clients.data?.length ? clients.data : (local.clients?.length ? local.clients : MBI.seed.clients),
+      version: local.version || 7,
+      plans: plans.data?.length ? plans.data : (local.plans || []),
+      clients: clients.data?.length ? clients.data : (local.clients || []),
       users: mergeUsers(local.users, users.data, me.user),
       documents: documents.data || [],
       imports: imports.data || [],

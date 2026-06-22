@@ -1,8 +1,30 @@
 (function () {
   window.MBI = window.MBI || {};
 
-  const DB_KEY = "mbi.database.v3";
   const SESSION_KEY = "mbi.session.v3";
+  const LEGACY_DB_KEY = "mbi.database.v3";
+
+  // Os DADOS vivem em memoria e sao sempre abastecidos pelo Supabase (sync no boot
+  // e no login). Nada de dados em localStorage nem seed em JS como fonte.
+  // Apenas o TOKEN de sessao permanece no localStorage (para manter o login no F5).
+  let memDb = null;
+
+  function emptyDb() {
+    return {
+      version: 7,
+      plans: [],
+      clients: [],
+      companies: [],
+      users: [],
+      financials: {},
+      documents: [],
+      imports: [],
+      tasks: [],
+      messages: [],
+      approvals: [],
+      audit: []
+    };
+  }
 
   function clone(value) {
     return JSON.parse(JSON.stringify(value));
@@ -12,42 +34,25 @@
     return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2, 7)}`;
   }
 
-  function readDatabase() {
-    const raw = localStorage.getItem(DB_KEY);
-    if (!raw) return null;
-    try {
-      return JSON.parse(raw);
-    } catch (error) {
-      return null;
-    }
-  }
-
-  function writeDatabase(db) {
-    localStorage.setItem(DB_KEY, JSON.stringify(db));
-  }
-
-  function ensureDatabase() {
-    const db = readDatabase();
-    if (db && db.version === MBI.seed.version) return db;
-    const seeded = clone(MBI.seed);
-    writeDatabase(seeded);
-    return seeded;
-  }
-
   function getDatabase() {
-    return ensureDatabase();
+    if (!memDb) memDb = emptyDb();
+    return memDb;
   }
 
   function setDatabase(db) {
-    writeDatabase(db);
-    return db;
+    memDb = db || emptyDb();
+    return memDb;
   }
 
   function updateDatabase(mutator) {
     const db = getDatabase();
     const result = mutator(db);
-    writeDatabase(db);
     return result;
+  }
+
+  function resetDatabase() {
+    memDb = emptyDb();
+    return memDb;
   }
 
   function getSession() {
@@ -68,10 +73,8 @@
     localStorage.removeItem(SESSION_KEY);
   }
 
-  function resetDatabase() {
-    localStorage.removeItem(DB_KEY);
-    return ensureDatabase();
-  }
+  // Remove o antigo cache de dados que ficava no localStorage (migracao para memoria).
+  try { localStorage.removeItem(LEGACY_DB_KEY); } catch (error) {}
 
   MBI.storage = {
     clone,
