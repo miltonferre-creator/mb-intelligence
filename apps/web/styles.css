@@ -1820,6 +1820,36 @@ textarea:focus {
   gap: 10px;
 }
 
+/* KPI executivo modernizado */
+.kpi-card { min-height: 150px; gap: 6px; }
+.kpi-card .metric-top span {
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  font-size: 12px;
+  color: var(--muted);
+}
+.kpi-value {
+  display: block;
+  font-size: clamp(26px, 3vw, 38px);
+  font-weight: 800;
+  line-height: 1.05;
+  color: var(--ink);
+}
+.kpi-foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+}
+.kpi-trend { display: flex; flex-direction: column; gap: 4px; }
+.kpi-trend > em {
+  color: var(--soft);
+  font-size: 11px;
+  font-style: normal;
+}
+.kpi-card .kpi-spark { width: 92px; height: 40px; flex: 0 0 auto; opacity: 1; }
+
 .delta-pill {
   flex: 0 0 auto;
   padding: 4px 8px;

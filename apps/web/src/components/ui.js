@@ -48,17 +48,23 @@
     const max = Math.max(...points, 1);
     const min = Math.min(...points, 0);
     const range = Math.max(max - min, 1);
-    const spark = points.length
-      ? points.map((item, index) => `${(index / Math.max(points.length - 1, 1)) * 100},${34 - ((item - min) / range) * 28}`).join(" ")
-      : "0,28 100,28";
+    const arrow = direction === 0 ? "" : direction > 0 ? "▲ " : "▼ ";
+    const coords = points.length
+      ? points.map((item, index) => [(index / Math.max(points.length - 1, 1)) * 100, 34 - ((item - min) / range) * 30])
+      : [[0, 28], [100, 28]];
+    const line = coords.map((p) => `${p[0]},${p[1]}`).join(" ");
+    const area = `0,38 ${line} 100,38`;
     return `
-      <article class="metric-card kpi-card ${color || "brand"}">
+      <article class="metric-card kpi-card ${color || "brand"}" title="${analysis || ""}">
         <div class="metric-top"><span>${label}</span><em>${hint || ""}</em></div>
-        <div class="kpi-value-row"><strong>${value}</strong><span class="delta-pill ${deltaClass}">${deltaText}</span></div>
-        <svg class="kpi-spark" viewBox="0 0 100 38" preserveAspectRatio="none" aria-hidden="true">
-          <polyline points="${spark}" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>
-        </svg>
-        <div class="metric-analysis"><strong>IA/MB:</strong> ${analysis}</div>
+        <strong class="kpi-value">${value}</strong>
+        <div class="kpi-foot">
+          <div class="kpi-trend"><span class="delta-pill ${deltaClass}">${arrow}${deltaText}</span><em>vs. mês anterior</em></div>
+          <svg class="kpi-spark" viewBox="0 0 100 38" preserveAspectRatio="none" aria-hidden="true">
+            <polygon points="${area}" fill="currentColor" fill-opacity="0.13"></polygon>
+            <polyline points="${line}" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></polyline>
+          </svg>
+        </div>
       </article>
     `;
   }
