@@ -22,10 +22,6 @@
     return MBI.ui.nav(items, active);
   }
 
-  function currentMonthValue() {
-    return MBI.services.finance?.currentMonth?.() || new Date().toISOString().slice(0, 7);
-  }
-
   function sessionFilters(key) {
     return MBI.auth.currentSession()?.uiFilters?.[key] || {};
   }
@@ -68,74 +64,6 @@
     if (route === "#/cliente/perfil") return shell(route, profile(client));
     if (route === "#/cliente/inteligencia") return shell(route, intelligence(client));
     return shell("#/cliente/inicio", home(client));
-  }
-
-  function processStatus(client, data) {
-    const docs = MBI.services.documents.listByClient(client.id);
-    const imports = MBI.services.imports.list(client.id);
-    const tasks = MBI.storage.getDatabase().tasks.filter((task) => task.clientId === client.id);
-    const financeReady = Number(data.revenue || 0) > 0;
-    const cashReady = client.planId === "cfo" ? data.cashBridge?.length > 0 : imports.some((item) => item.status?.includes("Valid"));
-    return [
-      ["Documentos", docs.length ? "Em dia" : "Pendente", docs.length ? `${docs.length} arquivo(s) liberado(s)` : "Aguardando primeira publicacao MB", "folder-check"],
-      ["Dados", financeReady ? "Atualizado" : "Insuficiente", financeReady ? "Base financeira disponivel para leitura" : "A MB ainda vai carregar ou solicitar dados", "database"],
-      ["Caixa", cashReady ? "Validado" : "Em revisao", cashReady ? "Fluxo de caixa pode ser acompanhado" : "Depende de OFX, Excel ou conciliacao", "wallet"],
-      ["Acoes", tasks.length ? `${tasks.length} abertas` : "Sem pendencias", tasks.length ? "Existe acompanhamento ativo" : "Nenhuma acao pendente no momento", "list-checks"]
-    ];
-  }
-
-  function copilotSignals(client, data) {
-    const signals = [];
-    const tasks = MBI.storage.getDatabase().tasks.filter((task) => task.clientId === client.id);
-    const docs = MBI.services.documents.listByClient(client.id);
-    const margin = Number(data.margin || 0);
-    const target = Number(data.marginTarget || 20);
-    const runway = Number(data.runway || 0);
-    const expenses = Number(data.expenses || 0);
-    const revenue = Number(data.revenue || 0);
-    if (tasks.some((task) => task.priority === "Alta")) signals.push(["Alta", "Resolver pendencia critica", tasks.find((task) => task.priority === "Alta")?.title || "Pendencia prioritaria da MB", "MB"]);
-    if (client.planId !== "contabilidade" && revenue && expenses > revenue) signals.push(["Alta", "Revisar consumo de caixa", "Despesas acima do faturamento informado.", "IA MB"]);
-    if (client.planId !== "contabilidade" && runway && runway < 30) signals.push(["Alta", "Preservar caixa", `Folego estimado em ${runway} dias; priorizar reducao de saidas.`, "IA MB"]);
-    if (client.planId === "cfo" && margin < target) signals.push(["Media", "Recuperar margem", `Margem atual ${margin}% abaixo da meta MB de ${target}%.`, "MB CFO"]);
-    if (!docs.length) signals.push(["Media", "Aguardar documentos base", "A MB ainda vai publicar documentos iniciais no portal.", "Sistema"]);
-    if (!signals.length) signals.push(["Normal", "Acompanhar fechamento", "Nenhuma prioridade critica aberta nesta competencia.", "Copiloto"]);
-    return signals.slice(0, 4);
-  }
-
-  function liveFeed(client, data) {
-    const db = MBI.storage.getDatabase();
-    const docs = MBI.services.documents.listByClient(client.id).slice(-2).map((doc) => ["Documento", MBI.ui.escape(doc.name || doc.fileName), MBI.ui.escape(doc.competence || doc.due || "Publicado")]);
-    const messages = (db.messages || []).filter((message) => message.clientId === client.id).slice(-2).map((message) => ["Mensagem", MBI.ui.escape(message.text), MBI.ui.escape(message.at || "Agora")]);
-    const tasks = (db.tasks || []).filter((task) => task.clientId === client.id).slice(-2).map((task) => ["Acao", MBI.ui.escape(task.title), MBI.ui.escape(task.status || task.due || "Em acompanhamento")]);
-    const rows = [...tasks, ...docs, ...messages].slice(-5);
-    if (!rows.length) rows.push(["Sistema", "Aguardando primeira atualizacao operacional da MB.", data.competenceLabel || "Competencia atual"]);
-    return `<div class="timeline">${rows.map(([type, text, meta]) => `<div class="timeline-item"><time>${type}</time><span><strong>${text}</strong><br>${meta}</span></div>`).join("")}</div>`;
-  }
-
-  function percentOf(value, base) {
-    const denominator = Number(base || 0);
-    if (!denominator) return 0;
-    return Math.max(0, Math.min(100, Math.round((Math.abs(Number(value || 0)) / denominator) * 100)));
-  }
-
-  function scoreBars(data) {
-    const rows = data.scoreBreakdown || [];
-    if (!rows.length) return [["Score calculado", data.score || 0, `${data.score || 0}/100`, "brand"]];
-    return rows.map((item) => [item.label, Math.round(item.score || 0), `${Math.round(item.score || 0)}/100 · ${item.value}`, item.status === "Saudavel" ? "teal" : item.status === "Risco" ? "amber" : "blue"]);
-  }
-
-  function expenseCompositionBars(data) {
-    const revenue = Number(data.revenue || 0);
-    const payroll = Number(data.payroll || 0);
-    const taxes = Number(data.taxes || 0);
-    const expenses = Number(data.expenses || 0);
-    const remaining = Math.max(expenses - payroll - taxes, 0);
-    return [
-      ["Despesas operacionais", percentOf(remaining, revenue), MBI.ui.money(remaining), "brand"],
-      ["Folha", percentOf(payroll, revenue), MBI.ui.money(payroll), "teal"],
-      ["Impostos", percentOf(taxes, revenue), MBI.ui.money(taxes), "blue"],
-      ["Total de despesas", percentOf(expenses, revenue), MBI.ui.money(expenses), "amber"]
-    ];
   }
 
   // Tendencia formatada vs mes anterior. invert=true para indicadores onde subir e ruim.
@@ -186,75 +114,11 @@
     `;
   }
 
-  function cockpit(client, data) {
-    const plan = MBI.services.plans.get(client.planId);
-    const tasks = MBI.storage.getDatabase().tasks.filter((task) => task.clientId === client.id);
-    const primaryTask = tasks[0];
-
-    return `
-      <section class="journey-hero">
-        <article class="panel executive-brief">
-          <div class="panel-header">
-            <div><h3>Leitura executiva</h3><p>${MBI.ui.escape(plan.name)} · ${MBI.ui.escape(data.competenceLabel || "competência atual")}.</p></div>
-            ${MBI.ui.pill(client.status)}
-          </div>
-          ${executiveBrief(client, data)}
-          <div class="brief-actions">
-            <button class="btn btn-primary" type="button" data-route="#/cliente/documentos">${MBI.ui.icon("folder-open")} Ver documentos</button>
-            <button class="btn btn-ghost" type="button" data-route="#/cliente/comunicacao">${MBI.ui.icon("messages-square")} Falar com a MB</button>
-          </div>
-        </article>
-        <article class="panel priority-panel">
-          <div class="panel-header"><div><h3>Prioridade agora</h3><p>O que move sua empresa para a proxima etapa.</p></div></div>
-          <div class="priority-callout">
-            <span class="priority-dot ${primaryTask?.priority === "Alta" ? "high" : "medium"}"></span>
-            <div><strong>${primaryTask?.title || "Acompanhar atualizacao MB"}</strong><p>${primaryTask ? `${primaryTask.owner} · vence ${primaryTask.due}` : "Sem pendencias criticas neste momento."}</p></div>
-          </div>
-          <div class="metric-analysis"><strong>IA MB:</strong> ${data.insights?.[0] || "A qualidade da analise aumenta conforme os dados sao enviados e revisados."}</div>
-        </article>
-      </section>
-      <section class="process-strip">
-        ${processStatus(client, data).map(([title, status, detail, icon]) => `
-          <article class="process-step">
-            <div>${MBI.ui.icon(icon)}</div>
-            <strong>${title}</strong>
-            ${MBI.ui.pill(status)}
-            <span>${detail}</span>
-          </article>
-        `).join("")}
-      </section>
-    `;
-  }
-
-  const intelligenceTabDefs = [
-    ["overview", "Visão Geral", "layout-dashboard"],
-    ["finance", "Financeiro", "line-chart"],
-    ["analysis", "Análise", "radar"],
-    ["history", "Histórico", "bar-chart-3"],
-    ["scenarios", "Cenários", "sliders-horizontal"]
-  ];
-
   function tabAllowed(client, tab) {
     if (tab === "overview") return true;
     if (client.planId === "cfo") return true;
     if (client.planId === "gestao") return ["finance", "analysis", "history"].includes(tab);
     return false;
-  }
-
-  function currentIntelligenceTab(client) {
-    const selected = MBI.auth.currentSession()?.uiFilters?.intelligenceTab || "overview";
-    return tabAllowed(client, selected) ? selected : "overview";
-  }
-
-  function intelligenceTabs(client, active) {
-    return `
-      <div class="intel-tabs">
-        ${intelligenceTabDefs.map(([key, label, icon]) => {
-          const allowed = tabAllowed(client, key);
-          return `<button class="intel-tab ${active === key ? "is-active" : ""} ${allowed ? "" : "is-locked"}" type="button" ${allowed ? `data-action="set-intelligence-tab" data-tab="${key}"` : ""} title="${allowed ? label : "Disponível em plano superior"}">${MBI.ui.icon(allowed ? icon : "lock")}<span>${label}</span></button>`;
-        }).join("")}
-      </div>
-    `;
   }
 
   function periodsAsc(client) {
@@ -303,20 +167,6 @@
     `;
   }
 
-  function documentDonut(client) {
-    const docs = MBI.services.documents.listByClient(client.id);
-    const fiscal = docs.filter((doc) => /fiscal|das/i.test(`${doc.category} ${doc.name}`)).length;
-    const labor = docs.filter((doc) => /trabalh|folha|fgts|inss/i.test(`${doc.category} ${doc.name}`)).length;
-    const finance = docs.filter((doc) => /financ|dre|caixa|relat/i.test(`${doc.category} ${doc.name}`)).length;
-    const other = Math.max(docs.length - fiscal - labor - finance, 0);
-    return MBI.ui.donut([
-      { label: "Fiscal", value: fiscal || 1, text: `${fiscal} arquivo(s)`, color: "brand" },
-      { label: "Trabalhista", value: labor || 1, text: `${labor} arquivo(s)`, color: "blue" },
-      { label: "Financeiro", value: finance || 1, text: `${finance} arquivo(s)`, color: "teal" },
-      { label: "Outros", value: other || 1, text: `${other} arquivo(s)`, color: "amber" }
-    ], `${docs.length}`);
-  }
-
   function expenseRanking(data) {
     const payroll = Number(data.payroll || 0);
     const taxes = Number(data.taxes || 0);
@@ -332,102 +182,6 @@
     if (!items.length) return `<div class="empty-lock">${MBI.ui.icon("bar-chart-big")}<h3>Sem despesas no período</h3><p>A MB ainda não detalhou a composição das despesas desta competência.</p></div>`;
     const base = total || items.reduce((sum, [, value]) => sum + value, 0) || 1;
     return MBI.ui.bars(items.map(([label, value, color]) => [label, Math.min((value / base) * 100, 100), `${MBI.ui.money(value)} · ${Math.round((value / base) * 100)}%`, color]));
-  }
-
-  function overviewTab(client, data) {
-    const locked = client.planId === "contabilidade"
-      ? `<section class="grid grid-3" style="margin-top:14px">${lockedUpgrade("DRE gerencial", "Gestao", "Visualize a cascata de resultado e entenda lucro, margem e custos.")}${lockedUpgrade("Score financeiro", "Gestao", "Libere o score com dimensões de liquidez, rentabilidade e eficiência.")}${lockedUpgrade("CFO consultivo", "CFO (em breve)", "Receba cenários, pareceres e recomendações executivas da MB.")}</section>`
-      : client.planId === "gestao"
-        ? `<section class="grid grid-2" style="margin-top:14px">${lockedUpgrade("Radar CFO", "CFO (em breve)", "Compare as seis dimensões do score com leitura executiva.")}${lockedUpgrade("Cenários consultivos", "CFO (em breve)", "Simule investimento, margem e caixa mínimo com parecer MB.")}</section>`
-        : "";
-    return `
-      ${cockpit(client, data)}
-      ${kpiGrid(client, data)}
-      ${tabAllowed(client, "finance") && (data.months || []).length ? `
-      <section class="panel chart" style="margin-top:14px"><div class="panel-header"><div><h3>Evolução: receita × despesas</h3><p>Como sua empresa vem se comportando mês a mês.</p></div><button class="btn btn-ghost btn-mini" type="button" data-action="set-intelligence-tab" data-tab="history">Ver histórico completo</button></div>${MBI.ui.lineChart(data.months)}<div class="chart-legend"><span><i class="legend-dot blue"></i> Receita</span><span><i class="legend-dot amber"></i> Despesas</span></div></section>` : ""}
-      <section class="grid grid-2" style="margin-top:14px">
-        <article class="panel"><div class="panel-header"><div><h3>Copiloto financeiro</h3><p>Prioridades, recomendacoes e proximos passos.</p></div>${MBI.ui.pill("Vivo")}</div><div class="priority-list">${copilotSignals(client, data).map(([priority, title, detail, origin]) => `<div class="priority-item"><span class="priority-dot ${priority === "Alta" ? "high" : priority === "Media" ? "medium" : ""}"></span><div><strong>${title}</strong><span>${detail}</span></div><small>${origin}</small></div>`).join("")}</div></article>
-        <article class="panel"><div class="panel-header"><div><h3>Linha do tempo</h3><p>Ultimas movimentacoes do acompanhamento.</p></div></div>${liveFeed(client, data)}</article>
-      </section>
-      <section class="grid grid-2" style="margin-top:14px">
-        <article class="panel"><div class="panel-header"><div><h3>Saúde documental</h3><p>Documentos publicados pela MB por categoria.</p></div></div>${documentDonut(client)}</article>
-        <article class="panel"><div class="panel-header"><div><h3>IA MB</h3><p>Leitura principal da competência.</p></div></div><div class="insight-list">${(data.insights || []).map((text) => `<div class="insight-item"><strong>Observação</strong><span>${text}</span></div>`).join("")}</div></article>
-      </section>
-      ${locked}
-    `;
-  }
-
-  function financeTab(client, data) {
-    if (!tabAllowed(client, "finance")) return lockedUpgrade("Financeiro gerencial", "Gestao", "DRE, DFC e evolução financeira ficam disponíveis nos planos financeiros.");
-    const dreActions = client.planId === "cfo"
-      ? `<div class="report-actions"><button class="btn btn-ghost" type="button" data-action="print-report" data-report="dre">${MBI.ui.icon("printer")} Imprimir</button><button class="btn btn-soft" type="button" data-action="export-report" data-report="dre">${MBI.ui.icon("file-spreadsheet")} Excel</button></div>`
-      : "";
-    const cashActions = client.planId === "cfo"
-      ? `<div class="report-actions"><button class="btn btn-ghost" type="button" data-action="print-report" data-report="cash">${MBI.ui.icon("printer")} Imprimir</button><button class="btn btn-soft" type="button" data-action="export-report" data-report="cash">${MBI.ui.icon("file-spreadsheet")} Excel</button></div>`
-      : "";
-    return `
-      <section class="grid grid-2">
-        <article class="panel">
-          <div class="panel-header"><div><h3>DRE em cascata</h3><p>Como a receita se transforma em resultado.</p></div>${dreActions}</div>
-          ${MBI.ui.waterfall(data.dre)}
-          <details class="report-detail"><summary>Tabela completa da DRE</summary>${MBI.ui.dreTable(data.dre)}</details>
-        </article>
-        <article class="panel">
-          <div class="panel-header"><div><h3>DFC em cascata</h3><p>Saldo inicial, entradas, saídas e saldo final.</p></div>${cashActions}</div>
-          ${MBI.ui.waterfall(data.cashBridge)}
-          <details class="report-detail"><summary>Tabela completa do fluxo de caixa</summary>${cashBridge(data.cashBridge)}</details>
-        </article>
-      </section>
-    `;
-  }
-
-  function analysisTab(client, data) {
-    if (!tabAllowed(client, "analysis")) return lockedUpgrade("Análise financeira", "Gestao", "Score, composição de despesas e fôlego de caixa ficam disponíveis nos planos financeiros.");
-    return `
-      <section class="grid grid-3">
-        <article class="panel"><div class="panel-header"><div><h3>MB Financial Score</h3><p>Leitura visual do risco financeiro.</p></div></div>${MBI.ui.scoreGauge(data.score, "MB Financial Score")}${MBI.ui.bars(scoreBars(data))}</article>
-        <article class="panel"><div class="panel-header"><div><h3>Onde você mais gasta</h3><p>Maiores despesas do período, em ordem.</p></div></div>${expenseRanking(data)}<div class="metric-analysis" style="margin-top:14px"><strong>IA MB:</strong> ranking calculado sobre as despesas validadas pela MB nesta competência.</div></article>
-        <article class="panel"><div class="panel-header"><div><h3>Fôlego de caixa</h3><p>Runway visual com zonas de risco.</p></div></div>${MBI.ui.runway(data.runway)}<div class="metric-analysis" style="margin-top:14px"><strong>MB:</strong> abaixo de 45 dias exige acompanhamento mais próximo.</div></article>
-      </section>
-      <section class="grid grid-2" style="margin-top:14px">
-        <article class="panel"><div class="panel-header"><div><h3>Margem e meta MB</h3><p>Eficiência da operação.</p></div></div>${MBI.ui.bars([["Margem atual", Math.min(Math.max(data.margin || 0, 0) * 3, 100), `${data.margin || 0}%`, "teal"], ["Meta MB", Math.min(Math.max(data.marginTarget || 20, 0) * 3, 100), `${data.marginTarget || 20}%`, "blue"], ["Pressão de custo", percentOf(data.expenses || 0, data.revenue || 1), `${percentOf(data.expenses || 0, data.revenue || 1)}% da receita`, "amber"]])}</article>
-        ${client.planId === "cfo" ? `<article class="panel"><div class="panel-header"><div><h3>Radar CFO</h3><p>Seis dimensões do score financeiro.</p></div></div>${MBI.ui.radar(data.scoreBreakdown)}</article>` : lockedUpgrade("Radar CFO", "CFO (em breve)", "O radar executivo mostra as dimensões de score com leitura consultiva.")}
-      </section>
-    `;
-  }
-
-  function historyTab(client, data) {
-    if (!tabAllowed(client, "history")) return lockedUpgrade("Histórico financeiro", "Gestao", "Acompanhe evolução, comparativos e tendências por competência.");
-    const periods = MBI.services.finance.listPeriods(client.id);
-    return `
-      <section class="grid grid-2">
-        <article class="panel chart"><div class="panel-header"><div><h3>Evolução receita x despesas</h3><p>Gráfico de área com tooltip e eixo de valores.</p></div></div>${MBI.ui.lineChart(data.months)}<div class="chart-legend"><span><i class="legend-dot blue"></i> Receita</span><span><i class="legend-dot amber"></i> Despesas</span></div></article>
-        <article class="panel chart"><div class="panel-header"><div><h3>Comparativo multi-período</h3><p>Receita, despesas e resultado por mês.</p></div></div>${MBI.ui.groupedBars(data.months)}<div class="chart-legend"><span><i class="legend-dot blue"></i> Receita</span><span><i class="legend-dot amber"></i> Despesas</span><span><i class="legend-dot teal"></i> Resultado</span></div></article>
-      </section>
-      <section class="panel" style="margin-top:14px"><div class="panel-header"><div><h3>Snapshots históricos</h3><p>Competências registradas pela MB.</p></div></div>${MBI.ui.table(["Competência", "Receita", "Despesas", "Resultado", "Caixa", "Margem"], periods.map((row) => [row.label, MBI.ui.money(row.revenue), MBI.ui.money(row.expenses), MBI.ui.money(row.result), MBI.ui.money(row.cash), `${row.margin}%`]))}</section>
-    `;
-  }
-
-  function scenariosTab(client, data) {
-    if (!tabAllowed(client, "scenarios")) return lockedUpgrade("Cenários executivos", "CFO (em breve)", "Simulações de margem, investimento, caixa mínimo e parecer MB ficam no plano CFO.");
-    const safeInvestment = Number(data.investmentCapacity || 0);
-    const marginGap = Math.max(Number(data.marginTarget || 20) - Number(data.margin || 0), 0);
-    return `
-      <section class="grid grid-3">
-        <article class="panel"><div class="panel-header"><div><h3>Capacidade de investimento</h3><p>Limite prudencial estimado.</p></div></div><div class="score-radar"><div><strong>${MBI.ui.money(safeInvestment)}</strong><span>Investimento seguro</span></div><div><strong>${data.runway || 0} dias</strong><span>Fôlego atual</span></div></div><div class="metric-analysis"><strong>MB CFO:</strong> preservar reserva mínima antes de novas decisões.</div></article>
-        <article class="panel"><div class="panel-header"><div><h3>Meta de margem</h3><p>Distância até a meta MB.</p></div></div>${MBI.ui.bars([["Margem atual", Math.min((data.margin || 0) * 3, 100), `${data.margin || 0}%`, "teal"], ["Meta", Math.min((data.marginTarget || 20) * 3, 100), `${data.marginTarget || 20}%`, "blue"], ["Gap", Math.min(marginGap * 5, 100), `${marginGap.toFixed(1).replace(".", ",")} p.p.`, "amber"]])}</article>
-        <article class="panel"><div class="panel-header"><div><h3>Parecer consultivo</h3><p>Próxima decisão recomendada.</p></div></div><div class="insight-item"><strong>Recomendação MB</strong><span>${data.insights?.[1] || "Aguardar validação consultiva da MB para decisão executiva."}</span></div><button class="btn btn-primary" style="margin-top:14px" type="button" data-action="print-report" data-report="dre">${MBI.ui.icon("file-text")} Exportar parecer</button></article>
-      </section>
-      <form class="panel scenario-simulator" style="margin-top:14px" data-revenue="${data.revenue || 0}" data-expenses="${data.expenses || 0}" data-cash="${data.cash || 0}">
-        <div class="panel-header"><div><h3>Simulador CFO</h3><p>Teste crescimento de receita, redução de despesas e investimento desejado.</p></div><button class="btn btn-primary" type="button" data-action="simulate-cfo-scenario">${MBI.ui.icon("calculator")} Simular cenário</button></div>
-        <div class="form-section">
-          <label><span>Crescimento de receita (%)</span><input type="number" name="revenueGrowth" value="8"></label>
-          <label><span>Redução de despesas (%)</span><input type="number" name="expenseReduction" value="5"></label>
-          <label><span>Investimento desejado</span><input type="number" name="investment" value="${Math.round(safeInvestment * .7)}"></label>
-        </div>
-        <div class="scenario-output" data-scenario-output><strong>Cenário base</strong><span>Simule para estimar resultado projetado e caixa após investimento.</span></div>
-      </form>
-    `;
   }
 
   function greeting() {

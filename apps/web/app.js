@@ -637,32 +637,6 @@
       return;
     }
 
-    if (action.dataset.action === "set-intelligence-tab") {
-      const session = MBI.auth.currentSession();
-      session.uiFilters = { ...(session.uiFilters || {}), intelligenceTab: action.dataset.tab || "overview" };
-      MBI.storage.setSession(session);
-      render();
-      return;
-    }
-
-    if (action.dataset.action === "simulate-cfo-scenario") {
-      const form = action.closest(".scenario-simulator");
-      const output = form?.querySelector("[data-scenario-output]");
-      if (!form || !output) return;
-      const revenue = Number(form.dataset.revenue || 0);
-      const expenses = Number(form.dataset.expenses || 0);
-      const cash = Number(form.dataset.cash || 0);
-      const growth = Number(form.querySelector("[name='revenueGrowth']")?.value || 0) / 100;
-      const reduction = Number(form.querySelector("[name='expenseReduction']")?.value || 0) / 100;
-      const investment = Number(form.querySelector("[name='investment']")?.value || 0);
-      const projectedRevenue = revenue * (1 + growth);
-      const projectedExpenses = expenses * (1 - reduction);
-      const projectedResult = projectedRevenue - projectedExpenses;
-      const projectedCash = cash + projectedResult - investment;
-      output.innerHTML = `<strong>Resultado projetado: ${MBI.ui.money(projectedResult)}</strong><span>Caixa estimado após investimento: ${MBI.ui.money(projectedCash)}. ${projectedCash >= 0 ? "Cenário preserva caixa positivo." : "Cenário exige revisão antes de executar."}</span>`;
-      return;
-    }
-
     if (action.dataset.action === "edit-finance-period") {
       const clientId = action.dataset.clientId;
       const competence = action.dataset.competence;
