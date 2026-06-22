@@ -67,19 +67,6 @@
   }
 
   function render(route) {
-    if (!MBI.auth.currentUser()) {
-      return `
-        <main class="login-page"><section class="login-workspace" style="max-width:520px;margin:0 auto;padding:60px 24px">
-          <div class="login-card" style="text-align:center">
-            <div class="section-title"><h2>Carregando a operação</h2><p>Não conseguimos carregar os dados do servidor agora. Verifique a conexão e tente novamente.</p></div>
-            <div class="login-actions" style="justify-content:center">
-              <button class="btn btn-primary" type="button" onclick="location.reload()">${MBI.ui.icon("refresh-cw")} Tentar novamente</button>
-              <button class="btn btn-ghost" type="button" data-action="logout">${MBI.ui.icon("log-out")} Sair</button>
-            </div>
-          </div>
-        </section></main>
-      `;
-    }
     if (!MBI.services.clients.list().length) return shell("#/admin/clientes", emptyClients());
     if (route === "#/admin/clientes") return shell(route, clients());
     if (route === "#/admin/novo-cliente") return shell("#/admin/clientes", clients());

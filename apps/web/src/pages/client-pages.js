@@ -58,23 +58,8 @@
     });
   }
 
-  function clientUnavailable() {
-    return `
-      <main class="login-page"><section class="login-workspace" style="max-width:520px;margin:0 auto;padding:60px 24px">
-        <div class="login-card" style="text-align:center">
-          <div class="section-title"><h2>Carregando seus dados</h2><p>Não conseguimos carregar suas informações do servidor agora. Verifique sua conexão e tente novamente.</p></div>
-          <div class="login-actions" style="justify-content:center">
-            <button class="btn btn-primary" type="button" onclick="location.reload()">${MBI.ui.icon("refresh-cw")} Tentar novamente</button>
-            <button class="btn btn-ghost" type="button" data-action="logout">${MBI.ui.icon("log-out")} Sair</button>
-          </div>
-        </div>
-      </section></main>
-    `;
-  }
-
   function render(route) {
     const client = MBI.services.clients.current();
-    if (!client) return clientUnavailable();
     if (route === "#/cliente/inicio") return shell(route, home(client));
     if (route === "#/cliente/onboarding") return shell(route, onboarding(client));
     if (route === "#/cliente/documentos") return shell(route, documents(client));
