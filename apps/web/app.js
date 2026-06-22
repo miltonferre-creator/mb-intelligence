@@ -626,6 +626,12 @@
       return;
     }
 
+    if (action.dataset.action === "toggle-sidebar") {
+      const collapsed = document.body.classList.toggle("nav-collapsed");
+      try { localStorage.setItem("mbi.ui.nav", collapsed ? "collapsed" : ""); } catch (error) {}
+      return;
+    }
+
     if (action.dataset.action === "focus-admin-imports") {
       document.getElementById("admin-imports")?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
@@ -968,6 +974,7 @@
   document.addEventListener("change", handleChange);
 
   async function boot() {
+    try { if (localStorage.getItem("mbi.ui.nav") === "collapsed") document.body.classList.add("nav-collapsed"); } catch (error) {}
     MBI.storage.getDatabase();
     if (MBI.auth.currentSession()?.token) {
       await MBI.sync.refreshIfPossible();

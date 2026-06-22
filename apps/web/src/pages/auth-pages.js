@@ -4,62 +4,29 @@
 
   function login() {
     return `
-      <main class="login-page">
-        <section class="login-brand">
+      <main class="login-page login-solo">
+        <div class="login-solo-card">
           <div class="brand-lockup">
             <img src="assets/mb-logo-premium.svg" alt="MB Assessoria Empresarial">
             <div><strong>MB Intelligence</strong><span>Portal do cliente MB</span></div>
           </div>
-          <div class="login-copy">
-            <h1>Contabilidade organizada e gestao inteligente para empresas que querem crescer com controle.</h1>
-            <p>Portal seguro para acompanhar documentos, guias fiscais, indicadores financeiros e comunicacao direta com a MB.</p>
+          <div class="section-title">
+            <h2>Entrar</h2>
+            <p>Acesse seu portal ou a administração da MB.</p>
           </div>
-          <div class="proof-grid">
-            <div>
-              <strong>Plano Contabilidade — R$&nbsp;500/mes</strong>
-              <span>Contabilidade, Simples Nacional, DAS, documentos e repositorio digital.</span>
+          <form class="login-form" data-form="login">
+            <div class="form-grid">
+              <label><span>E-mail</span><input name="email" type="email" autocomplete="email" required placeholder="seu@email.com.br"></label>
+              <label><span>Senha</span><input name="password" type="password" autocomplete="current-password" required placeholder="Sua senha de acesso"></label>
             </div>
-            <div>
-              <strong>Plano Gestao — R$&nbsp;770/mes</strong>
-              <span>Tudo do Contabilidade + folha (ate 5 func.), dashboard, indicadores e alertas.</span>
+            <button class="btn btn-primary login-solo-btn" type="submit">${MBI.ui.icon("log-in")} Entrar</button>
+            <div class="login-footer-links">
+              <button class="btn-link" type="button" data-route="#/recuperar-senha">Esqueci minha senha</button>
+              <span>·</span>
+              <button class="btn-link" type="button" data-route="#/privacidade">Privacidade e LGPD</button>
             </div>
-            <div>
-              <strong>Troca de contador sem dor de cabeca</strong>
-              <span>A MB cuida de toda a transicao. Voce so assina a procuracao.</span>
-            </div>
-            <div>
-              <strong>Portal 100% digital</strong>
-              <span>Acesse documentos, guias e relatorios a qualquer hora pelo celular ou computador.</span>
-            </div>
-          </div>
-          <a class="btn btn-whatsapp" href="https://wa.me/5500000000000?text=Ola%2C%20quero%20conhecer%20os%20planos%20da%20MB" target="_blank" rel="noopener">
-            ${MBI.ui.icon("message-circle")} Falar com a MB no WhatsApp
-          </a>
-        </section>
-
-        <section class="login-workspace">
-          <div class="login-card">
-            <div class="section-title">
-              <h2>Entrar</h2>
-              <p>Acesse seu portal ou a administracao operacional da MB.</p>
-            </div>
-            <form class="login-form" data-form="login">
-              <div class="form-grid">
-                <label><span>E-mail</span><input name="email" type="email" autocomplete="email" required placeholder="seu@email.com.br"></label>
-                <label><span>Senha</span><input name="password" type="password" autocomplete="current-password" required placeholder="Sua senha de acesso"></label>
-              </div>
-              <div class="login-actions">
-                <button class="btn btn-primary" type="submit">${MBI.ui.icon("log-in")} Entrar</button>
-                <button class="btn btn-ghost" type="button" data-route="#/contratar">${MBI.ui.icon("shopping-bag")} Quero contratar</button>
-              </div>
-              <div class="login-footer-links">
-                <button class="btn-link" type="button" data-route="#/recuperar-senha">Esqueci minha senha</button>
-                <span>·</span>
-                <button class="btn-link" type="button" data-route="#/privacidade">Privacidade e LGPD</button>
-              </div>
-            </form>
-          </div>
-        </section>
+          </form>
+        </div>
       </main>
     `;
   }

@@ -369,12 +369,15 @@
           <div class="side-account">
             <span>${sessionLabel}</span>
             <strong>${sessionName}</strong>
-            <div style="margin-top:10px"><button class="btn btn-dark" type="button" data-action="logout">${icon("log-out")} Sair</button></div>
+            <div style="margin-top:10px"><button class="btn btn-dark" type="button" data-action="logout">${icon("log-out")} <span>Sair</span></button></div>
           </div>
         </aside>
         <main class="content">
           <header class="topbar">
-            <div><h1>${title}</h1><p>${subtitle}</p></div>
+            <div class="topbar-left">
+              <button class="icon-btn nav-toggle" type="button" data-action="toggle-sidebar" title="Recolher menu" aria-label="Recolher menu">${icon("panel-left")}</button>
+              <div><h1>${title}</h1><p>${subtitle}</p></div>
+            </div>
             <div class="topbar-actions">
               <button class="icon-btn" type="button" title="Notificações">${icon("bell")}</button>
               <button class="icon-btn" type="button" title="Ajuda">${icon("circle-help")}</button>
