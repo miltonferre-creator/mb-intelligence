@@ -4,7 +4,7 @@
 
   const routeTitles = {
     "#/cliente/inicio": "Início",
-    "#/cliente/inteligencia": "Análise Financeira",
+    "#/cliente/inteligencia": "Dashboard",
     "#/cliente/onboarding": "Onboarding",
     "#/cliente/documentos": "Documentos e guias",
     "#/cliente/comunicacao": "Comunicação MB",
@@ -13,7 +13,7 @@
 
   function menu(active, client) {
     const items = [["#/cliente/inicio", "home", "Início"]];
-    if (client && tabAllowed(client, "finance")) items.push(["#/cliente/inteligencia", "line-chart", "Financeiro"]);
+    if (client && tabAllowed(client, "finance")) items.push(["#/cliente/inteligencia", "layout-dashboard", "Dashboard"]);
     items.push(
       ["#/cliente/documentos", "folder-open", "Documentos"],
       ["#/cliente/comunicacao", "messages-square", "Comunicação"],
@@ -494,7 +494,7 @@
       <section class="home-actions">
         <button class="btn btn-primary" type="button" data-route="#/cliente/documentos">${MBI.ui.icon("folder-open")} Meus documentos</button>
         <button class="btn btn-soft" type="button" data-route="#/cliente/comunicacao">${MBI.ui.icon("messages-square")} Falar com a MB</button>
-        ${tabAllowed(client, "finance") ? `<button class="btn btn-soft" type="button" data-route="#/cliente/inteligencia">${MBI.ui.icon("line-chart")} Ver análise financeira</button>` : ""}
+        ${tabAllowed(client, "finance") ? `<button class="btn btn-soft" type="button" data-route="#/cliente/inteligencia">${MBI.ui.icon("layout-dashboard")} Ver dashboard</button>` : ""}
       </section>`;
 
     const financeBlock = tabAllowed(client, "finance")
@@ -512,16 +512,45 @@
     `;
   }
 
+  // Dashboard executivo em UMA tela (sem abas): KPIs, evolucao, onde gasta,
+  // leitura MB e score. DRE/fluxo ficam recolhidos. Menos e mais.
   function intelligence(client) {
     const data = MBI.services.finance.get(client.id);
-    const selector = competenceSelector(client, data);
-    const active = currentIntelligenceTab(client);
-    const content = active === "finance" ? financeTab(client, data)
-      : active === "analysis" ? analysisTab(client, data)
-      : active === "history" ? historyTab(client, data)
-      : active === "scenarios" ? scenariosTab(client, data)
-      : overviewTab(client, data);
-    return `${selector}${intelligenceTabs(client, active)}<div class="intel-tab-content">${content}</div>`;
+    if (!tabAllowed(client, "finance")) {
+      return lockedUpgrade("Dashboard financeiro", "Gestao", "Faturamento, lucro, margem, evolução e indicadores ficam disponíveis no Plano Gestão.");
+    }
+    const scorePanel = client.planId === "cfo"
+      ? `<article class="panel"><div class="panel-header"><div><h3>Radar do score</h3><p>Seis dimensões financeiras.</p></div></div>${MBI.ui.radar(data.scoreBreakdown)}</article>`
+      : `<article class="panel"><div class="panel-header"><div><h3>MB Financial Score</h3><p>Leitura de risco financeiro.</p></div></div>${MBI.ui.scoreGauge(data.score, "MB Financial Score")}</article>`;
+    return `
+      ${competenceSelector(client, data)}
+      ${kpiGrid(client, data)}
+      <section class="grid dash-split" style="margin-top:14px">
+        <article class="panel chart">
+          <div class="panel-header"><div><h3>Receita ao longo do tempo</h3><p>Receita e despesas, mês a mês.</p></div></div>
+          ${MBI.ui.lineChart(data.months)}
+          <div class="chart-legend"><span><i class="legend-dot blue"></i> Receita</span><span><i class="legend-dot amber"></i> Despesas</span></div>
+        </article>
+        <article class="panel">
+          <div class="panel-header"><div><h3>Onde você mais gasta</h3><p>Maiores despesas do período.</p></div></div>
+          ${expenseRanking(data)}
+        </article>
+      </section>
+      <section class="grid dash-split" style="margin-top:14px">
+        <article class="panel">
+          <div class="panel-header"><div><h3>Inteligência MB</h3><p>Leitura executiva da competência.</p></div></div>
+          ${executiveBrief(client, data)}
+        </article>
+        ${scorePanel}
+      </section>
+      <details class="report-detail" style="margin-top:14px">
+        <summary>Ver relatórios completos — DRE e fluxo de caixa</summary>
+        <section class="grid grid-2" style="margin-top:14px">
+          <article class="panel"><div class="panel-header"><div><h3>DRE em cascata</h3><p>Como a receita vira resultado.</p></div></div>${MBI.ui.waterfall(data.dre)}</article>
+          <article class="panel"><div class="panel-header"><div><h3>Fluxo de caixa</h3><p>Entradas, saídas e saldo.</p></div></div>${MBI.ui.waterfall(data.cashBridge)}</article>
+        </section>
+      </details>
+    `;
   }
 
   function cashBridge(rows) {

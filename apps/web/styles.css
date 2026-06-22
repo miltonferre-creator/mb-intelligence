@@ -2554,3 +2554,14 @@ button.workflow-step:hover { border-color: var(--brand-3); }
 @media (max-width: 900px) {
   .workflow-steps { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ===== Dashboard do cliente: grafico largo + painel lateral ===== */
+.dash-split {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 14px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .dash-split { grid-template-columns: 1fr; }
+}
