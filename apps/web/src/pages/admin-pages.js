@@ -160,35 +160,35 @@
       .sort((a, b) => String(a.name).localeCompare(String(b.name), "pt-BR"));
     const rows = filtered.map((client) => {
       const plan = MBI.services.plans.get(client.planId);
-      return [MBI.ui.escape(client.name), MBI.ui.escape(plan.name), MBI.ui.pill(client.status), MBI.ui.escape(client.maturity), `<button class="btn btn-soft" type="button" data-action="set-client" data-client-id="${MBI.ui.escape(client.id)}">Operar</button>`];
+      const suspended = client.status === "Pausado";
+      return [
+        MBI.ui.escape(client.name),
+        MBI.ui.escape(plan?.name || client.planId),
+        MBI.ui.pill(client.status),
+        MBI.ui.escape(client.maturity),
+        `<button class="btn btn-soft btn-mini" type="button" data-action="set-client" data-client-id="${MBI.ui.escape(client.id)}">${MBI.ui.icon("pencil")} Operar/Editar</button> <button class="btn btn-ghost btn-mini" type="button" data-action="suspend-client" data-client-id="${MBI.ui.escape(client.id)}">${MBI.ui.icon(suspended ? "play" : "pause")} ${suspended ? "Reativar" : "Suspender"}</button>`
+      ];
     });
     const current = MBI.services.clients.current();
     return `
-      <section class="admin-client-page">
-        <aside class="admin-client-side">
-          <form class="panel filter-stack" data-form="admin-client-filters">
-            <div class="panel-header"><div><h3>Buscar cliente</h3><p>Filtre a carteira por dados comerciais e operacionais.</p></div></div>
-            <label><span>Nome, CNPJ ou segmento</span><input name="search" placeholder="Buscar cliente" value="${filters.search || ""}"></label>
-            <label><span>Plano</span><select name="planId"><option>Todos</option>${MBI.services.plans.list().map((plan) => `<option value="${plan.id}" ${filters.planId === plan.id ? "selected" : ""}>${plan.name}</option>`).join("")}</select></label>
-            <label><span>Status</span><select name="status"><option>Todos</option>${["Ativo", "Onboarding", "Pausado", "Risco"].map((status) => `<option ${filters.status === status ? "selected" : ""}>${status}</option>`).join("")}</select></label>
-            <label><span>Confianca</span><select name="confidence"><option>Todos</option>${["Baixa", "Media", "Alta"].map((confidence) => `<option ${filters.confidence === confidence ? "selected" : ""}>${confidence}</option>`).join("")}</select></label>
-            <button class="btn btn-primary" type="submit">${MBI.ui.icon("search")} Filtrar</button>
-          </form>
-          <article class="panel">
-            <div class="panel-header"><div><h3>Resumo</h3><p>Cliente selecionado para operacao.</p></div>${MBI.ui.pill(MBI.services.plans.get(current?.planId)?.name || current?.planId || "—")}</div>
-            ${MBI.ui.table(["Campo", "Valor"], [["Empresa", MBI.ui.escape(current?.name || "—")], ["CNPJ", MBI.ui.escape(current?.cnpj || "—")], ["Consultor", MBI.ui.escape(current?.consultant || "—")], ["Confianca", MBI.ui.escape(current?.confidence || "—")]])}
-          </article>
-        </aside>
-        <div class="admin-client-main">
-          <article class="panel">
-            <div class="panel-header"><div><h3>Carteira de clientes</h3><p>Lista operacional com busca, filtros e troca rapida de contexto.</p></div>${MBI.ui.pill(`${filtered.length} cliente(s)`)}</div>
-            ${MBI.ui.table(["Cliente", "Plano", "Status", "Maturidade", "Acao"], rows)}
-          </article>
-          ${clientProfileEditor(current)}
-          <div class="section-title" style="margin-top:6px"><h2>Cadastrar novo cliente</h2><p>O cadastro e a troca de plano ficam nesta mesma tela para evitar duplicidade.</p></div>
-          ${newClient()}
-        </div>
+      <form class="filter-row" data-form="admin-client-filters" style="margin-bottom:14px">
+        <input name="search" placeholder="Buscar por nome, CNPJ ou segmento" value="${MBI.ui.escape(filters.search || "")}">
+        <select name="planId"><option>Todos</option>${MBI.services.plans.list().map((plan) => `<option value="${plan.id}" ${filters.planId === plan.id ? "selected" : ""}>${plan.name}</option>`).join("")}</select>
+        <select name="status"><option>Todos</option>${["Ativo", "Onboarding", "Pausado", "Risco"].map((status) => `<option ${filters.status === status ? "selected" : ""}>${status}</option>`).join("")}</select>
+        <button class="btn btn-primary" type="submit">${MBI.ui.icon("search")} Filtrar</button>
+      </form>
+      <section class="panel">
+        <div class="panel-header"><div><h3>Carteira de clientes</h3><p>Operar/editar abre a ficha; suspender pausa o acesso.</p></div>${MBI.ui.pill(`${filtered.length} cliente(s)`)}</div>
+        ${MBI.ui.table(["Cliente", "Plano", "Status", "Maturidade", "Ações"], rows)}
       </section>
+      <details class="report-detail" style="margin-top:14px"${current ? " open" : ""}>
+        <summary>Editar ficha${current ? ` — ${MBI.ui.escape(current.name)}` : " do cliente em operação"}</summary>
+        ${current ? clientProfileEditor(current) : `<div class="empty-lock">${MBI.ui.icon("user")}<h3>Nenhum cliente em operação</h3><p>Clique em "Operar/Editar" em um cliente da lista.</p></div>`}
+      </details>
+      <details class="report-detail" style="margin-top:14px">
+        <summary>Cadastrar novo cliente</summary>
+        ${newClient()}
+      </details>
     `;
   }
 

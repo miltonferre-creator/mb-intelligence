@@ -621,6 +621,24 @@
       return;
     }
 
+    if (action.dataset.action === "suspend-client") {
+      const id = action.dataset.clientId;
+      const client = MBI.services.clients.get(id);
+      const next = client?.status === "Pausado" ? "Ativo" : "Pausado";
+      if (!window.confirm(next === "Pausado" ? "Suspender o acesso deste cliente ao portal?" : "Reativar o acesso deste cliente?")) return;
+      try {
+        await remoteOrLocal(
+          async () => MBI.api.request(`/clients/${id}`, { method: "PATCH", body: { status: next } }),
+          () => MBI.services.clients.updateProfile(id, { status: next })
+        );
+        showToast(next === "Pausado" ? "Cliente suspenso." : "Cliente reativado.");
+        render();
+      } catch (error) {
+        showToast(error.message || "Não foi possível alterar o status.");
+      }
+      return;
+    }
+
     if (action.dataset.action === "edit-user") {
       const user = MBI.services.users.list().find((item) => item.id === action.dataset.userId);
       if (!user) return;
