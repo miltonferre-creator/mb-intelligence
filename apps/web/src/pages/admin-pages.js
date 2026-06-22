@@ -243,7 +243,7 @@
     return `
       <form class="grid" data-form="update-plan-prices">
         <article class="panel"><div class="panel-header"><div><h3>Valores dos planos</h3><p>Preços editáveis pela equipe MB.</p></div><button class="btn btn-primary" type="submit">${MBI.ui.icon("save")} Salvar preços</button></div><div class="plan-admin-grid">${plans.map((plan) => `<div class="plan-admin-card"><span class="status-pill ${plan.color}">${plan.name}</span><h3 style="margin-top:12px">${plan.tagline}</h3><label><span>Valor mensal</span><input type="number" name="price_${plan.id}" value="${plan.price}" step="50"></label><div class="module-chips">${plan.modules.map((module) => `<span class="chip is-on">${module}</span>`).join("")}</div></div>`).join("")}</div></article>
-        <article class="panel"><div class="panel-header"><div><h3>Matriz de permissões</h3><p>Regra de liberação por plano.</p></div></div>${MBI.ui.table(["Módulo", "Contabilidade", "Gestao", "CFO (em breve)", "Regra"], MBI.services.plans.matrix())}</article>
+        <article class="panel"><div class="panel-header"><div><h3>Matriz de permissões</h3><p>Regra de liberação por plano.</p></div></div>${MBI.ui.table(["Módulo", "Básico", "Gestão", "Regra"], MBI.services.plans.matrix())}</article>
       </form>
     `;
   }

@@ -53,7 +53,7 @@
         city: payload.city,
         segment: payload.segment,
         taxRegime: payload.taxRegime || "Simples Nacional",
-        planId: payload.planId || "contabilidade",
+        planId: payload.planId || "basico",
         maturity: "Onboarding",
         status: "Onboarding",
         owner: payload.owner,

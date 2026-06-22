@@ -94,8 +94,8 @@
 
   // Leitura executiva: responde em 5s quanto faturou, lucrou, tem em caixa e o que exige atencao.
   function executiveBrief(client, data) {
-    if (client.planId === "contabilidade") {
-      return `<div class="brief-copy"><strong>Leitura financeira disponível no Plano Gestão</strong><span>Seu plano acompanha documentos, guias e obrigações fiscais. Para ver faturamento, resultado, margem e caixa com leitura executiva automática, evolua para o Plano Gestão.</span></div>`;
+    if (client.planId !== "gestao") {
+      return `<div class="brief-copy"><strong>Leitura financeira disponível no Plano Gestão</strong><span>Seu plano Básico acompanha documentos, guias e obrigações fiscais. Para ver faturamento, resultado, margem e caixa com leitura executiva automática, evolua para o Plano Gestão.</span></div>`;
     }
     if (!(Number(data.revenue || 0) > 0)) {
       return `<div class="brief-copy"><strong>Aguardando sua base financeira</strong><span>A MB ainda não carregou os dados de ${data.competenceLabel}. Assim que entrarem, sua leitura executiva — quanto faturou, lucrou e tem em caixa — aparece aqui automaticamente.</span></div>`;
@@ -116,9 +116,8 @@
 
   function tabAllowed(client, tab) {
     if (tab === "overview") return true;
-    if (client.planId === "cfo") return true;
-    if (client.planId === "gestao") return ["finance", "analysis", "history"].includes(tab);
-    return false;
+    // 2 planos: so o Gestao libera financeiro/dashboard; Basico = downloads.
+    return client.planId === "gestao";
   }
 
   function periodsAsc(client) {
@@ -149,9 +148,9 @@
     return `
       <section class="grid grid-4 kpi-grid">
         ${MBI.ui.kpi("Faturamento", MBI.ui.money(data.revenue), data.competenceLabel, data.revenue ? "Receita atualizada para a competência selecionada." : "Aguardando base financeira da MB.", "blue", delta(current, previous, "revenue"), spark(rows, "revenue"))}
-        ${MBI.ui.kpi("Resultado", data.result ? MBI.ui.money(data.result) : "Indisponível", `${data.margin || 0}% margem`, client.planId === "contabilidade" ? "Plano atual não libera lucro gerencial completo." : "Resultado calculado com dados disponíveis.", "teal", delta(current, previous, "result"), spark(rows, "result"))}
+        ${MBI.ui.kpi("Resultado", data.result ? MBI.ui.money(data.result) : "Indisponível", `${data.margin || 0}% margem`, "Resultado calculado com os dados validados pela MB.", "teal", delta(current, previous, "result"), spark(rows, "result"))}
         ${MBI.ui.kpi("Impostos / DAS", MBI.ui.money(data.taxes), "Fiscal", "Acompanhamento fiscal da MB por competência.", "amber", delta(current, previous, "taxes"), spark(rows, "taxes"), true)}
-        ${MBI.ui.kpi(client.planId === "cfo" ? "Score MB" : "Fôlego", client.planId === "cfo" ? `${data.score || 0}/100` : `${data.runway || 0} dias`, client.planId === "cfo" ? "Financeiro" : "Caixa", client.planId === "cfo" ? "Score financeiro liberado para leitura executiva." : "Fôlego visual disponível nos planos financeiros.", "brand", delta(current, previous, client.planId === "cfo" ? "score" : "cash"), spark(rows, client.planId === "cfo" ? "score" : "cash"))}
+        ${MBI.ui.kpi("Score MB", `${data.score || 0}/100`, "Financeiro", "Score financeiro calculado pela MB.", "brand", delta(current, previous, "score"), spark(rows, "score"))}
       </section>
     `;
   }
@@ -277,9 +276,7 @@
     if (!tabAllowed(client, "finance")) {
       return lockedUpgrade("Dashboard financeiro", "Gestao", "Faturamento, lucro, margem, evolução e indicadores ficam disponíveis no Plano Gestão.");
     }
-    const scorePanel = client.planId === "cfo"
-      ? `<article class="panel"><div class="panel-header"><div><h3>Radar do score</h3><p>Seis dimensões financeiras.</p></div></div>${MBI.ui.radar(data.scoreBreakdown)}</article>`
-      : `<article class="panel"><div class="panel-header"><div><h3>MB Financial Score</h3><p>Leitura de risco financeiro.</p></div></div>${MBI.ui.scoreGauge(data.score, "MB Financial Score")}</article>`;
+    const scorePanel = `<article class="panel"><div class="panel-header"><div><h3>Radar do score</h3><p>Seis dimensões financeiras.</p></div></div>${MBI.ui.radar(data.scoreBreakdown)}</article>`;
     return `
       <div class="exec-dash">
       ${competenceSelector(client, data)}
@@ -342,7 +339,7 @@
       ["Documentos base", MBI.services.documents.listByClient(client.id).length ? "Concluído" : "Pendente", "Contrato social, guias e documentos fiscais."],
       ["Dados financeiros", data.revenue ? "Em andamento" : "Pendente", "Planilhas, OFX, XML ou integrações."],
       ["Validação MB", client.confidence === "Alta" ? "Concluído" : "Em revisão", "Equipe MB revisa antes de publicar."],
-      ["Cockpit liberado", client.planId === "cfo" ? "Completo" : "Parcial", "Módulos liberados conforme plano."]
+      ["Cockpit liberado", client.planId === "gestao" ? "Completo" : "Parcial", "Módulos liberados conforme plano."]
     ];
     const done = steps.filter((step) => ["Concluído", "Completo"].includes(step[1])).length;
     const progress = Math.round((done / steps.length) * 100);

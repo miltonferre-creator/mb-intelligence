@@ -23,15 +23,14 @@
 
   function matrix() {
     return [
-      ["Documentos e guias", "Sim", "Sim", "Em breve", "Base"],
-      ["Faturamento e fiscal", "Básico", "Completo", "Em breve", "Plano + dados"],
-      ["Folha (até 5 func.)", "Não", "Sim", "Em breve", "Plano Gestão"],
-      ["Dashboard financeiro", "Não", "Sim", "Em breve", "Plano Gestão"],
-      ["Indicadores e alertas", "Não", "Sim", "Em breve", "Plano Gestão"],
-      ["Observações IA", "Não", "Sim", "Em breve", "Plano Gestão"],
-      ["DRE executiva", "Não", "Não", "Em breve", "CFO (futuro)"],
-      ["Fluxo de caixa gerencial", "Não", "Não", "Em breve", "CFO (futuro)"],
-      ["CFO consultivo", "Não", "Não", "Em breve", "CFO (futuro)"]
+      ["Documentos (contábil, fiscal, folha)", "Sim", "Sim", "Base"],
+      ["Download de guias e arquivos", "Sim", "Sim", "Base"],
+      ["Comunicação com a MB", "Sim", "Sim", "Base"],
+      ["Dashboard financeiro", "Não", "Sim", "Gestão"],
+      ["Faturamento, resultado e margem", "Não", "Sim", "Gestão"],
+      ["MB Financial Score + radar", "Não", "Sim", "Gestão"],
+      ["Indicadores, alertas e leitura IA", "Não", "Sim", "Gestão"],
+      ["DRE e fluxo de caixa", "Não", "Sim", "Gestão"]
     ];
   }
 

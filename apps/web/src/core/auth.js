@@ -112,7 +112,7 @@
       const clientId = MBI.storage.nowId("cli");
       const companyId = MBI.storage.nowId("emp");
       const userId = MBI.storage.nowId("usr");
-      const planId = payload.planId || "gestao";
+      const planId = payload.planId || "basico";
       const client = {
         id: clientId,
         name: payload.companyName,

@@ -5,29 +5,20 @@
     version: 7,
     plans: [
       {
-        id: "contabilidade",
-        name: "Contabilidade",
+        id: "basico",
+        name: "Básico",
         price: 500,
-        tagline: "Contabilidade, Simples Nacional, DAS, documentos e repositorio digital.",
-        modules: ["Documentos", "Guias", "DAS", "Pendencias", "Avisos", "Repositorio"],
+        tagline: "Contabilidade, fiscal e folha: seus documentos e guias para download.",
+        modules: ["Documentos", "Guias", "DAS", "Fiscal", "Folha", "Comunicacao"],
         color: "status-warning"
       },
       {
         id: "gestao",
-        name: "Gestao",
+        name: "Gestão",
         price: 770,
-        tagline: "Tudo do Contabilidade + folha ate 5 funcionarios, dashboard e indicadores.",
-        modules: ["Documentos", "Fiscal", "Folha", "Faturamento", "Dashboard", "Indicadores", "Alertas", "Observacoes IA"],
+        tagline: "Tudo do Básico + dashboard financeiro, indicadores, score e radar.",
+        modules: ["Documentos", "Fiscal", "Folha", "Faturamento", "Dashboard", "Score", "Indicadores", "Radar"],
         color: "status-ok"
-      },
-      {
-        id: "cfo",
-        name: "CFO as a Service",
-        price: 0,
-        tagline: "Analise executiva, DRE, caixa, score e apoio consultivo. Em breve.",
-        modules: ["Todos os modulos", "DRE", "Fluxo de caixa", "Score", "Parecer MB", "Reunioes CFO"],
-        color: "status-danger",
-        comingSoon: true
       }
     ],
     clients: [
@@ -39,7 +30,7 @@
         city: "Fortaleza/CE",
         segment: "Comercio varejista",
         taxRegime: "Simples Nacional",
-        planId: "cfo",
+        planId: "gestao",
         maturity: "CFO validado",
         status: "Ativo",
         owner: "Marcos Silva",
@@ -79,7 +70,7 @@
         city: "Recife/PE",
         segment: "Servicos",
         taxRegime: "Simples Nacional",
-        planId: "contabilidade",
+        planId: "basico",
         maturity: "Fiscal basico",
         status: "Onboarding",
         owner: "Juliana Prime",
