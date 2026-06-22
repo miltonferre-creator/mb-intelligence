@@ -302,7 +302,9 @@
         ${periods.length ? MBI.ui.table(["Competencia", "Faturamento", "Despesas", "Resultado", "Caixa", "Margem", "Acao"], periods.map((row) => [MBI.ui.escape(row.label), MBI.ui.money(row.revenue), MBI.ui.money(row.expenses), MBI.ui.money(row.result), MBI.ui.money(row.cash), `${row.margin}%`, `<button class="btn btn-soft btn-mini" type="button" data-action="edit-finance-period" data-client-id="${MBI.ui.escape(client.id)}" data-competence="${MBI.ui.escape(row.competence)}">${MBI.ui.icon("pencil")} Editar</button>`])) : `<div class="empty-lock">${MBI.ui.icon("calendar")}<h3>Nenhum periodo registrado</h3><p>Salve os primeiros indicadores para criar o historico.</p></div>`}
       </section>
 
-      <section class="grid grid-2" style="margin-top:14px">
+      <details class="report-detail" style="margin-top:14px">
+        <summary>Outras ações — importar arquivo e criar tarefa</summary>
+      <section class="grid grid-2" style="margin-top:12px">
         <form class="panel" data-form="admin-import" enctype="multipart/form-data">
           <input type="hidden" name="clientId" value="${MBI.ui.escape(client.id)}">
           <input type="hidden" name="status" value="Aguardando validacao MB">
@@ -329,6 +331,7 @@
           <button class="btn btn-primary" style="margin-top:12px" type="submit">${MBI.ui.icon("plus")} Criar tarefa</button>
         </form>
       </section>
+      </details>
     `;
   }
 
@@ -366,16 +369,40 @@
   }
 
   function users() {
+    const rows = MBI.services.users.list().map((user) => [
+      MBI.ui.escape(user.name),
+      user.type === "mb" ? "MB" : "Cliente",
+      MBI.ui.escape(user.role),
+      MBI.ui.escape(user.email),
+      MBI.ui.pill(user.status),
+      `<button class="btn btn-soft btn-mini" type="button" data-action="edit-user" data-user-id="${MBI.ui.escape(user.id)}">${MBI.ui.icon("pencil")} Editar</button> <button class="btn btn-ghost btn-mini" type="button" data-action="deactivate-user" data-user-id="${MBI.ui.escape(user.id)}">${MBI.ui.icon("user-x")} Desativar</button>`
+    ]);
     return `
-      <section class="grid grid-2">
-        <article class="panel"><div class="panel-header"><div><h3>Usuários</h3><p>Equipe MB e acessos de cliente.</p></div></div>${MBI.ui.table(["Nome", "Tipo", "Perfil", "E-mail", "Status", "Acoes"], MBI.services.users.list().map((user) => [MBI.ui.escape(user.name), user.type === "mb" ? "MB" : "Cliente", MBI.ui.escape(user.role), MBI.ui.escape(user.email), MBI.ui.pill(user.status), `<button class="btn btn-soft btn-mini" type="button" data-action="edit-user" data-user-id="${MBI.ui.escape(user.id)}">Editar</button> <button class="btn btn-ghost btn-mini" type="button" data-action="deactivate-user" data-user-id="${MBI.ui.escape(user.id)}">Desativar</button>`]))}</article>
-        <form class="panel" data-form="create-user"><div class="panel-header"><div><h3>Criar usuário</h3><p>Cria o acesso do usuário ao portal.</p></div></div><div class="form-section two"><label><span>Tipo</span><select name="type"><option value="client">Cliente</option><option value="mb">MB</option></select></label><label><span>Cliente</span><select name="clientId">${MBI.services.clients.list().map((client) => `<option value="${MBI.ui.escape(client.id)}">${MBI.ui.escape(client.name)}</option>`).join("")}</select></label><label><span>Nome</span><input name="name" required placeholder="Nome do usuário"></label><label><span>E-mail</span><input name="email" type="email" required placeholder="email@empresa.com.br"></label><label><span>Senha</span><input name="password" type="password" required minlength="8" placeholder="Mínimo 8 caracteres"></label><label><span>Perfil</span><input name="role" placeholder="Ex.: Somente leitura"></label></div><button class="btn btn-primary" style="margin-top:14px" type="submit">${MBI.ui.icon("user-plus")} Criar usuário</button></form>
+      <section class="panel">
+        <div class="panel-header"><div><h3>Usuários</h3><p>Equipe MB e acessos de cliente.</p></div>${MBI.ui.pill(`${rows.length} usuário(s)`)}</div>
+        ${MBI.ui.table(["Nome", "Tipo", "Perfil", "E-mail", "Status", "Ações"], rows)}
       </section>
+      <details class="report-detail" style="margin-top:14px">
+        <summary>Criar usuário</summary>
+        <form class="panel" data-form="create-user" style="margin-top:14px"><div class="form-section two"><label><span>Tipo</span><select name="type"><option value="client">Cliente</option><option value="mb">MB</option></select></label><label><span>Cliente</span><select name="clientId">${MBI.services.clients.list().map((client) => `<option value="${MBI.ui.escape(client.id)}">${MBI.ui.escape(client.name)}</option>`).join("")}</select></label><label><span>Nome</span><input name="name" required placeholder="Nome do usuário"></label><label><span>E-mail</span><input name="email" type="email" required placeholder="email@empresa.com.br"></label><label><span>Senha</span><input name="password" type="password" required minlength="8" placeholder="Mínimo 8 caracteres"></label><label><span>Perfil</span><input name="role" placeholder="Ex.: Somente leitura"></label></div><button class="btn btn-primary" style="margin-top:14px" type="submit">${MBI.ui.icon("user-plus")} Criar usuário</button></form>
+      </details>
     `;
   }
 
   function audit() {
-    return `<section class="panel"><div class="panel-header"><div><h3>Trilha de auditoria</h3><p>Registro local de ações relevantes.</p></div></div><div class="audit-list">${MBI.services.audit.list().map((row) => `<div class="audit-item"><time>${MBI.ui.escape(row.at)}</time><div><strong>${MBI.ui.escape(row.action)}</strong><span>${MBI.ui.escape(row.user)} · ${MBI.ui.escape(row.target)} · ${MBI.ui.escape(row.result)}</span></div></div>`).join("")}</div></section>`;
+    const rows = MBI.services.audit.list().map((row) => [
+      MBI.ui.escape(row.at),
+      MBI.ui.escape(row.action),
+      MBI.ui.escape(row.user),
+      MBI.ui.escape(row.target),
+      MBI.ui.escape(row.result)
+    ]);
+    return `
+      <section class="panel">
+        <div class="panel-header"><div><h3>Trilha de auditoria</h3><p>Registro de ações relevantes na operação da MB.</p></div>${MBI.ui.pill(`${rows.length} registro(s)`)}</div>
+        ${rows.length ? MBI.ui.table(["Quando", "Ação", "Usuário", "Alvo", "Resultado"], rows) : `<div class="empty-lock">${MBI.ui.icon("history")}<h3>Sem registros ainda</h3><p>As ações relevantes da MB aparecerão aqui.</p></div>`}
+      </section>
+    `;
   }
 
   MBI.pages.admin = { render };
