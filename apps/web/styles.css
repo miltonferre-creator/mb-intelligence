@@ -2807,6 +2807,30 @@ button.workflow-step:hover { border-color: var(--brand-3); }
 .nav-collapsed .side-account { padding-top: 12px; }
 .nav-collapsed .side-account .btn { justify-content: center; padding: 11px 0; gap: 0; }
 
+/* ===== Operacao do admin: cabecalho do cliente + stats ===== */
+.admin-op-head {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+@media (max-width: 820px) { .admin-op-head { grid-template-columns: 1fr; } }
+.op-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 4px;
+}
+.op-stats > div {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+.op-stats span { display: block; font-size: 12px; color: var(--muted); }
+.op-stats strong { display: block; font-size: 18px; color: var(--ink); margin-top: 2px; }
+@media (max-width: 600px) { .op-stats { grid-template-columns: repeat(2, 1fr); } }
+
 /* ===== Header (topbar) escuro com identidade MB ===== */
 .topbar {
   margin: -24px -24px 16px;

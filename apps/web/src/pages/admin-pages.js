@@ -94,7 +94,6 @@
 
   function operationV2() {
     const db = MBI.storage.getDatabase();
-    const clients = db.clients;
     const selected = MBI.services.clients.current();
     if (!selected) return emptyClients();
     const data = MBI.services.finance.get(selected.id);
@@ -103,39 +102,19 @@
     const selectedImports = MBI.services.imports.list(selected.id);
     const selectedTasks = db.tasks.filter((task) => task.clientId === selected.id);
     const selectedApprovals = db.approvals.filter((item) => item.clientId === selected.id);
-    const openApprovals = db.approvals.filter((item) => !item.status?.includes("Aprovado"));
-    const clientsInRisk = clients.filter((client) => client.confidence === "Baixa" || client.status === "Onboarding").length;
-    const fiscalQueue = db.documents.filter((doc) => /Fiscal|DAS|XML/i.test(`${doc.category} ${doc.name}`) && !/Aprovado|Disponivel|Validado/i.test(doc.status || "")).length;
-    const financeQueue = db.imports.filter((item) => !/Validado/i.test(item.status || "")).length;
-    const dreQueue = openApprovals.length;
-    const onboardingQueue = clients.filter((client) => client.status === "Onboarding").length;
-    const operationalQueues = [
-      ["Fiscal", `${fiscalQueue} documento(s)`, fiscalQueue ? "Alta" : "Normal", roleOwner("fiscal", "Equipe Fiscal"), MBI.ui.pill(fiscalQueue ? "Atencao" : "Em dia")],
-      ["Financeiro", `${financeQueue} importacao(oes)`, financeQueue ? "Alta" : "Normal", roleOwner("financeiro", "Equipe Financeira"), MBI.ui.pill(financeQueue ? "Em revisao" : "Em dia")],
-      ["DRE / IA", `${dreQueue} aprovacao(oes)`, dreQueue ? "Media" : "Normal", roleOwner("cfo", "Consultoria MB"), MBI.ui.pill(dreQueue ? "Aguardando" : "Em dia")],
-      ["Onboarding", `${onboardingQueue} cliente(s)`, onboardingQueue ? "Alta" : "Normal", roleOwner("operacional", "Gestao MB"), MBI.ui.pill(onboardingQueue ? "Pendente" : "Em dia")]
-    ];
-    const journey = [
-      ["Cadastro", selected.status === "Ativo" ? "Ativo" : selected.status, selected.status === "Ativo" ? "Cliente pronto para operacao" : "Completar ativacao", "building-2"],
-      ["Documentos", selectedDocs.length ? "Recebido" : "Pendente", selectedDocs.length ? `${selectedDocs.length} documento(s)` : "Publicar documentos iniciais", "folder-up"],
-      ["Importacoes", selectedImports.length ? "Em fila" : "Nao iniciada", selectedImports.length ? `${selectedImports.length} arquivo(s)` : "Carregar OFX, CSV, XML ou Excel", "database-zap"],
-      ["Analise", selected.confidence === "Alta" ? "Confiavel" : "Revisar", selected.confidence === "Alta" ? "Pode liberar leitura executiva" : "Dados ainda exigem validacao", "shield-check"]
-    ];
-
-    // Fluxo linear de trabalho da MB para o cliente selecionado: cadastrar -> alimentar
-    // -> publicar -> aprovar -> entregar. Cada passo mostra o estado e leva a tela certa.
-    const dataLoaded = Number(data.revenue || 0) > 0 || selectedImports.length > 0;
     const approvalsPending = selectedApprovals.some((item) => !item.status?.includes("Aprovado"));
+    const dataLoaded = Number(data.revenue || 0) > 0 || selectedImports.length > 0;
+
     const flowSteps = [
-      ["1", "Cadastrar", selected.status === "Ativo" ? "Cliente ativo" : "Em ativação", "building-2", "#/admin/clientes", selected.status === "Ativo"],
+      ["1", "Cadastrar", selected.status === "Ativo" ? "Cliente ativo" : "Em ativacao", "building-2", "#/admin/clientes", selected.status === "Ativo"],
       ["2", "Alimentar dados", dataLoaded ? "Dados carregados" : "Pendente", "database-zap", "#/admin/alimentar-portal", dataLoaded],
       ["3", "Publicar documentos", selectedDocs.length ? `${selectedDocs.length} publicado(s)` : "Nenhum ainda", "folder-up", "#/admin/documentos", selectedDocs.length > 0],
-      ["4", "Aprovar conteúdo", selectedApprovals.length ? (approvalsPending ? "Há pendências" : "Tudo aprovado") : "Sem itens", "shield-check", "#/admin/aprovacoes", selectedApprovals.length > 0 && !approvalsPending],
-      ["5", "Entregar ao cliente", "Disponível no portal do cliente", "send", "", false]
+      ["4", "Aprovar conteudo", selectedApprovals.length ? (approvalsPending ? "Ha pendencias" : "Tudo aprovado") : "Sem itens", "shield-check", "#/admin/aprovacoes", selectedApprovals.length > 0 && !approvalsPending],
+      ["5", "Entregar ao cliente", "Disponivel no portal do cliente", "send", "", false]
     ];
     const workflow = `
       <section class="panel workflow-panel">
-        <div class="panel-header"><div><h3>Fluxo de trabalho · ${MBI.ui.escape(selected.name)}</h3><p>O passo a passo para deixar o portal deste cliente pronto.</p></div>${MBI.ui.pill(plan.name)}</div>
+        <div class="panel-header"><div><h3>Fluxo de trabalho</h3><p>O passo a passo para deixar o portal deste cliente pronto.</p></div>${MBI.ui.pill(plan.name)}</div>
         <div class="workflow-steps">
           ${flowSteps.map(([n, title, status, ic, route, done]) => `
             <${route ? "button" : "div"} class="workflow-step ${done ? "is-done" : ""}"${route ? ` type="button" data-route="${route}"` : ""}>
@@ -145,49 +124,30 @@
         </div>
       </section>`;
 
-    return `
-      ${workflow}
-      <section class="grid grid-4">
-        ${MBI.ui.metric("Clientes ativos", String(clients.filter((c) => c.status === "Ativo").length), "carteira", "Carteira pronta para operacao em escala.", "blue")}
-        ${MBI.ui.metric("Clientes em risco", String(clientsInRisk), "prioridade", "Onboarding, baixa confianca ou dados insuficientes exigem acao.", "amber")}
-        ${MBI.ui.metric("Aprovacoes IA", String(openApprovals.length), "pendentes", "Insights estrategicos exigem validacao humana antes do cliente.", "brand")}
-        ${MBI.ui.metric("Importacoes", String(db.imports.length), "arquivos", "Base inicial para consolidar dados financeiros e fiscais.", "teal")}
-      </section>
+    const opStats = `
+      <div class="op-stats">
+        <div><span>Faturamento</span><strong>${MBI.ui.money(data.revenue || 0)}</strong></div>
+        <div><span>Resultado</span><strong>${data.result ? MBI.ui.money(data.result) : "—"}</strong></div>
+        <div><span>Margem</span><strong>${data.margin || 0}%</strong></div>
+        <div><span>Score MB</span><strong>${data.score || 0}/100</strong></div>
+      </div>`;
 
-      <section class="grid admin-cockpit-grid" style="margin-top:14px">
+    return `
+      <section class="grid admin-op-head">
         ${clientSelector()}
         <article class="panel selected-client-card">
-          <div class="panel-header"><div><h3>Cliente em operacao</h3><p>Contexto central para documentos, dados, importacoes e aprovacoes.</p></div>${MBI.ui.pill(plan.name)}</div>
-          ${MBI.ui.table(["Campo", "Valor", ""], [
-            ["Empresa", selected.name, ""],
-            ["Responsavel", selected.owner, ""],
-            ["Maturidade", selected.maturity, ""],
-            ["Confianca", selected.confidence, ""],
-            ["Faturamento", MBI.ui.money(data.revenue || 0), ""],
-            ["Pendencias", String(selectedTasks.length), ""]
-          ])}
-          <div class="brief-actions">
+          <div class="panel-header"><div><h3>${MBI.ui.escape(selected.name)}</h3><p>${MBI.ui.escape(plan.name)} · ${MBI.ui.escape(selected.status)} · Confianca ${MBI.ui.escape(selected.confidence)} · ${MBI.ui.escape(data.competenceLabel || "")}</p></div>${MBI.ui.pill(selected.confidence)}</div>
+          ${opStats}
+          <div class="brief-actions" style="margin-top:12px">
             <button class="btn btn-primary" type="button" data-route="#/admin/alimentar-portal">${MBI.ui.icon("panel-top")} Alimentar portal</button>
             <button class="btn btn-ghost" type="button" data-route="#/admin/documentos">${MBI.ui.icon("folder-up")} Publicar documento</button>
           </div>
         </article>
-        <article class="panel">
-          <div class="panel-header"><div><h3>Jornada operacional</h3><p>O que precisa acontecer para o cliente evoluir.</p></div>${MBI.ui.pill(selected.confidence)}</div>
-          <div class="process-strip compact">
-            ${journey.map(([title, status, detail, icon]) => `<article class="process-step"><div>${MBI.ui.icon(icon)}</div><strong>${title}</strong>${MBI.ui.pill(status)}<span>${detail}</span></article>`).join("")}
-          </div>
-        </article>
       </section>
-
+      ${workflow}
       <section class="grid grid-2" style="margin-top:14px">
-        <article class="panel"><div class="panel-header"><div><h3>Filas operacionais</h3><p>Trabalho da MB organizado por area.</p></div></div>${MBI.ui.table(["Fila", "Volume", "Prioridade", "Responsavel", "Status"], operationalQueues)}</article>
-        <article class="panel"><div class="panel-header"><div><h3>Proximas acoes</h3><p>Tarefas do cliente selecionado.</p></div></div><div class="priority-list">${selectedTasks.map((task) => `<div class="priority-item"><span class="priority-dot ${task.priority === "Alta" ? "high" : "medium"}"></span><div><strong>${MBI.ui.escape(task.title)}</strong><span>${MBI.ui.escape(task.owner)} · vence ${MBI.ui.escape(task.due)}</span></div>${MBI.ui.pill(task.status)}</div>`).join("") || `<div class="empty-lock">${MBI.ui.icon("check-circle")}<h3>Nenhuma tarefa aberta</h3><p>Cliente sem pendencias operacionais no momento.</p></div>`}</div></article>
-      </section>
-
-      <section class="grid grid-3" style="margin-top:14px">
-        <article class="panel"><div class="panel-header"><div><h3>Aprovacoes do cliente</h3><p>Governanca antes de liberar ao portal.</p></div></div>${MBI.ui.table(["Analise", "Confianca", "Status"], selectedApprovals.map((row) => [MBI.ui.escape(row.title), MBI.ui.escape(row.confidence), MBI.ui.pill(row.status)]))}</article>
-        <article class="panel"><div class="panel-header"><div><h3>Oportunidade comercial</h3><p>Upsell e retencao orientados por dados.</p></div></div><div class="metric-analysis"><strong>MB:</strong> ${selected.planId === "contabilidade" ? "Cliente pode evoluir para Financeiro IA quando enviar extratos e faturamento." : selected.planId === "financeiro" ? "Cliente com dados financeiros pode receber oferta CFO as a Service." : "Cliente CFO deve receber acompanhamento executivo e revisao mensal."}</div></article>
-        <article class="panel"><div class="panel-header"><div><h3>Ultimas acoes</h3><p>Trilha operacional recente.</p></div></div><div class="timeline">${MBI.services.audit.list(5).map((row) => `<div class="timeline-item"><time>${MBI.ui.escape(row.at)}</time><span><strong>${MBI.ui.escape(row.action)}</strong><br>${MBI.ui.escape(row.user)} · ${MBI.ui.escape(row.target)}</span></div>`).join("")}</div></article>
+        <article class="panel"><div class="panel-header"><div><h3>Proximas acoes</h3><p>Tarefas deste cliente.</p></div>${MBI.ui.pill(String(selectedTasks.length))}</div><div class="priority-list">${selectedTasks.map((task) => `<div class="priority-item"><span class="priority-dot ${task.priority === "Alta" ? "high" : "medium"}"></span><div><strong>${MBI.ui.escape(task.title)}</strong><span>${MBI.ui.escape(task.owner)} · vence ${MBI.ui.escape(task.due)}</span></div>${MBI.ui.pill(task.status)}</div>`).join("") || `<div class="empty-lock">${MBI.ui.icon("check-circle")}<h3>Nenhuma tarefa aberta</h3><p>Cliente sem pendencias no momento.</p></div>`}</div></article>
+        <article class="panel"><div class="panel-header"><div><h3>Aprovacoes deste cliente</h3><p>Governanca antes de liberar ao portal.</p></div></div>${selectedApprovals.length ? MBI.ui.table(["Analise", "Confianca", "Status"], selectedApprovals.map((row) => [MBI.ui.escape(row.title), MBI.ui.escape(row.confidence), MBI.ui.pill(row.status)])) : `<div class="empty-lock">${MBI.ui.icon("shield-check")}<h3>Sem analises na fila</h3><p>Crie analises em Alimentar portal.</p></div>`}</article>
       </section>
     `;
   }
@@ -619,7 +579,29 @@
       return [client.name, String(docs.length), docs.filter((doc) => doc.status?.includes("Pendente")).length || "0", docs.at(-1)?.name || "Sem documentos"];
     });
 
+    const activeCount = db.clients.filter((c) => c.status === "Ativo").length;
+    const riskCount = db.clients.filter((c) => c.confidence === "Baixa" || c.status === "Onboarding").length;
+    const openApprovals = db.approvals.filter((a) => !a.status?.includes("Aprovado")).length;
+    const fiscalQueue = db.documents.filter((doc) => /Fiscal|DAS|XML/i.test(`${doc.category} ${doc.name}`) && !/Aprovado|Disponivel|Validado/i.test(doc.status || "")).length;
+    const financeQueue = db.imports.filter((item) => !/Validado/i.test(item.status || "")).length;
+    const onboardingQueue = db.clients.filter((c) => c.status === "Onboarding").length;
+    const operationalQueues = [
+      ["Fiscal", `${fiscalQueue} documento(s)`, fiscalQueue ? "Alta" : "Normal", roleOwner("fiscal", "Equipe Fiscal"), MBI.ui.pill(fiscalQueue ? "Atencao" : "Em dia")],
+      ["Financeiro", `${financeQueue} importacao(oes)`, financeQueue ? "Alta" : "Normal", roleOwner("financeiro", "Equipe Financeira"), MBI.ui.pill(financeQueue ? "Em revisao" : "Em dia")],
+      ["DRE / IA", `${openApprovals} aprovacao(oes)`, openApprovals ? "Media" : "Normal", roleOwner("cfo", "Consultoria MB"), MBI.ui.pill(openApprovals ? "Aguardando" : "Em dia")],
+      ["Onboarding", `${onboardingQueue} cliente(s)`, onboardingQueue ? "Alta" : "Normal", roleOwner("operacional", "Gestao MB"), MBI.ui.pill(onboardingQueue ? "Pendente" : "Em dia")]
+    ];
+
     return `
+      <section class="grid grid-4" style="margin-bottom:14px">
+        ${MBI.ui.metric("Clientes ativos", String(activeCount), "carteira", "Carteira pronta para operacao.", "blue")}
+        ${MBI.ui.metric("Clientes em risco", String(riskCount), "prioridade", "Onboarding ou baixa confianca exigem acao.", "amber")}
+        ${MBI.ui.metric("Aprovacoes IA", String(openApprovals), "pendentes", "Insights aguardando validacao da MB.", "brand")}
+        ${MBI.ui.metric("Importacoes", String(db.imports.length), "arquivos", "Base para consolidar dados financeiros.", "teal")}
+      </section>
+      <section class="panel" style="margin-bottom:14px">
+        <div class="panel-header"><div><h3>Filas operacionais</h3><p>Trabalho da MB por area.</p></div></div>${MBI.ui.table(["Fila", "Volume", "Prioridade", "Responsavel", "Status"], operationalQueues)}
+      </section>
       <section class="panel" style="margin-bottom:14px">
         <div class="panel-header"><div><h3>Indicadores MB</h3><p>Visao interna para carteira, receita recorrente, risco, produtividade e documentos. Use os botoes para exportar bases de acompanhamento.</p></div></div>
         <div class="button-row">
