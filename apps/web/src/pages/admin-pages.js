@@ -19,15 +19,19 @@
 
   function menu(active) {
     return MBI.ui.nav([
-      ["#/admin/operacao", "layout-dashboard", "Operacao"],
+      [null, null, "Operação"],
+      ["#/admin/operacao", "layout-dashboard", "Painel"],
       ["#/admin/clientes", "building-2", "Clientes"],
-      ["#/admin/planos", "badge-dollar-sign", "Planos"],
-      ["#/admin/alimentar-portal", "panel-top", "Alimentar portal"],
+      [null, null, "Alimentar o portal"],
+      ["#/admin/alimentar-portal", "panel-top", "Dados & importações"],
       ["#/admin/documentos", "folder-up", "Documentos"],
-      ["#/admin/usuarios", "users-round", "Usuários"],
       ["#/admin/aprovacoes", "shield-check", "Aprovações"],
-      ["#/admin/auditoria", "history", "Auditoria"],
-      ["#/admin/relatorios", "file-bar-chart", "Indicadores"]
+      [null, null, "Configuração"],
+      ["#/admin/planos", "badge-dollar-sign", "Planos"],
+      ["#/admin/usuarios", "users-round", "Usuários"],
+      [null, null, "Registros"],
+      ["#/admin/relatorios", "file-bar-chart", "Indicadores"],
+      ["#/admin/auditoria", "history", "Auditoria"]
     ], active);
   }
 
@@ -118,7 +122,31 @@
       ["Analise", selected.confidence === "Alta" ? "Confiavel" : "Revisar", selected.confidence === "Alta" ? "Pode liberar leitura executiva" : "Dados ainda exigem validacao", "shield-check"]
     ];
 
+    // Fluxo linear de trabalho da MB para o cliente selecionado: cadastrar -> alimentar
+    // -> publicar -> aprovar -> entregar. Cada passo mostra o estado e leva a tela certa.
+    const dataLoaded = Number(data.revenue || 0) > 0 || selectedImports.length > 0;
+    const approvalsPending = selectedApprovals.some((item) => !item.status?.includes("Aprovado"));
+    const flowSteps = [
+      ["1", "Cadastrar", selected.status === "Ativo" ? "Cliente ativo" : "Em ativação", "building-2", "#/admin/clientes", selected.status === "Ativo"],
+      ["2", "Alimentar dados", dataLoaded ? "Dados carregados" : "Pendente", "database-zap", "#/admin/alimentar-portal", dataLoaded],
+      ["3", "Publicar documentos", selectedDocs.length ? `${selectedDocs.length} publicado(s)` : "Nenhum ainda", "folder-up", "#/admin/documentos", selectedDocs.length > 0],
+      ["4", "Aprovar conteúdo", selectedApprovals.length ? (approvalsPending ? "Há pendências" : "Tudo aprovado") : "Sem itens", "shield-check", "#/admin/aprovacoes", selectedApprovals.length > 0 && !approvalsPending],
+      ["5", "Entregar ao cliente", "Disponível no portal do cliente", "send", "", false]
+    ];
+    const workflow = `
+      <section class="panel workflow-panel">
+        <div class="panel-header"><div><h3>Fluxo de trabalho · ${MBI.ui.escape(selected.name)}</h3><p>O passo a passo para deixar o portal deste cliente pronto.</p></div>${MBI.ui.pill(plan.name)}</div>
+        <div class="workflow-steps">
+          ${flowSteps.map(([n, title, status, ic, route, done]) => `
+            <${route ? "button" : "div"} class="workflow-step ${done ? "is-done" : ""}"${route ? ` type="button" data-route="${route}"` : ""}>
+              <span class="workflow-num">${done ? MBI.ui.icon("check") : n}</span>
+              <div class="workflow-step-body">${MBI.ui.icon(ic)}<strong>${title}</strong><span>${MBI.ui.escape(status)}</span></div>
+            </${route ? "button" : "div"}>`).join("")}
+        </div>
+      </section>`;
+
     return `
+      ${workflow}
       <section class="grid grid-4">
         ${MBI.ui.metric("Clientes ativos", String(clients.filter((c) => c.status === "Ativo").length), "carteira", "Carteira pronta para operacao em escala.", "blue")}
         ${MBI.ui.metric("Clientes em risco", String(clientsInRisk), "prioridade", "Onboarding, baixa confianca ou dados insuficientes exigem acao.", "amber")}

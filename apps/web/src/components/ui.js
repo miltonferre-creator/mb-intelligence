@@ -315,11 +315,15 @@
   }
 
   function nav(items, activeRoute) {
-    return items.map(([route, iconName, label]) => `
+    return items.map(([route, iconName, label]) => {
+      // Item sem rota vira cabecalho de secao do menu (agrupa o fluxo de trabalho).
+      if (!route) return `<span class="nav-group">${label}</span>`;
+      return `
       <button class="nav-btn ${route === activeRoute ? "is-active" : ""}" type="button" data-route="${route}">
         ${icon(iconName)} <span>${label}</span>
       </button>
-    `).join("");
+    `;
+    }).join("");
   }
 
   function toast(message) {
