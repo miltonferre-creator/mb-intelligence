@@ -8,9 +8,7 @@
     "#/admin/novo-cliente": "Gestao de clientes",
     "#/admin/planos": "Planos e permissões",
     "#/admin/alimentar-portal": "Alimentar portal",
-    "#/admin/dados-cliente": "Informações do cliente",
     "#/admin/documentos": "Documentos",
-    "#/admin/importacoes": "Alimentar portal",
     "#/admin/usuarios": "Usuários e perfis",
     "#/admin/aprovacoes": "Aprovações",
     "#/admin/auditoria": "Auditoria",
@@ -72,9 +70,7 @@
     if (route === "#/admin/novo-cliente") return shell("#/admin/clientes", clients());
     if (route === "#/admin/planos") return shell(route, plans());
     if (route === "#/admin/alimentar-portal") return shell(route, publicationCenter());
-    if (route === "#/admin/dados-cliente") return shell(route, publicationCenter());
     if (route === "#/admin/documentos") return shell(route, documents());
-    if (route === "#/admin/importacoes") return shell("#/admin/alimentar-portal", publicationCenter());
     if (route === "#/admin/usuarios") return shell(route, users());
     if (route === "#/admin/aprovacoes") return shell(route, approvals());
     if (route === "#/admin/auditoria") return shell(route, audit());
@@ -150,10 +146,6 @@
         <article class="panel"><div class="panel-header"><div><h3>Aprovacoes deste cliente</h3><p>Governanca antes de liberar ao portal.</p></div></div>${selectedApprovals.length ? MBI.ui.table(["Analise", "Confianca", "Status"], selectedApprovals.map((row) => [MBI.ui.escape(row.title), MBI.ui.escape(row.confidence), MBI.ui.pill(row.status)])) : `<div class="empty-lock">${MBI.ui.icon("shield-check")}<h3>Sem analises na fila</h3><p>Crie analises em Alimentar portal.</p></div>`}</article>
       </section>
     `;
-  }
-
-  function operation() {
-    return operationV2();
   }
 
   function clientSelector() {
@@ -417,43 +409,6 @@
     `;
   }
 
-  function clientData() {
-    const client = MBI.services.clients.current();
-    const data = MBI.services.finance.get(client.id);
-    return `
-      <section class="grid grid-2">
-        ${clientSelector()}
-        <form class="panel" data-form="update-client-profile">
-          <input type="hidden" name="clientId" value="${client.id}">
-          <div class="panel-header"><div><h3>Ficha operacional</h3><p>Status, plano, maturidade e responsáveis da MB.</p></div><button class="btn btn-primary" type="submit">${MBI.ui.icon("save")} Salvar ficha</button></div>
-          <div class="form-section two">
-            <label><span>Razão social</span><input name="name" value="${MBI.ui.escape(client.name)}"></label>
-            <label><span>Nome fantasia</span><input name="tradeName" value="${MBI.ui.escape(client.tradeName || client.name)}"></label>
-            <label><span>CNPJ</span><input name="cnpj" value="${MBI.ui.escape(client.cnpj)}"></label>
-            <label><span>Cidade/UF</span><input name="city" value="${MBI.ui.escape(client.city)}"></label>
-            <label><span>Segmento</span><input name="segment" value="${MBI.ui.escape(client.segment)}"></label>
-            <label><span>Regime</span><select name="taxRegime"><option ${client.taxRegime === "Simples Nacional" ? "selected" : ""}>Simples Nacional</option><option ${client.taxRegime === "Lucro Presumido" ? "selected" : ""}>Lucro Presumido</option></select></label>
-            <label><span>Plano</span><select name="planId">${MBI.services.plans.list().map((plan) => `<option value="${plan.id}" ${plan.id === client.planId ? "selected" : ""}>${plan.name}</option>`).join("")}</select></label>
-            <label><span>Status</span><select name="status"><option ${client.status === "Onboarding" ? "selected" : ""}>Onboarding</option><option ${client.status === "Ativo" ? "selected" : ""}>Ativo</option><option ${client.status === "Pausado" ? "selected" : ""}>Pausado</option><option ${client.status === "Risco" ? "selected" : ""}>Risco</option></select></label>
-            <label><span>Maturidade</span><select name="maturity"><option ${client.maturity === "Fiscal basico" ? "selected" : ""}>Fiscal basico</option><option ${client.maturity === "Financeiro integrado" ? "selected" : ""}>Financeiro integrado</option><option ${client.maturity === "CFO validado" ? "selected" : ""}>CFO validado</option><option ${client.maturity === "Onboarding" ? "selected" : ""}>Onboarding</option></select></label>
-            <label><span>Confiança</span><select name="confidence"><option ${client.confidence === "Baixa" ? "selected" : ""}>Baixa</option><option ${client.confidence === "Media" ? "selected" : ""}>Media</option><option ${client.confidence === "Alta" ? "selected" : ""}>Alta</option></select></label>
-            <label><span>Responsável legal</span><input name="owner" value="${MBI.ui.escape(client.owner)}"></label>
-            <label><span>E-mail</span><input name="email" value="${MBI.ui.escape(client.email)}"></label>
-            <label><span>WhatsApp</span><input name="phone" value="${MBI.ui.escape(client.phone)}"></label>
-            <label><span>Consultor MB</span><input name="consultant" value="${MBI.ui.escape(client.consultant)}"></label>
-            <label><span>Analista MB</span><input name="analyst" value="${MBI.ui.escape(client.analyst)}"></label>
-          </div>
-        </form>
-        <form class="panel" data-form="update-finance">
-          <input type="hidden" name="clientId" value="${client.id}">
-          <div class="panel-header"><div><h3>Alimentar informações do cliente</h3><p>Dados publicados no dashboard após validação MB.</p></div><button class="btn btn-primary" type="submit">${MBI.ui.icon("save")} Salvar dados</button></div>
-          <div class="form-section two"><label><span>Faturamento</span><input name="revenue" type="number" value="${data.revenue}"></label><label><span>Despesas</span><input name="expenses" type="number" value="${data.expenses}"></label><label><span>Impostos</span><input name="taxes" type="number" value="${data.taxes}"></label><label><span>Folha</span><input name="payroll" type="number" value="${data.payroll}"></label><label><span>Caixa</span><input name="cash" type="number" value="${data.cash}"></label><label><span>Score</span><input name="score" type="number" value="${data.score}"></label></div>
-          <label style="margin-top:12px"><span>Análise MB</span><textarea name="insight">${data.insights?.[0] || ""}</textarea></label>
-        </form>
-      </section>
-    `;
-  }
-
   function documents() {
     const client = MBI.services.clients.current();
     const filters = sessionFilters("adminDocuments");
@@ -488,22 +443,11 @@
     `;
   }
 
-  function imports() {
-    const client = MBI.services.clients.current();
-    return `
-      <section class="grid grid-2">
-        ${clientSelector()}
-        <form class="panel" data-form="admin-import" enctype="multipart/form-data"><input type="hidden" name="clientId" value="${MBI.ui.escape(client.id)}"><div class="panel-header"><div><h3>Registrar importação</h3><p>Fluxo interno da MB para arquivos financeiros e fiscais.</p></div></div><label class="upload-zone"><input class="sr-only" type="file" name="file" required>${MBI.ui.icon("database-zap")}<div><strong>Importar dados para ${MBI.ui.escape(client.name)}</strong><p>Excel, CSV, OFX, XML ou PDF. O arquivo fica no Storage e entra na fila de validação.</p></div></label><div class="form-section two" style="margin-top:14px"><label><span>Nome exibido</span><input name="fileName" placeholder="Preenchido ao selecionar o arquivo"></label><label><span>Tipo</span><select name="type"><option>OFX</option><option>CSV</option><option>Excel</option><option>XML</option><option>PDF</option></select></label><label><span>Competência</span><input type="month" name="competence" value="${currentMonthValue()}"></label><label><span>Status</span><select name="status"><option>Aguardando validação MB</option><option>Validado</option><option>Erro de colunas</option></select></label><label><span>Resultado</span><input name="result" value="Aguardando processamento"></label></div><button class="btn btn-primary" style="margin-top:14px" type="submit">${MBI.ui.icon("upload")} Carregar arquivo</button></form>
-      </section>
-      <section class="panel" style="margin-top:14px">${MBI.ui.table(["Cliente", "Arquivo", "Tipo", "Status", "Resultado"], MBI.services.imports.list().map((row) => [MBI.ui.escape(MBI.services.clients.get(row.clientId)?.name || row.clientId), MBI.ui.escape(row.fileName), MBI.ui.escape(row.type), MBI.ui.pill(row.status), MBI.ui.escape(row.result)]))}</section>
-    `;
-  }
-
   function users() {
     return `
       <section class="grid grid-2">
         <article class="panel"><div class="panel-header"><div><h3>Usuários</h3><p>Equipe MB e acessos de cliente.</p></div></div>${MBI.ui.table(["Nome", "Tipo", "Perfil", "E-mail", "Status", "Acoes"], MBI.services.users.list().map((user) => [MBI.ui.escape(user.name), user.type === "mb" ? "MB" : "Cliente", MBI.ui.escape(user.role), MBI.ui.escape(user.email), MBI.ui.pill(user.status), `<button class="btn btn-soft btn-mini" type="button" data-action="edit-user" data-user-id="${MBI.ui.escape(user.id)}">Editar</button> <button class="btn btn-ghost btn-mini" type="button" data-action="deactivate-user" data-user-id="${MBI.ui.escape(user.id)}">Desativar</button>`]))}</article>
-        <form class="panel" data-form="create-user"><div class="panel-header"><div><h3>Criar usuário</h3><p>Acesso real local para teste.</p></div></div><div class="form-section two"><label><span>Tipo</span><select name="type"><option value="client">Cliente</option><option value="mb">MB</option></select></label><label><span>Cliente</span><select name="clientId">${MBI.services.clients.list().map((client) => `<option value="${MBI.ui.escape(client.id)}">${MBI.ui.escape(client.name)}</option>`).join("")}</select></label><label><span>Nome</span><input name="name" value="Novo usuário"></label><label><span>E-mail</span><input name="email" value="usuario@empresa.com.br"></label><label><span>Senha</span><input name="password" value="123456"></label><label><span>Perfil</span><input name="role" value="Somente leitura"></label></div><button class="btn btn-primary" style="margin-top:14px" type="submit">${MBI.ui.icon("user-plus")} Criar usuário</button></form>
+        <form class="panel" data-form="create-user"><div class="panel-header"><div><h3>Criar usuário</h3><p>Cria o acesso do usuário ao portal.</p></div></div><div class="form-section two"><label><span>Tipo</span><select name="type"><option value="client">Cliente</option><option value="mb">MB</option></select></label><label><span>Cliente</span><select name="clientId">${MBI.services.clients.list().map((client) => `<option value="${MBI.ui.escape(client.id)}">${MBI.ui.escape(client.name)}</option>`).join("")}</select></label><label><span>Nome</span><input name="name" required placeholder="Nome do usuário"></label><label><span>E-mail</span><input name="email" type="email" required placeholder="email@empresa.com.br"></label><label><span>Senha</span><input name="password" type="password" required minlength="8" placeholder="Mínimo 8 caracteres"></label><label><span>Perfil</span><input name="role" placeholder="Ex.: Somente leitura"></label></div><button class="btn btn-primary" style="margin-top:14px" type="submit">${MBI.ui.icon("user-plus")} Criar usuário</button></form>
       </section>
     `;
   }
