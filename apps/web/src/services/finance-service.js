@@ -41,6 +41,10 @@
     return "Risco";
   }
 
+  // ESPELHO OFFLINE. A implementacao canonica do MB Financial Score vive no backend
+  // (apps/api/src/server-supabase.js::calculateFinancialScore) e e a fonte de verdade
+  // para clientes reais. Esta copia so e usada em modo offline/demo (sem API) e em edicoes
+  // locais. Qualquer mudanca de peso/limiar/penalidade deve ser feita NOS DOIS lugares.
   function calculateScore(data) {
     const revenue = Number(data.revenue || 0);
     const expenses = Number(data.expenses || 0);
@@ -226,7 +230,13 @@
     const competence = normalizeMonth(data.competence || selectedCompetence(clientId));
     const result = Number(data.result ?? (Number(data.revenue || 0) - Number(data.expenses || 0)));
     const margin = Number(data.revenue || 0) ? Math.round((result / Number(data.revenue || 0)) * 1000) / 10 : 0;
-    const score = calculateScore({ ...data, result, margin });
+    // Fonte de verdade do score = backend (server-supabase.js::calculateFinancialScore).
+    // Quando o dado veio do servidor (score + breakdown presentes), usamos os dois JUNTOS
+    // para o numero e o radar nunca se contradizerem. calculateScore local so atua offline/demo.
+    const hasServerScore = data.score != null && Array.isArray(data.scoreBreakdown) && data.scoreBreakdown.length > 0;
+    const score = hasServerScore
+      ? { total: Number(data.score), dimensions: data.scoreBreakdown }
+      : calculateScore({ ...data, result, margin });
     const withComputed = {
       ...data,
       competence,
@@ -235,7 +245,7 @@
       result,
       margin,
       score: score.total,
-      scoreBreakdown: data.scoreBreakdown || score.dimensions,
+      scoreBreakdown: score.dimensions,
       dre: data.dre?.length ? data.dre : buildDre({ ...data, result, margin, competence }),
       cashBridge: data.cashBridge?.length ? data.cashBridge : buildCashFlow({ ...data, result, margin, competence })
     };
