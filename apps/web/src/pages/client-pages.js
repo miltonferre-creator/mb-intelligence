@@ -327,17 +327,21 @@
     ], `${docs.length}`);
   }
 
-  function expenseDonut(data) {
+  function expenseRanking(data) {
     const payroll = Number(data.payroll || 0);
     const taxes = Number(data.taxes || 0);
     const direct = Number(data.directCosts || 0);
-    const admin = Math.max(Number(data.expenses || 0) - payroll - taxes - direct, 0);
-    return MBI.ui.donut([
-      { label: "Folha", value: payroll, text: MBI.ui.money(payroll), color: "teal" },
-      { label: "Impostos", value: taxes, text: MBI.ui.money(taxes), color: "blue" },
-      { label: "CMV/Custos", value: direct, text: MBI.ui.money(direct), color: "amber" },
-      { label: "Admin.", value: admin, text: MBI.ui.money(admin), color: "brand" }
-    ], MBI.ui.money(Number(data.expenses || 0)));
+    const total = Number(data.expenses || 0);
+    const admin = Math.max(total - payroll - taxes - direct, 0);
+    const items = [
+      ["Folha", payroll, "teal"],
+      ["Impostos", taxes, "blue"],
+      ["CMV / Custos", direct, "amber"],
+      ["Administrativas", admin, "brand"]
+    ].filter(([, value]) => value > 0).sort((a, b) => b[1] - a[1]);
+    if (!items.length) return `<div class="empty-lock">${MBI.ui.icon("bar-chart-big")}<h3>Sem despesas no período</h3><p>A MB ainda não detalhou a composição das despesas desta competência.</p></div>`;
+    const base = total || items.reduce((sum, [, value]) => sum + value, 0) || 1;
+    return MBI.ui.bars(items.map(([label, value, color]) => [label, Math.min((value / base) * 100, 100), `${MBI.ui.money(value)} · ${Math.round((value / base) * 100)}%`, color]));
   }
 
   function overviewTab(client, data) {
@@ -392,7 +396,7 @@
     return `
       <section class="grid grid-3">
         <article class="panel"><div class="panel-header"><div><h3>MB Financial Score</h3><p>Leitura visual do risco financeiro.</p></div></div>${MBI.ui.scoreGauge(data.score, "MB Financial Score")}${MBI.ui.bars(scoreBars(data))}</article>
-        <article class="panel"><div class="panel-header"><div><h3>Composição das despesas</h3><p>Folha, impostos, custos e administração.</p></div></div>${expenseDonut(data)}<div class="metric-analysis" style="margin-top:14px"><strong>IA MB:</strong> despesas calculadas com base nos dados carregados pela MB.</div></article>
+        <article class="panel"><div class="panel-header"><div><h3>Onde você mais gasta</h3><p>Maiores despesas do período, em ordem.</p></div></div>${expenseRanking(data)}<div class="metric-analysis" style="margin-top:14px"><strong>IA MB:</strong> ranking calculado sobre as despesas validadas pela MB nesta competência.</div></article>
         <article class="panel"><div class="panel-header"><div><h3>Fôlego de caixa</h3><p>Runway visual com zonas de risco.</p></div></div>${MBI.ui.runway(data.runway)}<div class="metric-analysis" style="margin-top:14px"><strong>MB:</strong> abaixo de 45 dias exige acompanhamento mais próximo.</div></article>
       </section>
       <section class="grid grid-2" style="margin-top:14px">

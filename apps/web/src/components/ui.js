@@ -118,38 +118,50 @@
         </div>
       `;
     }
-    const width = 520;
-    const height = 220;
-    const padding = 34;
+    const width = 560;
+    const height = 240;
+    const padL = 46, padR = 16, padT = 18, padB = 28;
     const values = months.flatMap((item) => [Number(item[1] || 0), Number(item[2] || 0)]);
-    const max = Math.max(...values, 1) * 1.12;
-    const xFor = (index) => padding + (index / Math.max(months.length - 1, 1)) * (width - padding * 2);
-    const yFor = (value) => height - padding - (Number(value || 0) / max) * (height - padding * 2);
-    const line = (key) => months.map((item, index) => `${xFor(index)},${yFor(item[key])}`).join(" ");
-    const area = (key) => `${padding},${height - padding} ${line(key)} ${width - padding},${height - padding}`;
+    let maxV = Math.max(...values), minV = Math.min(...values);
+    if (maxV === minV) { maxV = maxV || 1; minV = 0; }
+    // Escala pela FAIXA dos dados (nao a partir de zero): a linha usa a altura toda
+    // e mostra a variacao real, em vez de ficar achatada no topo.
+    const span = (maxV - minV) || 1;
+    const top = maxV + span * 0.18;
+    const bottom = Math.max(minV - span * 0.18, 0);
+    const range = (top - bottom) || 1;
+    const xFor = (i) => padL + (i / Math.max(months.length - 1, 1)) * (width - padL - padR);
+    const yFor = (v) => padT + (1 - (Number(v || 0) - bottom) / range) * (height - padT - padB);
+    const pts = (key) => months.map((item, i) => [xFor(i), yFor(item[key])]);
+    const smooth = (p) => {
+      if (p.length < 2) return p.length ? `M ${p[0][0]} ${p[0][1]}` : "";
+      let d = `M ${p[0][0]} ${p[0][1]}`;
+      for (let i = 0; i < p.length - 1; i++) {
+        const p0 = p[i - 1] || p[i], p1 = p[i], p2 = p[i + 1], p3 = p[i + 2] || p2, t = 0.16;
+        d += ` C ${p1[0] + (p2[0] - p0[0]) * t} ${p1[1] + (p2[1] - p0[1]) * t} ${p2[0] - (p3[0] - p1[0]) * t} ${p2[1] - (p3[1] - p1[1]) * t} ${p2[0]} ${p2[1]}`;
+      }
+      return d;
+    };
+    const areaPath = (key) => `${smooth(pts(key))} L ${xFor(months.length - 1)} ${height - padB} L ${xFor(0)} ${height - padB} Z`;
+    const gridVals = [0, 1, 2, 3].map((i) => bottom + (range * i) / 3);
     return `
-      <svg class="chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Grafico de evolucao financeira">
-        ${[0, 1, 2, 3].map((i) => {
-          const value = (max / 3) * (3 - i);
-          const y = yFor(value);
-          return `<line x1="${padding}" x2="${width - padding}" y1="${y}" y2="${y}" stroke="#e7ebf0" stroke-width="1"></line><text x="4" y="${y + 4}" font-size="10" fill="#8b94a3">${chartValue(value)}</text>`;
-        }).join("")}
-        <polygon points="${area(1)}" fill="rgba(29,78,216,.12)"></polygon>
-        <polygon points="${area(2)}" fill="rgba(217,119,6,.12)"></polygon>
-        <polyline class="chart-line-draw" points="${line(1)}" fill="none" stroke="#1d4ed8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></polyline>
-        <polyline class="chart-line-draw delay" points="${line(2)}" fill="none" stroke="#d97706" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></polyline>
-        ${months.map((item, index) => `
-          <g class="chart-point" tabindex="0">
-            <title>${item[0]} - Receita: ${chartValue(item[1])} | Despesas: ${chartValue(item[2])} | Resultado: ${chartValue(Number(item[1] || 0) - Number(item[2] || 0))}</title>
-            <circle class="point-visible" cx="${xFor(index)}" cy="${yFor(item[1])}" r="4" fill="#1d4ed8"></circle>
-            <circle class="chart-hit" cx="${xFor(index)}" cy="${yFor(item[1])}" r="12" fill="transparent"></circle>
+      <svg class="chart-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Evolucao de receita e despesas">
+        <defs>
+          <linearGradient id="gradRev" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1d4ed8" stop-opacity="0.28"></stop><stop offset="100%" stop-color="#1d4ed8" stop-opacity="0"></stop></linearGradient>
+          <linearGradient id="gradExp" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#d97706" stop-opacity="0.20"></stop><stop offset="100%" stop-color="#d97706" stop-opacity="0"></stop></linearGradient>
+        </defs>
+        ${gridVals.map((value) => { const y = yFor(value); return `<line x1="${padL}" x2="${width - padR}" y1="${y}" y2="${y}" stroke="#eceff3" stroke-width="1"></line><text x="${padL - 6}" y="${y + 3}" text-anchor="end" font-size="10" fill="#9aa3af">${chartValue(value)}</text>`; }).join("")}
+        <path d="${areaPath(1)}" fill="url(#gradRev)"></path>
+        <path d="${areaPath(2)}" fill="url(#gradExp)"></path>
+        <path d="${smooth(pts(2))}" fill="none" stroke="#d97706" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
+        <path d="${smooth(pts(1))}" fill="none" stroke="#1d4ed8" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"></path>
+        ${months.map((item, i) => `
+          <g class="chart-point" tabindex="0"><title>${item[0]} · Receita ${chartValue(item[1])} · Despesas ${chartValue(item[2])} · Resultado ${chartValue(Number(item[1] || 0) - Number(item[2] || 0))}</title>
+            <circle cx="${xFor(i)}" cy="${yFor(item[1])}" r="3.5" fill="#1d4ed8"></circle>
+            <circle cx="${xFor(i)}" cy="${yFor(item[2])}" r="3.5" fill="#d97706"></circle>
+            <circle class="chart-hit" cx="${xFor(i)}" cy="${(yFor(item[1]) + yFor(item[2])) / 2}" r="16" fill="transparent"></circle>
           </g>
-          <g class="chart-point" tabindex="0">
-            <title>${item[0]} - Despesas: ${chartValue(item[2])} | Receita: ${chartValue(item[1])} | Resultado: ${chartValue(Number(item[1] || 0) - Number(item[2] || 0))}</title>
-            <circle class="point-visible" cx="${xFor(index)}" cy="${yFor(item[2])}" r="4" fill="#d97706"></circle>
-            <circle class="chart-hit" cx="${xFor(index)}" cy="${yFor(item[2])}" r="12" fill="transparent"></circle>
-          </g>
-          <text x="${xFor(index)}" y="${height - 4}" text-anchor="middle" font-size="11" fill="#667085">${item[0]}</text>
+          <text x="${xFor(i)}" y="${height - 8}" text-anchor="middle" font-size="11" fill="#667085">${item[0]}</text>
         `).join("")}
       </svg>
     `;
