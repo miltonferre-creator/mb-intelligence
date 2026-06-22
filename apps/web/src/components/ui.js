@@ -37,10 +37,13 @@
     `;
   }
 
-  function kpi(label, value, hint, analysis, color, delta, sparkValues) {
+  function kpi(label, value, hint, analysis, color, delta, sparkValues, invert) {
     const direction = Number(delta || 0);
     const deltaText = direction === 0 ? "sem variação" : `${direction > 0 ? "+" : ""}${direction.toFixed(1).replace(".", ",")}%`;
-    const deltaClass = direction > 0 ? "is-up" : direction < 0 ? "is-down" : "is-flat";
+    // invert=true para indicadores onde subir e ruim (impostos, despesas): o sinal segue
+    // a direcao real, mas a cor reflete bom/ruim (verde/vermelho).
+    const good = invert ? direction < 0 : direction > 0;
+    const deltaClass = direction === 0 ? "is-flat" : good ? "is-up" : "is-down";
     const points = (sparkValues || []).map(Number).filter((item) => Number.isFinite(item));
     const max = Math.max(...points, 1);
     const min = Math.min(...points, 0);

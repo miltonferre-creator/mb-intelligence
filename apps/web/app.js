@@ -19,7 +19,7 @@
   }
 
   function defaultRouteForSession(session) {
-    return session?.type === "mb" ? "#/admin/operacao" : "#/cliente/inteligencia";
+    return session?.type === "mb" ? "#/admin/operacao" : "#/cliente/inicio";
   }
 
   function showToast(message) {

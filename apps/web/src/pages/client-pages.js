@@ -3,21 +3,23 @@
   MBI.pages = MBI.pages || {};
 
   const routeTitles = {
-    "#/cliente/inteligencia": "Inteligência Financeira",
+    "#/cliente/inicio": "Início",
+    "#/cliente/inteligencia": "Análise Financeira",
     "#/cliente/onboarding": "Onboarding",
     "#/cliente/documentos": "Documentos e guias",
     "#/cliente/comunicacao": "Comunicação MB",
     "#/cliente/perfil": "Perfil e acessos"
   };
 
-  function menu(active) {
-    return MBI.ui.nav([
-      ["#/cliente/inteligencia", "activity", "Inteligência"],
-      ["#/cliente/onboarding", "list-checks", "Onboarding"],
+  function menu(active, client) {
+    const items = [["#/cliente/inicio", "home", "Início"]];
+    if (client && tabAllowed(client, "finance")) items.push(["#/cliente/inteligencia", "line-chart", "Financeiro"]);
+    items.push(
       ["#/cliente/documentos", "folder-open", "Documentos"],
       ["#/cliente/comunicacao", "messages-square", "Comunicação"],
       ["#/cliente/perfil", "user-round", "Perfil"]
-    ], active);
+    );
+    return MBI.ui.nav(items, active);
   }
 
   function currentMonthValue() {
@@ -45,7 +47,7 @@
     return MBI.ui.shell({
       title: routeTitles[route] || "Portal do Cliente",
       subtitle: `${MBI.ui.escape(client.name)} · ${MBI.ui.escape(plan.name)} · Confiança ${MBI.ui.escape(client.confidence)}`,
-      menu: menu(route),
+      menu: menu(route, client),
       content,
       sessionLabel: plan.name,
       sessionName: client.owner
@@ -54,12 +56,14 @@
 
   function render(route) {
     const client = MBI.services.clients.current();
+    if (route === "#/cliente/inicio") return shell(route, home(client));
     if (route === "#/cliente/onboarding") return shell(route, onboarding(client));
     if (route === "#/cliente/documentos") return shell(route, documents(client));
     if (route === "#/cliente/importacoes") return shell("#/cliente/documentos", documents(client));
     if (route === "#/cliente/comunicacao") return shell(route, communication(client));
     if (route === "#/cliente/perfil") return shell(route, profile(client));
-    return shell("#/cliente/inteligencia", intelligence(client));
+    if (route === "#/cliente/inteligencia") return shell(route, intelligence(client));
+    return shell("#/cliente/inicio", home(client));
   }
 
   function processStatus(client, data) {
@@ -292,7 +296,7 @@
       <section class="grid grid-4 kpi-grid">
         ${MBI.ui.kpi("Faturamento", MBI.ui.money(data.revenue), data.competenceLabel, data.revenue ? "Receita atualizada para a competência selecionada." : "Aguardando base financeira da MB.", "blue", delta(current, previous, "revenue"), spark(rows, "revenue"))}
         ${MBI.ui.kpi("Resultado", data.result ? MBI.ui.money(data.result) : "Indisponível", `${data.margin || 0}% margem`, client.planId === "contabilidade" ? "Plano atual não libera lucro gerencial completo." : "Resultado calculado com dados disponíveis.", "teal", delta(current, previous, "result"), spark(rows, "result"))}
-        ${MBI.ui.kpi("Impostos / DAS", MBI.ui.money(data.taxes), "Fiscal", "Acompanhamento fiscal da MB por competência.", "amber", delta(current, previous, "taxes"), spark(rows, "taxes"))}
+        ${MBI.ui.kpi("Impostos / DAS", MBI.ui.money(data.taxes), "Fiscal", "Acompanhamento fiscal da MB por competência.", "amber", delta(current, previous, "taxes"), spark(rows, "taxes"), true)}
         ${MBI.ui.kpi(client.planId === "cfo" ? "Score MB" : "Fôlego", client.planId === "cfo" ? `${data.score || 0}/100` : `${data.runway || 0} dias`, client.planId === "cfo" ? "Financeiro" : "Caixa", client.planId === "cfo" ? "Score financeiro liberado para leitura executiva." : "Fôlego visual disponível nos planos financeiros.", "brand", delta(current, previous, client.planId === "cfo" ? "score" : "cash"), spark(rows, client.planId === "cfo" ? "score" : "cash"))}
       </section>
     `;
@@ -345,6 +349,8 @@
     return `
       ${cockpit(client, data)}
       ${kpiGrid(client, data)}
+      ${tabAllowed(client, "finance") && (data.months || []).length ? `
+      <section class="panel chart" style="margin-top:14px"><div class="panel-header"><div><h3>Evolução: receita × despesas</h3><p>Como sua empresa vem se comportando mês a mês.</p></div><button class="btn btn-ghost btn-mini" type="button" data-action="set-intelligence-tab" data-tab="history">Ver histórico completo</button></div>${MBI.ui.lineChart(data.months)}<div class="chart-legend"><span><i class="legend-dot blue"></i> Receita</span><span><i class="legend-dot amber"></i> Despesas</span></div></section>` : ""}
       <section class="grid grid-2" style="margin-top:14px">
         <article class="panel"><div class="panel-header"><div><h3>Copiloto financeiro</h3><p>Prioridades, recomendacoes e proximos passos.</p></div>${MBI.ui.pill("Vivo")}</div><div class="priority-list">${copilotSignals(client, data).map(([priority, title, detail, origin]) => `<div class="priority-item"><span class="priority-dot ${priority === "Alta" ? "high" : priority === "Media" ? "medium" : ""}"></span><div><strong>${title}</strong><span>${detail}</span></div><small>${origin}</small></div>`).join("")}</div></article>
         <article class="panel"><div class="panel-header"><div><h3>Linha do tempo</h3><p>Ultimas movimentacoes do acompanhamento.</p></div></div>${liveFeed(client, data)}</article>
@@ -427,6 +433,92 @@
         </div>
         <div class="scenario-output" data-scenario-output><strong>Cenário base</strong><span>Simule para estimar resultado projetado e caixa após investimento.</span></div>
       </form>
+    `;
+  }
+
+  function greeting() {
+    const h = new Date().getHours();
+    return h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
+  }
+
+  function isGuia(doc) {
+    return /fiscal|das|guia|imposto|inss|fgts|darf|tribut|dae|gps/i.test(`${doc.category || ""} ${doc.name || ""} ${doc.type || ""}`);
+  }
+
+  function dueLabel(value) {
+    const iso = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
+    return String(value || "") || "Sem prazo";
+  }
+
+  function guiasToPay(client) {
+    return MBI.services.documents.listByClient(client.id)
+      .filter((doc) => isGuia(doc) && (doc.dueDate || /\d{2}/.test(String(doc.due || ""))))
+      .sort((a, b) => String(a.dueDate || a.due).localeCompare(String(b.dueDate || b.due)));
+  }
+
+  function recentDocs(client) {
+    return MBI.services.documents.listByClient(client.id).slice().reverse().slice(0, 4);
+  }
+
+  function openTasks(client) {
+    return MBI.storage.getDatabase().tasks.filter((task) => task.clientId === client.id && !/conclu|feito|encerr|finaliz/i.test(task.status || ""));
+  }
+
+  // Tela inicial orientada as tarefas reais do mes: guias a pagar, documentos,
+  // status "tudo em dia?" e acoes rapidas. Para Gestao/CFO inclui leitura financeira;
+  // para Contabilidade, um convite (e nao um muro de cadeados).
+  function home(client) {
+    const data = MBI.services.finance.get(client.id);
+    const guias = guiasToPay(client);
+    const recents = recentDocs(client);
+    const tasks = openTasks(client);
+    const statusTone = tasks.length ? "is-warn" : "is-good";
+    const statusText = tasks.length
+      ? `${tasks.length} pendência(s) aguardando você ou a MB`
+      : guias.length ? "Suas guias do mês estão disponíveis para pagamento" : "Tudo em dia este mês";
+
+    const guiasPanel = `
+      <article class="panel home-panel">
+        <div class="panel-header"><div><h3>Guias e impostos a pagar</h3><p>Publicados pela MB para você pagar no prazo.</p></div>${MBI.ui.pill(String(guias.length))}</div>
+        ${guias.length ? `<div class="home-list">${guias.map((doc) => `
+          <div class="home-row">
+            <div class="home-row-main"><strong>${MBI.ui.escape(doc.name || doc.fileName)}</strong><span>Vence ${MBI.ui.escape(dueLabel(doc.dueDate || doc.due))}</span></div>
+            <button class="btn btn-soft btn-mini" type="button" data-action="document-download" data-document-id="${MBI.ui.escape(doc.id)}">${MBI.ui.icon("download")} Baixar</button>
+          </div>`).join("")}</div>`
+          : `<div class="home-empty">${MBI.ui.icon("check-circle")}<p>Nenhuma guia em aberto. Assim que a MB publicar suas guias do mês, elas aparecem aqui.</p></div>`}
+      </article>`;
+
+    const docsPanel = `
+      <article class="panel home-panel">
+        <div class="panel-header"><div><h3>Documentos recentes</h3><p>Últimos arquivos liberados pela MB.</p></div><button class="btn btn-ghost btn-mini" type="button" data-route="#/cliente/documentos">Ver todos</button></div>
+        ${recents.length ? `<div class="home-list">${recents.map((doc) => `
+          <div class="home-row">
+            <div class="home-row-main"><strong>${MBI.ui.escape(doc.name || doc.fileName)}</strong><span>${MBI.ui.escape(doc.category || "Documento")}${doc.competence ? ` · ${MBI.ui.escape(doc.competence)}` : ""}</span></div>
+            <button class="btn btn-soft btn-mini" type="button" data-action="document-download" data-document-id="${MBI.ui.escape(doc.id)}">${MBI.ui.icon("download")} Baixar</button>
+          </div>`).join("")}</div>`
+          : `<div class="home-empty">${MBI.ui.icon("folder-open")}<p>Nenhum documento publicado ainda. A MB disponibiliza seus documentos aqui.</p></div>`}
+      </article>`;
+
+    const quickActions = `
+      <section class="home-actions">
+        <button class="btn btn-primary" type="button" data-route="#/cliente/documentos">${MBI.ui.icon("folder-open")} Meus documentos</button>
+        <button class="btn btn-soft" type="button" data-route="#/cliente/comunicacao">${MBI.ui.icon("messages-square")} Falar com a MB</button>
+        ${tabAllowed(client, "finance") ? `<button class="btn btn-soft" type="button" data-route="#/cliente/inteligencia">${MBI.ui.icon("line-chart")} Ver análise financeira</button>` : ""}
+      </section>`;
+
+    const financeBlock = tabAllowed(client, "finance")
+      ? `<article class="panel"><div class="panel-header"><div><h3>Resumo financeiro · ${MBI.ui.escape(data.competenceLabel || "competência atual")}</h3><p>Leitura rápida. Detalhes completos em Financeiro.</p></div></div>${executiveBrief(client, data)}</article>`
+      : `<article class="panel home-invite"><div class="home-invite-icon">${MBI.ui.icon("trending-up")}</div><div class="home-invite-text"><h3>Quer enxergar o financeiro da sua empresa?</h3><p>O Plano Gestão libera faturamento, lucro, margem, indicadores e alertas automáticos — além de tudo que você já tem no Contabilidade.</p></div><a class="btn btn-primary" href="https://wa.me/5500000000000?text=Quero%20conhecer%20o%20Plano%20Gest%C3%A3o%20da%20MB" target="_blank" rel="noopener">${MBI.ui.icon("message-circle")} Conhecer o Plano Gestão</a></article>`;
+
+    return `
+      <section class="home-hero ${statusTone}">
+        <div class="home-hero-text"><span>${greeting()}, ${MBI.ui.escape(client.owner || client.name)}.</span><strong>${MBI.ui.escape(client.name)} · ${MBI.ui.escape(data.competenceLabel || "")}</strong></div>
+        <div class="home-status ${statusTone}">${MBI.ui.icon(tasks.length ? "alert-triangle" : "check-circle")}<span>${statusText}</span></div>
+      </section>
+      <section class="grid grid-2" style="margin-top:14px">${guiasPanel}${docsPanel}</section>
+      ${quickActions}
+      <section style="margin-top:14px">${financeBlock}</section>
     `;
   }
 
