@@ -84,8 +84,6 @@
       "update-plan-prices": "Salvando valores...",
       "update-finance": "Atualizando indicadores...",
       "create-task": "Criando pendencia...",
-      "create-approval": "Enviando para aprovacao...",
-      "approval-review": "Salvando revisao...",
       "publish-document": "Enviando documento...",
       "admin-import": "Carregando arquivo...",
       "create-user": "Criando usuario...",
@@ -465,49 +463,6 @@
         return;
       }
 
-      if (form.dataset.form === "create-approval") {
-        await remoteOrLocal(
-          async () => MBI.api.request("/approvals", { method: "POST", body: data }),
-          () => MBI.storage.updateDatabase((db) => {
-            db.approvals.push({
-              id: MBI.storage.nowId("apr"),
-              clientId: data.clientId,
-              title: data.title,
-              text: data.text,
-              confidence: data.confidence || "Media",
-              owner: MBI.auth.currentUser()?.name || "MB",
-              status: data.status || "Aguardando aprovacao"
-            });
-          })
-        );
-        showToast("Analise criada e enviada para governanca MB.");
-        return;
-      }
-
-      if (form.dataset.form === "approval-review") {
-        await remoteOrLocal(
-          async () => MBI.api.request(`/approvals/${data.approvalId}`, {
-            method: "PATCH",
-            body: {
-              status: data.status,
-              text: data.text,
-              reviewNotes: data.reviewNotes
-            }
-          }),
-          () => MBI.storage.updateDatabase((db) => {
-            const approval = db.approvals.find((item) => item.id === data.approvalId);
-            if (approval) {
-              approval.status = data.status;
-              approval.text = data.text;
-              approval.reviewNotes = data.reviewNotes;
-              approval.owner = MBI.auth.currentUser()?.name || approval.owner;
-            }
-          })
-        );
-        showToast("Revisao de IA salva pela equipe MB.");
-        return;
-      }
-
       if (form.dataset.form === "update-client-profile") {
         assertValidCnpj(data, data.clientId);
         await remoteOrLocal(
@@ -686,11 +641,6 @@
       return;
     }
 
-    if (action.dataset.action === "export-operational-report") {
-      exportOperationalReport(action.dataset.report);
-      return;
-    }
-
     if (action.dataset.action === "print-report") {
       printReport(action.dataset.report);
       return;
@@ -733,36 +683,6 @@
         showToast("Documento excluido do portal.");
       } catch (error) {
         showToast(error.message || "Nao foi possivel excluir o documento.");
-      } finally {
-        action.disabled = false;
-        action.innerHTML = original;
-      }
-      return;
-    }
-
-    if (action.dataset.action === "approval-status") {
-      const status = action.dataset.status;
-      const approvalId = action.dataset.approvalId;
-      const notes = window.prompt("Observação da revisão MB:", status === "Aprovado" ? "Insight aprovado para liberação ao cliente." : "Insight não deve ser liberado ao cliente neste formato.");
-      if (notes === null) return;
-      const original = action.innerHTML;
-      try {
-        action.disabled = true;
-        action.innerHTML = `<span class="spinner" aria-hidden="true"></span>Salvando...`;
-        await remoteOrLocal(
-          async () => MBI.api.request(`/approvals/${approvalId}`, { method: "PATCH", body: { status, reviewNotes: notes } }),
-          () => MBI.storage.updateDatabase((db) => {
-            const approval = db.approvals.find((item) => item.id === approvalId);
-            if (approval) {
-              approval.status = status;
-              approval.reviewNotes = notes;
-              approval.owner = MBI.auth.currentUser()?.name || approval.owner;
-            }
-          })
-        );
-        showToast(`Insight ${status.toLowerCase()} pela MB.`);
-      } catch (error) {
-        showToast(error.message || "Não foi possível revisar o insight.");
       } finally {
         action.disabled = false;
         action.innerHTML = original;
@@ -888,47 +808,6 @@
     a.remove();
     URL.revokeObjectURL(url);
     showToast("Arquivo CSV/Excel gerado.");
-  }
-
-  function exportOperationalReport(type) {
-    const db = MBI.storage.getDatabase();
-    const rowsByType = {
-      plans: [
-        ["Plano", "Clientes", "MRR estimado", "Status"],
-        ...MBI.services.plans.list().map((plan) => {
-          const count = db.clients.filter((client) => client.planId === plan.id).length;
-          return [plan.name, count, count * Number(plan.price || 0), count ? "Ativo" : "Sem clientes"];
-        })
-      ],
-      risk: [
-        ["Cliente", "Plano", "Confianca", "Pendencias", "Risco"],
-        ...db.clients.map((client) => {
-          const tasks = db.tasks.filter((task) => task.clientId === client.id && !String(task.status || "").includes("Concl")).length;
-          const risk = client.confidence === "Baixa" || client.status === "Onboarding" || tasks ? "Atencao" : "Saudavel";
-          return [client.name, MBI.services.plans.get(client.planId)?.name || client.planId, client.confidence, tasks, risk];
-        })
-      ],
-      users: [
-        ["Operador", "Perfil", "Status"],
-        ...MBI.services.users.list("mb").map((user) => [user.name, user.role, user.status])
-      ],
-      documents: [
-        ["Cliente", "Documento", "Categoria", "Competencia", "Status"],
-        ...db.documents.map((doc) => [MBI.services.clients.get(doc.clientId)?.name || doc.clientId, doc.name, doc.category, doc.competence || doc.due || "", doc.status])
-      ]
-    };
-    const rows = rowsByType[type] || rowsByType.plans;
-    const csv = rows.map((row) => row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(";")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `MB_Intelligence_Relatorio_Operacional_${type || "carteira"}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-    showToast("Relatorio operacional exportado.");
   }
 
   function normalizeReportRows(rows) {
