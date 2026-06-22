@@ -179,7 +179,7 @@
     if (!months || months.length < 2) {
       return `<div class="empty-lock">${icon("activity")}<h3>Aguardando histórico</h3><p>O gráfico aparece quando houver competências suficientes.</p></div>`;
     }
-    const W = 600, H = 260, padL = 54, padR = 22, padT = 30, padB = 30;
+    const W = 600, H = 206, padL = 54, padR = 22, padT = 24, padB = 26;
     const rev = months.map((m) => Number(m[1] || 0));
     const n = rev.length;
     const meanX = (n - 1) / 2;

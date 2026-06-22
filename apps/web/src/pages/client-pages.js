@@ -543,10 +543,10 @@
         ${scorePanel}
       </section>
       <section style="margin-top:12px">
-        <article class="panel">
-          <div class="panel-header"><div><h3>Inteligência MB</h3><p>Leitura executiva da competência.</p></div></div>
-          ${executiveBrief(client, data)}
-        </article>
+        ${(() => {
+          const [tone, txt] = executiveAlert(data);
+          return `<div class="exec-alert ${tone}">${MBI.ui.icon(tone === "is-good" ? "check-circle" : "alert-triangle")}<span><strong>Inteligência MB · ${tone === "is-good" ? "Situação" : "Atenção"}:</strong> ${txt}</span></div>`;
+        })()}
       </section>
       <details class="report-detail" style="margin-top:14px">
         <summary>Ver relatórios completos — DRE e fluxo de caixa</summary>

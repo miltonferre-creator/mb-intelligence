@@ -2616,8 +2616,9 @@ button.workflow-step:hover { border-color: var(--brand-3); }
 
 /* Versao compacta do dashboard p/ caber na tela */
 .exec-dash { padding: 16px; }
-.exec-dash .kpi-card { min-height: 104px; gap: 4px; padding: 14px; }
-.exec-dash .kpi-value { font-size: clamp(20px, 2.2vw, 28px); }
+.exec-dash .kpi-card { min-height: 88px; gap: 3px; padding: 12px 14px; }
+.exec-dash .kpi-value { font-size: clamp(19px, 2vw, 26px); }
+.exec-dash .kpi-card .kpi-spark { height: 30px; }
 .exec-dash .panel { padding: 14px; }
 .exec-dash .panel-header { margin-bottom: 6px; }
 
@@ -2805,3 +2806,20 @@ button.workflow-step:hover { border-color: var(--brand-3); }
 .nav-collapsed .nav-btn { justify-content: center; padding: 11px 0; gap: 0; }
 .nav-collapsed .side-account { padding-top: 12px; }
 .nav-collapsed .side-account .btn { justify-content: center; padding: 11px 0; gap: 0; }
+
+/* ===== Header (topbar) escuro com identidade MB ===== */
+.topbar {
+  margin: -24px -24px 16px;
+  padding: 16px 24px;
+  border-radius: 0 0 16px 16px;
+  background: radial-gradient(130% 320% at 0% 0%, rgba(143, 18, 27, .55), #0e0f15 58%);
+  color: #fff;
+}
+.topbar h1 { color: #fff; }
+.topbar p { color: rgba(255, 255, 255, .55); }
+.topbar .icon-btn {
+  color: #fff;
+  background: rgba(255, 255, 255, .08);
+  border-color: rgba(255, 255, 255, .16);
+}
+.topbar .icon-btn:hover { background: rgba(255, 255, 255, .16); }
