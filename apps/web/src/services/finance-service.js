@@ -179,7 +179,15 @@
 
   function listCompetences(clientId) {
     const item = MBI.storage.getDatabase().financials[clientId] || {};
+    // A API ja envia a lista completa de competencias (ate 12 meses). Usa ela primeiro.
+    if (Array.isArray(item.competences) && item.competences.length) {
+      return item.competences
+        .map((c) => ({ value: normalizeMonth(c.value || c), label: c.label || monthLabel(c.value || c) }))
+        .sort((a, b) => b.value.localeCompare(a.value));
+    }
+    // Fallback: snapshots locais, periodos da API ou mes atual.
     const values = Object.keys(item.snapshots || {});
+    if (Array.isArray(item.periods)) item.periods.forEach((p) => values.push(normalizeMonth(p.competence)));
     if (item.competence) values.push(normalizeMonth(item.competence));
     if (!values.length) values.push(currentMonth());
     return [...new Set(values)]
