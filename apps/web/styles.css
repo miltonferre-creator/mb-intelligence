@@ -2595,3 +2595,79 @@ button.workflow-step:hover { border-color: var(--brand-3); }
 @media (max-width: 900px) {
   .dash-split { grid-template-columns: 1fr; }
 }
+
+/* ============================================================
+   DASHBOARD EXECUTIVO (tema escuro com brilho, cor MB)
+   ============================================================ */
+.exec-dash {
+  padding: 20px;
+  border-radius: 16px;
+  background:
+    radial-gradient(120% 90% at 12% -15%, rgba(143, 18, 27, .38), rgba(13, 15, 22, 0) 55%),
+    radial-gradient(100% 80% at 100% 0%, rgba(91, 7, 11, .30), rgba(13, 15, 22, 0) 50%),
+    #0d0f16;
+  border: 1px solid rgba(255, 255, 255, .07);
+  color: #e8eaf0;
+}
+.exec-dash .panel {
+  background: rgba(255, 255, 255, .035);
+  border: 1px solid rgba(255, 255, 255, .08);
+  box-shadow: none;
+  color: #e8eaf0;
+}
+.exec-dash .panel-header h3 { color: #fff; }
+.exec-dash .panel-header p { color: rgba(255, 255, 255, .5); }
+.exec-dash label span { color: rgba(255, 255, 255, .6); }
+.exec-dash select,
+.exec-dash input {
+  background: rgba(255, 255, 255, .06);
+  color: #fff;
+  border-color: rgba(255, 255, 255, .14);
+}
+
+/* KPIs no escuro */
+.exec-dash .kpi-card {
+  background: rgba(255, 255, 255, .04);
+  border-color: rgba(255, 255, 255, .09);
+}
+.exec-dash .kpi-value { color: #fff; }
+.exec-dash .kpi-card .metric-top span { color: rgba(255, 255, 255, .55); }
+.exec-dash .kpi-card em,
+.exec-dash .kpi-trend > em { color: rgba(255, 255, 255, .4); }
+.exec-dash .kpi-card.blue { color: #5b9bff; }
+.exec-dash .kpi-card.teal { color: #2dd4bf; }
+.exec-dash .kpi-card.amber { color: #f0a93b; }
+.exec-dash .kpi-card.brand { color: #e0606a; }
+.exec-dash .delta-pill.is-flat { color: rgba(255, 255, 255, .6); background: rgba(255, 255, 255, .08); }
+
+/* Grafico executivo */
+.exec-chart { width: 100%; height: auto; display: block; }
+.exec-dash .chart-legend { color: rgba(255, 255, 255, .6); margin-top: 10px; }
+.exec-dash .legend-dot.brand { background: #e0606a; }
+.exec-dash .legend-dot.dashed {
+  height: 2px;
+  border-radius: 0;
+  background: linear-gradient(90deg, rgba(255, 255, 255, .65) 55%, transparent 55%);
+  background-size: 7px 2px;
+}
+
+/* Ranking de despesas com gradiente */
+.exec-dash .bar-row span { color: rgba(255, 255, 255, .72); }
+.exec-dash .bar-row strong { color: #fff; }
+.exec-dash .bar-track { background: rgba(255, 255, 255, .08); }
+.exec-dash .bar-fill { background: linear-gradient(90deg, #8f121b, #e0606a); }
+
+/* Leitura executiva no escuro */
+.exec-dash .exec-metric { background: rgba(255, 255, 255, .05); border-color: rgba(255, 255, 255, .1); }
+.exec-dash .exec-metric > span { color: rgba(255, 255, 255, .5); }
+.exec-dash .exec-metric > strong { color: #fff; }
+
+/* Score / radar no escuro */
+.exec-dash .score-gauge strong,
+.exec-dash .score-gauge em,
+.exec-dash .score-gauge p { color: #fff; }
+
+/* Relatorios recolhidos */
+.exec-dash .report-detail summary { color: rgba(255, 255, 255, .82); }
+.exec-dash .metric-analysis { background: rgba(255, 255, 255, .05); color: rgba(255, 255, 255, .75); border-left-color: #e0606a; }
+.exec-dash .metric-analysis strong { color: #fff; }

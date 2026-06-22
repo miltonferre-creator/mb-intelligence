@@ -173,6 +173,60 @@
     `;
   }
 
+  // Grafico executivo (tema escuro): Receita (linha + pontos + area + callout no pico)
+  // e Tendencia (regressao linear, tracejada). Usado no Dashboard do cliente.
+  function execLineChart(months) {
+    if (!months || months.length < 2) {
+      return `<div class="empty-lock">${icon("activity")}<h3>Aguardando histórico</h3><p>O gráfico aparece quando houver competências suficientes.</p></div>`;
+    }
+    const W = 600, H = 260, padL = 54, padR = 22, padT = 30, padB = 30;
+    const rev = months.map((m) => Number(m[1] || 0));
+    const n = rev.length;
+    const meanX = (n - 1) / 2;
+    const meanY = rev.reduce((a, b) => a + b, 0) / n;
+    let num = 0, den = 0;
+    rev.forEach((y, i) => { num += (i - meanX) * (y - meanY); den += (i - meanX) ** 2; });
+    const slope = den ? num / den : 0;
+    const intercept = meanY - slope * meanX;
+    const trend = rev.map((_, i) => intercept + slope * i);
+    let maxV = Math.max(...rev, ...trend), minV = Math.min(...rev, ...trend);
+    if (maxV === minV) { maxV = maxV || 1; minV = 0; }
+    const span = (maxV - minV) || 1;
+    const top = maxV + span * 0.18, bottom = Math.max(minV - span * 0.18, 0);
+    const range = (top - bottom) || 1;
+    const xFor = (i) => padL + (i / (n - 1)) * (W - padL - padR);
+    const yFor = (v) => padT + (1 - (v - bottom) / range) * (H - padT - padB);
+    const smooth = (p) => {
+      let d = `M ${p[0][0]} ${p[0][1]}`;
+      for (let i = 0; i < p.length - 1; i++) {
+        const p0 = p[i - 1] || p[i], p1 = p[i], p2 = p[i + 1], p3 = p[i + 2] || p2, t = 0.16;
+        d += ` C ${p1[0] + (p2[0] - p0[0]) * t} ${p1[1] + (p2[1] - p0[1]) * t} ${p2[0] - (p3[0] - p1[0]) * t} ${p2[1] - (p3[1] - p1[1]) * t} ${p2[0]} ${p2[1]}`;
+      }
+      return d;
+    };
+    const revPts = rev.map((v, i) => [xFor(i), yFor(v)]);
+    const revLine = smooth(revPts);
+    const area = `${revLine} L ${xFor(n - 1)} ${H - padB} L ${xFor(0)} ${H - padB} Z`;
+    const last = revPts[n - 1];
+    const grid = [0, 1, 2, 3].map((i) => bottom + (range * i) / 3);
+    const cx = Math.min(last[0] - 4, W - 108), cy = Math.max(last[1] - 34, 6);
+    return `
+      <svg class="exec-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Receita ao longo do tempo">
+        <defs>
+          <linearGradient id="execArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e0606a" stop-opacity="0.34"></stop><stop offset="100%" stop-color="#e0606a" stop-opacity="0"></stop></linearGradient>
+          <filter id="execGlow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.4" result="b"></feGaussianBlur><feMerge><feMergeNode in="b"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter>
+        </defs>
+        ${grid.map((v) => { const y = yFor(v); return `<line x1="${padL}" x2="${W - padR}" y1="${y}" y2="${y}" stroke="rgba(255,255,255,.08)" stroke-width="1"></line><text x="${padL - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="rgba(255,255,255,.42)">${chartValue(v)}</text>`; }).join("")}
+        <path d="${area}" fill="url(#execArea)"></path>
+        <path d="M ${xFor(0)} ${yFor(trend[0])} L ${xFor(n - 1)} ${yFor(trend[n - 1])}" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2" stroke-dasharray="6 5"></path>
+        <path d="${revLine}" fill="none" stroke="#e0606a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" filter="url(#execGlow)"></path>
+        ${revPts.map((p, i) => `<circle cx="${p[0]}" cy="${p[1]}" r="${i === n - 1 ? 5 : 3.2}" fill="#13101a" stroke="#e0606a" stroke-width="2"></circle>`).join("")}
+        ${months.map((m, i) => (i % 2 === 0 || i === n - 1) ? `<text x="${xFor(i)}" y="${H - 8}" text-anchor="middle" font-size="10" fill="rgba(255,255,255,.5)">${String(m[0]).split(" ")[0]}</text>` : "").join("")}
+        <g transform="translate(${cx}, ${cy})"><rect width="104" height="26" rx="13" fill="#8f121b"></rect><text x="52" y="17" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">${chartValue(rev[n - 1])}</text></g>
+      </svg>
+    `;
+  }
+
   function groupedBars(months) {
     if (!months || !months.length) return `<div class="empty-lock">${icon("bar-chart-3")}<h3>Sem histórico</h3><p>A MB ainda não salvou competências suficientes.</p></div>`;
     const max = Math.max(...months.flatMap((item) => [Number(item[1] || 0), Number(item[2] || 0), Math.abs(Number(item[1] || 0) - Number(item[2] || 0))]), 1);
@@ -348,5 +402,5 @@
     return message ? `<div class="toast">${message}</div>` : "";
   }
 
-  MBI.ui = { icon, escape, money, pill, metric, kpi, table, bars, lineChart, groupedBars, scoreGauge, runway, donut, waterfall, radar, dreTable, shell, nav, toast, statusClass };
+  MBI.ui = { icon, escape, money, pill, metric, kpi, table, bars, lineChart, execLineChart, groupedBars, scoreGauge, runway, donut, waterfall, radar, dreTable, shell, nav, toast, statusClass };
 })();

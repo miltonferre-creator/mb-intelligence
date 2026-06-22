@@ -523,13 +523,14 @@
       ? `<article class="panel"><div class="panel-header"><div><h3>Radar do score</h3><p>Seis dimensões financeiras.</p></div></div>${MBI.ui.radar(data.scoreBreakdown)}</article>`
       : `<article class="panel"><div class="panel-header"><div><h3>MB Financial Score</h3><p>Leitura de risco financeiro.</p></div></div>${MBI.ui.scoreGauge(data.score, "MB Financial Score")}</article>`;
     return `
+      <div class="exec-dash">
       ${competenceSelector(client, data)}
       ${kpiGrid(client, data)}
       <section class="grid dash-split" style="margin-top:14px">
         <article class="panel chart">
-          <div class="panel-header"><div><h3>Receita ao longo do tempo</h3><p>Receita e despesas, mês a mês.</p></div></div>
-          ${MBI.ui.lineChart(data.months)}
-          <div class="chart-legend"><span><i class="legend-dot blue"></i> Receita</span><span><i class="legend-dot amber"></i> Despesas</span></div>
+          <div class="panel-header"><div><h3>Receita ao longo do tempo</h3><p>Evolução de faturamento, mês a mês.</p></div></div>
+          ${MBI.ui.execLineChart(data.months)}
+          <div class="chart-legend"><span><i class="legend-dot brand"></i> Receita</span><span><i class="legend-dot dashed"></i> Tendência</span></div>
         </article>
         <article class="panel">
           <div class="panel-header"><div><h3>Onde você mais gasta</h3><p>Maiores despesas do período.</p></div></div>
@@ -550,6 +551,7 @@
           <article class="panel"><div class="panel-header"><div><h3>Fluxo de caixa</h3><p>Entradas, saídas e saldo.</p></div></div>${MBI.ui.waterfall(data.cashBridge)}</article>
         </section>
       </details>
+      </div>
     `;
   }
 
