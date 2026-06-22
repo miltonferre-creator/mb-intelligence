@@ -33,11 +33,15 @@
   function competenceSelector(client, data) {
     const options = data.competences?.length ? data.competences : MBI.services.finance.listCompetences(client.id);
     return `
-      <form class="panel competence-selector" data-form="select-competence">
-        <input type="hidden" name="clientId" value="${client.id}">
-        <label><span>Competencia</span><select name="competence">${options.map((item) => `<option value="${item.value}" ${item.value === data.competence ? "selected" : ""}>${item.label}</option>`).join("")}</select></label>
-        <button class="btn btn-primary" type="submit">${MBI.ui.icon("calendar-check")} Ver mes</button>
-      </form>
+      <div class="competence-bar">
+        <form class="competence-filter" data-form="select-competence">
+          <input type="hidden" name="clientId" value="${MBI.ui.escape(client.id)}">
+          <span class="competence-filter-ic">${MBI.ui.icon("calendar-days")}</span>
+          <span class="competence-filter-tag">Competência</span>
+          <select name="competence" aria-label="Competência" onchange="this.form.requestSubmit()">${options.map((item) => `<option value="${MBI.ui.escape(item.value)}" ${item.value === data.competence ? "selected" : ""}>${MBI.ui.escape(item.label)}</option>`).join("")}</select>
+          <button class="competence-filter-go" type="submit" aria-label="Aplicar competência">Ver</button>
+        </form>
+      </div>
     `;
   }
 

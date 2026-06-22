@@ -2671,3 +2671,52 @@ button.workflow-step:hover { border-color: var(--brand-3); }
 .exec-dash .report-detail summary { color: rgba(255, 255, 255, .82); }
 .exec-dash .metric-analysis { background: rgba(255, 255, 255, .05); color: rgba(255, 255, 255, .75); border-left-color: #e0606a; }
 .exec-dash .metric-analysis strong { color: #fff; }
+
+/* Filtro de competencia moderno (pill escuro, troca ao selecionar) */
+.competence-bar { display: flex; justify-content: flex-end; }
+.competence-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px 7px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .14);
+}
+.competence-filter-ic { display: inline-flex; color: rgba(255, 255, 255, .55); }
+.competence-filter-ic svg { width: 16px; height: 16px; }
+.competence-filter-tag {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, .5);
+}
+.competence-filter select {
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  background-color: transparent;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  padding: 2px 24px 2px 6px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c7cad4' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+  background-size: 15px;
+}
+.competence-filter select:focus { outline: none; }
+.competence-filter select option { background: #161922; color: #fff; }
+.competence-filter-go {
+  border: none;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--brand-2), var(--brand-3));
+}
