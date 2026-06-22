@@ -2590,11 +2590,18 @@ button.workflow-step:hover { border-color: var(--brand-3); }
   display: grid;
   grid-template-columns: 1.6fr 1fr;
   gap: 14px;
-  align-items: start;
+  align-items: stretch;
 }
 @media (max-width: 900px) {
   .dash-split { grid-template-columns: 1fr; }
 }
+
+/* Preenche o quadro: paineis da linha com altura igual e conteudo curto centralizado */
+.exec-dash .panel { display: flex; flex-direction: column; }
+.exec-dash .panel > .bar-chart,
+.exec-dash .panel > .score-gauge,
+.exec-dash .panel > .radar-chart,
+.exec-dash .panel > .donut-wrap { margin-block: auto; }
 
 /* ============================================================
    DASHBOARD EXECUTIVO (tema escuro com brilho, cor MB)
@@ -2709,14 +2716,14 @@ button.workflow-step:hover { border-color: var(--brand-3); }
 }
 .competence-filter select:focus { outline: none; }
 .competence-filter select option { background: #161922; color: #fff; }
+/* troca a competencia ao selecionar; o botao fica oculto (fallback de submit) */
 .competence-filter-go {
-  border: none;
-  cursor: pointer;
-  border-radius: 999px;
-  padding: 6px 14px;
-  font: inherit;
-  font-weight: 700;
-  font-size: 13px;
-  color: #fff;
-  background: linear-gradient(135deg, var(--brand-2), var(--brand-3));
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  border: 0;
 }
