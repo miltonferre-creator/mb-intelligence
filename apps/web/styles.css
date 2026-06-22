@@ -1023,18 +1023,6 @@ textarea:focus {
   overflow: visible;
 }
 
-.chart-point .point-visible {
-  transition: transform .18s ease, stroke-width .18s ease;
-  transform-origin: center;
-}
-
-.chart-point:hover .point-visible,
-.chart-point:focus .point-visible {
-  stroke: #fff;
-  stroke-width: 2;
-  transform: scale(1.35);
-}
-
 .chart-hit {
   pointer-events: all;
 }
@@ -1908,16 +1896,6 @@ textarea:focus {
   font-size: 12px;
 }
 
-.chart-line-draw {
-  stroke-dasharray: 900;
-  stroke-dashoffset: 900;
-  animation: drawLine 1s ease forwards;
-}
-
-.chart-line-draw.delay {
-  animation-delay: .14s;
-}
-
 .grouped-bars {
   min-height: 260px;
   display: flex;
@@ -2240,9 +2218,6 @@ textarea:focus {
   to { height: var(--height); opacity: 1; }
 }
 
-@keyframes drawLine {
-  to { stroke-dashoffset: 0; }
-}
 
 @keyframes radarGrow {
   from { transform: scale(.35); opacity: 0; }

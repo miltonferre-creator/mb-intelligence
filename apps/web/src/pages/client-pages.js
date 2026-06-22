@@ -114,20 +114,6 @@
     return Math.max(0, Math.min(100, Math.round((Math.abs(Number(value || 0)) / denominator) * 100)));
   }
 
-  function documentHealthBars(client) {
-    const docs = MBI.services.documents.listByClient(client.id);
-    const hasFiscal = docs.some((doc) => /fiscal|das/i.test(`${doc.category} ${doc.name}`));
-    const hasAccounting = docs.some((doc) => /cont|dre|balancete/i.test(`${doc.category} ${doc.name}`));
-    const hasLabor = docs.some((doc) => /trabalh|folha|fgts|inss/i.test(`${doc.category} ${doc.name}`));
-    const pending = docs.filter((doc) => /pendente|aguardando/i.test(doc.status || "")).length;
-    return [
-      ["DAS / Fiscal", hasFiscal ? 100 : 0, hasFiscal ? "Disponível" : "Pendente", "brand"],
-      ["Contábil", hasAccounting ? 100 : 0, hasAccounting ? "Disponível" : "Pendente", "teal"],
-      ["Trabalhista", hasLabor ? 100 : 0, hasLabor ? "Disponível" : "Quando aplicável", "blue"],
-      ["Pendências", pending ? 100 : 0, pending ? `${pending} aberta(s)` : "Sem pendências", pending ? "amber" : "teal"]
-    ];
-  }
-
   function scoreBars(data) {
     const rows = data.scoreBreakdown || [];
     if (!rows.length) return [["Score calculado", data.score || 0, `${data.score || 0}/100`, "brand"]];
@@ -538,146 +524,6 @@
     return `${selector}${intelligenceTabs(client, active)}<div class="intel-tab-content">${content}</div>`;
   }
 
-  function intelligenceLegacy(client) {
-    const plan = MBI.services.plans.get(client.planId);
-    const data = MBI.services.finance.get(client.id);
-    const cockpitView = cockpit(client, data);
-    const selector = competenceSelector(client, data);
-    const latestMonth = data.competenceLabel || data.months?.at(-1)?.[0] || "competência atual";
-    const basic = `
-      <section class="grid grid-4">
-        ${MBI.ui.metric("Faturamento", MBI.ui.money(data.revenue), latestMonth, data.revenue ? "Base atualizada para leitura gerencial." : "Dados financeiros ainda insuficientes.", "blue")}
-        ${MBI.ui.metric("Impostos / DAS", MBI.ui.money(data.taxes), "Simples", "Guia e vencimentos seguem acompanhamento fiscal da MB.", "amber")}
-        ${MBI.ui.metric("Resultado", data.result ? MBI.ui.money(data.result) : "Indisponível", `${data.margin || 0}%`, client.planId === "contabilidade" ? "Plano atual não libera análise financeira completa." : "Resultado calculado com dados disponíveis.", "teal")}
-        ${MBI.ui.metric("Score", data.score || "N/A", "MB Financial", client.planId === "cfo" ? "Score financeiro liberado para leitura executiva." : "Score completo disponível no CFO (em breve).", "brand")}
-      </section>
-    `;
-
-    if (client.planId === "contabilidade") {
-      return `
-        ${selector}
-        ${cockpitView}
-        ${basic}
-        <section class="grid grid-2" style="margin-top:14px">
-          <article class="panel"><div class="panel-header"><div><h3>Portal contábil</h3><p>Documentos, DAS, guias e obrigações em um só lugar.</p></div></div>${MBI.ui.bars(documentHealthBars(client))}</article>
-          <article class="panel"><div class="panel-header"><div><h3>IA MB</h3><p>Limite de análise protegido por plano e dados.</p></div></div><div class="insight-list">${data.insights.map((text) => `<div class="insight-item"><strong>Observação</strong><span>${text}</span></div>`).join("")}</div></article>
-        </section>
-      `;
-    }
-
-    const charts = `
-      <section class="grid grid-2" style="margin-top:14px">
-        <article class="panel chart"><div class="panel-header"><div><h3>Receita x despesas</h3><p>Evolução mensal consolidada.</p></div></div>${MBI.ui.lineChart(data.months)}<div class="chart-legend"><span><i class="legend-dot blue"></i> Receita</span><span><i class="legend-dot amber"></i> Despesas</span></div></article>
-        <article class="panel"><div class="panel-header"><div><h3>Copiloto financeiro</h3><p>Próximas ações priorizadas.</p></div></div>${copilot(client)}</article>
-      </section>
-    `;
-
-    const managerialReports = `
-      <section class="grid financial-center" style="margin-top:14px">
-        <article class="panel">
-          <div class="panel-header"><div><h3>DRE gerencial simplificada</h3><p>Visao gerencial liberada conforme dados disponiveis.</p></div></div>
-          ${MBI.ui.dreTable(data.dre)}
-        </article>
-        <article class="panel">
-          <div class="panel-header"><div><h3>Fluxo de caixa gerencial</h3><p>DFC simplificada por competencia.</p></div></div>
-          ${cashBridge(data.cashBridge)}
-        </article>
-      </section>
-    `;
-
-    if (client.planId !== "cfo") return `${selector}${cockpitView}${basic}${managerialReports}${charts}`;
-
-    return `
-      ${selector}
-      ${cockpitView}
-      ${basic}
-      <section class="grid financial-center" style="margin-top:14px">
-        <article class="panel">
-          <div class="panel-header"><div><h3>DRE gerencial</h3><p>Relatório validado para leitura executiva.</p></div><div class="report-actions"><button class="btn btn-ghost" type="button" data-action="print-report" data-report="dre">${MBI.ui.icon("printer")} Imprimir</button><button class="btn btn-soft" type="button" data-action="export-report" data-report="dre">${MBI.ui.icon("file-spreadsheet")} Excel</button></div></div>
-          ${MBI.ui.dreTable(data.dre)}
-        </article>
-        <article class="panel">
-          <div class="panel-header"><div><h3>Fluxo de caixa</h3><p>Saldo, entradas, saídas e fôlego financeiro.</p></div><div class="report-actions"><button class="btn btn-ghost" type="button" data-action="print-report" data-report="cash">${MBI.ui.icon("printer")} Imprimir</button><button class="btn btn-soft" type="button" data-action="export-report" data-report="cash">${MBI.ui.icon("file-spreadsheet")} Excel</button></div></div>
-          ${cashBridge(data.cashBridge)}
-        </article>
-      </section>
-      ${cfoExecutiveCharts(data)}
-      ${charts}
-    `;
-  }
-
-  function cfoExecutiveCharts(data) {
-    const marginTarget = Number(data.marginTarget || 20);
-    const marginTargetBar = Math.min(Math.max(marginTarget, 0) * 3, 100);
-    const marginBar = Math.min(Math.max(data.margin || 0, 0) * 3, 100);
-    const resultBar = percentOf(data.result || 0, data.revenue || 1);
-    const runwayTarget = 45;
-    return `
-      <section class="grid cfo-executive-grid" style="margin-top:14px">
-        <article class="panel chart cfo-main-chart">
-          <div class="panel-header">
-            <div>
-              <h3>Evolução executiva</h3>
-              <p>Receita, despesas e pressão de margem em visão ampliada.</p>
-            </div>
-            <span class="status-pill status-ok">Leitura CFO</span>
-          </div>
-          ${MBI.ui.lineChart(data.months)}
-          <div class="chart-legend">
-            <span><i class="legend-dot blue"></i> Receita</span>
-            <span><i class="legend-dot amber"></i> Despesas</span>
-          </div>
-          <div class="metric-analysis" style="margin-top:14px"><strong>MB CFO:</strong> acompanhar diferença entre crescimento de receita e avanço das despesas para proteger a margem.</div>
-        </article>
-
-        <article class="panel chart cfo-score-panel">
-          <div class="panel-header">
-            <div>
-              <h3>Score e capacidade</h3>
-              <p>Indicadores executivos para decisão.</p>
-            </div>
-          </div>
-          <div class="score-radar">
-            <div><strong>${data.score || 0}</strong><span>MB Financial Score</span></div>
-            <div><strong>${MBI.ui.money(data.investmentCapacity || 0)}</strong><span>Capacidade segura</span></div>
-            <div><strong>${data.runway || 0} dias</strong><span>Fôlego de caixa</span></div>
-          </div>
-          ${MBI.ui.bars(scoreBars(data))}
-        </article>
-      </section>
-
-      <section class="grid grid-3 cfo-detail-grid" style="margin-top:14px">
-        <article class="panel chart">
-          <div class="panel-header"><div><h3>Composição das despesas</h3><p>Onde o caixa está sendo consumido.</p></div></div>
-          ${MBI.ui.bars(expenseCompositionBars(data))}
-          <div class="metric-analysis" style="margin-top:14px"><strong>IA MB:</strong> composição calculada com os dados financeiros informados e validados pela MB.</div>
-        </article>
-
-        <article class="panel chart">
-          <div class="panel-header"><div><h3>Margem e resultado</h3><p>Leitura gerencial da eficiência.</p></div></div>
-          ${MBI.ui.bars([
-            ["Margem atual", marginBar, `${data.margin || 0}%`, "teal"],
-            ["Meta MB", marginTargetBar, `${marginTarget}%`, "blue"],
-            ["Resultado", resultBar, MBI.ui.money(data.result || 0), "brand"],
-            ["Pressão de custo", percentOf(data.expenses || 0, data.revenue || 1), `${percentOf(data.expenses || 0, data.revenue || 1)}% da receita`, "amber"]
-          ])}
-          <div class="metric-analysis" style="margin-top:14px"><strong>MB CFO:</strong> meta lida da configuração financeira do cliente; ajuste em Alimentar portal quando necessário.</div>
-        </article>
-
-        <article class="panel chart">
-          <div class="panel-header"><div><h3>Decisão de investimento</h3><p>Capacidade, reserva e limite prudencial.</p></div></div>
-          ${MBI.ui.bars([
-            ["Reserva mínima", Math.min((runwayTarget / Math.max(runwayTarget, data.runway || 1)) * 100, 100), `${runwayTarget} dias`, "brand"],
-            ["Caixa atual", percentOf(data.cash || 0, (data.expenses || 1) * 2), MBI.ui.money(data.cash || 0), "teal"],
-            ["Investimento seguro", percentOf(data.investmentCapacity || 0, data.cash || 1), MBI.ui.money(data.investmentCapacity || 0), "blue"],
-            ["Fôlego atual", Math.min(((data.runway || 0) / runwayTarget) * 100, 100), `${data.runway || 0} dias`, "amber"]
-          ])}
-          <div class="metric-analysis" style="margin-top:14px"><strong>IA MB:</strong> investimento moderado é possível, desde que a reserva mínima seja preservada.</div>
-        </article>
-      </section>
-    `;
-  }
-
   function cashBridge(rows) {
     if (!rows.length) return `<div class="empty-lock">${MBI.ui.icon("lock")}<h3>Caixa não validado</h3><p>A MB precisa carregar OFX ou planilha para liberar a DFC gerencial.</p></div>`;
     const normalized = rows.map((row) => Array.isArray(row)
@@ -695,12 +541,6 @@
         `).join("")}
       </div>
     `;
-  }
-
-  function copilot(client) {
-    const tasks = MBI.storage.getDatabase().tasks.filter((task) => task.clientId === client.id);
-    if (!tasks.length) return `<div class="insight-item"><strong>Copiloto</strong><span>Nenhuma acao pendente. A MB acompanha o proximo fechamento.</span></div>`;
-    return `<div class="priority-list">${tasks.map((task) => `<div class="priority-item"><span class="priority-dot ${task.priority === "Alta" ? "high" : "medium"}"></span><div><strong>${MBI.ui.escape(task.title)}</strong><span>${MBI.ui.escape(task.owner)} · vence ${MBI.ui.escape(task.due)}</span></div>${MBI.ui.pill(task.status)}</div>`).join("")}</div>`;
   }
 
   function onboarding(client) {
