@@ -51,16 +51,28 @@
     return user?.name || fallback;
   }
 
+  function topbarClientSelector() {
+    const current = MBI.services.clients.current();
+    const list = MBI.services.clients.list();
+    if (!list.length) return "";
+    return `
+      <form class="topbar-client" data-form="select-admin-client">
+        <span class="topbar-client-tag">${MBI.ui.icon("building-2")} Cliente</span>
+        <select name="clientId" aria-label="Cliente em operação" onchange="this.form.requestSubmit()">${list.map((c) => `<option value="${MBI.ui.escape(c.id)}" ${c.id === current?.id ? "selected" : ""}>${MBI.ui.escape(c.name)}</option>`).join("")}</select>
+        <button class="competence-filter-go" type="submit" aria-label="Trocar cliente">Trocar</button>
+      </form>`;
+  }
+
   function shell(route, content) {
     const user = MBI.auth.currentUser();
-    const client = MBI.services.clients.current();
     return MBI.ui.shell({
       title: titles[route] || "Administração MB",
-      subtitle: `Operador: ${MBI.ui.escape(user.name)} · Cliente em operação: ${MBI.ui.escape(client?.name || "Nenhum")}`,
+      subtitle: `Operador: ${MBI.ui.escape(user.name)}`,
       menu: menu(route),
       content,
       sessionLabel: user.role,
-      sessionName: user.name
+      sessionName: user.name,
+      topbarExtra: topbarClientSelector()
     });
   }
 
@@ -129,8 +141,7 @@
       </div>`;
 
     return `
-      <section class="grid admin-op-head">
-        ${clientSelector()}
+      <section>
         <article class="panel selected-client-card">
           <div class="panel-header"><div><h3>${MBI.ui.escape(selected.name)}</h3><p>${MBI.ui.escape(plan.name)} · ${MBI.ui.escape(selected.status)} · Confianca ${MBI.ui.escape(selected.confidence)} · ${MBI.ui.escape(data.competenceLabel || "")}</p></div>${MBI.ui.pill(selected.confidence)}</div>
           ${opStats}
@@ -145,17 +156,6 @@
         <article class="panel"><div class="panel-header"><div><h3>Proximas acoes</h3><p>Tarefas deste cliente.</p></div>${MBI.ui.pill(String(selectedTasks.length))}</div><div class="priority-list">${selectedTasks.map((task) => `<div class="priority-item"><span class="priority-dot ${task.priority === "Alta" ? "high" : "medium"}"></span><div><strong>${MBI.ui.escape(task.title)}</strong><span>${MBI.ui.escape(task.owner)} · vence ${MBI.ui.escape(task.due)}</span></div>${MBI.ui.pill(task.status)}</div>`).join("") || `<div class="empty-lock">${MBI.ui.icon("check-circle")}<h3>Nenhuma tarefa aberta</h3><p>Cliente sem pendencias no momento.</p></div>`}</div></article>
         <article class="panel"><div class="panel-header"><div><h3>Aprovacoes deste cliente</h3><p>Governanca antes de liberar ao portal.</p></div></div>${selectedApprovals.length ? MBI.ui.table(["Analise", "Confianca", "Status"], selectedApprovals.map((row) => [MBI.ui.escape(row.title), MBI.ui.escape(row.confidence), MBI.ui.pill(row.status)])) : `<div class="empty-lock">${MBI.ui.icon("shield-check")}<h3>Sem analises na fila</h3><p>Crie analises em Alimentar portal.</p></div>`}</article>
       </section>
-    `;
-  }
-
-  function clientSelector() {
-    const current = MBI.services.clients.current();
-    return `
-      <form data-form="select-admin-client" class="panel">
-        <div class="panel-header"><div><h3>Cliente em operação</h3><p>Define o contexto das telas administrativas.</p></div></div>
-        <label><span>Cliente</span><select name="clientId">${MBI.services.clients.list().map((client) => `<option value="${MBI.ui.escape(client.id)}" ${client.id === current?.id ? "selected" : ""}>${MBI.ui.escape(client.name)}</option>`).join("")}</select></label>
-        <button class="btn btn-primary" style="margin-top:12px" type="submit">${MBI.ui.icon("refresh-cw")} Trocar contexto</button>
-      </form>
     `;
   }
 
@@ -176,7 +176,6 @@
     return `
       <section class="admin-client-page">
         <aside class="admin-client-side">
-          ${clientSelector()}
           <form class="panel filter-stack" data-form="admin-client-filters">
             <div class="panel-header"><div><h3>Buscar cliente</h3><p>Filtre a carteira por dados comerciais e operacionais.</p></div></div>
             <label><span>Nome, CNPJ ou segmento</span><input name="search" placeholder="Buscar cliente" value="${filters.search || ""}"></label>
@@ -266,10 +265,6 @@
       <section class="publish-flow">
         <aside class="publish-guide panel">
           <div class="panel-header"><div><h3>Onde a MB inclui as informações</h3><p>Este é o painel central para alimentar o portal do cliente.</p></div>${MBI.ui.pill(plan.name)}</div>
-          <form data-form="select-admin-client" class="inline-selector">
-            <label><span>Cliente em operação</span><select name="clientId">${MBI.services.clients.list().map((item) => `<option value="${MBI.ui.escape(item.id)}" ${item.id === client.id ? "selected" : ""}>${MBI.ui.escape(item.name)}</option>`).join("")}</select></label>
-            <button class="btn btn-primary" type="submit">${MBI.ui.icon("refresh-cw")} Trocar</button>
-          </form>
           <div class="flow-map">
             <div><strong>1. Indicadores</strong><span>Atualiza dashboard, fiscal, folha, caixa e score.</span></div>
             <div><strong>2. Copiloto</strong><span>Cria pendências, ações e próximos passos.</span></div>
@@ -418,8 +413,7 @@
       .filter((doc) => !filters.competence || String(doc.competence || doc.due || "").startsWith(filters.competence))
       .sort((a, b) => String(b.competence || b.due || "").localeCompare(String(a.competence || a.due || "")));
     return `
-      <section class="grid grid-2">
-        ${clientSelector()}
+      <section>
         <form class="panel" data-form="publish-document" enctype="multipart/form-data">
           <input type="hidden" name="clientId" value="${client.id}">
           <div class="panel-header"><div><h3>Publicar documento</h3><p>Envio principal realizado pela equipe MB com arquivo salvo no Storage.</p></div></div>

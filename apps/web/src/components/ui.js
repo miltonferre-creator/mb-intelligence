@@ -357,7 +357,7 @@
     `;
   }
 
-  function shell({ title, subtitle, menu, content, sessionLabel, sessionName }) {
+  function shell({ title, subtitle, menu, content, sessionLabel, sessionName, topbarExtra }) {
     return `
       <div class="app-shell">
         <aside class="sidebar">
@@ -380,6 +380,7 @@
               <div><h1>${title}</h1><p>${subtitle}</p></div>
             </div>
             <div class="topbar-actions">
+              ${topbarExtra || ""}
               <button class="icon-btn" type="button" title="Notificações">${icon("bell")}</button>
               <button class="icon-btn" type="button" title="Ajuda">${icon("circle-help")}</button>
             </div>
