@@ -360,6 +360,7 @@
   function shell({ title, subtitle, menu, content, sessionLabel, sessionName, topbarExtra }) {
     return `
       <div class="app-shell">
+        <div class="app-backdrop" data-action="toggle-sidebar" aria-hidden="true"></div>
         <aside class="sidebar">
           <div class="side-brand">
             <img src="assets/mb-logo-premium.svg" alt="MB Intelligence">

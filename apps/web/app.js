@@ -566,6 +566,7 @@
   async function handleClick(event) {
     const routeButton = event.target.closest("[data-route]");
     if (routeButton) {
+      document.body.classList.remove("nav-open");
       navigate(routeButton.dataset.route);
       return;
     }
@@ -582,8 +583,12 @@
     }
 
     if (action.dataset.action === "toggle-sidebar") {
-      const collapsed = document.body.classList.toggle("nav-collapsed");
-      try { localStorage.setItem("mbi.ui.nav", collapsed ? "collapsed" : "expanded"); } catch (error) {}
+      if (window.matchMedia("(max-width: 900px)").matches) {
+        document.body.classList.toggle("nav-open");
+      } else {
+        const collapsed = document.body.classList.toggle("nav-collapsed");
+        try { localStorage.setItem("mbi.ui.nav", collapsed ? "collapsed" : "expanded"); } catch (error) {}
+      }
       return;
     }
 
