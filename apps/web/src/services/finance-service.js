@@ -236,7 +236,10 @@
   function normalize(data, clientId) {
     if (!data) return data;
     const competence = normalizeMonth(data.competence || selectedCompetence(clientId));
-    const result = Number(data.result ?? (Number(data.revenue || 0) - Number(data.expenses || 0)));
+    // Recalcula o resultado quando vier zerado mas houver receita/despesa (evita "R$ 0"
+    // com faturamento positivo). Usa o valor informado quando ele for diferente de zero.
+    const computedResult = Number(data.revenue || 0) - Number(data.expenses || 0);
+    const result = Number(data.result) || computedResult;
     const margin = Number(data.revenue || 0) ? Math.round((result / Number(data.revenue || 0)) * 1000) / 10 : 0;
     // Fonte de verdade do score = backend (server-supabase.js::calculateFinancialScore).
     // Quando o dado veio do servidor (score + breakdown presentes), usamos os dois JUNTOS
