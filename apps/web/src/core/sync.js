@@ -64,7 +64,10 @@
       synced: true,
       version: local.version || MBI.seed.version,
       plans: plans.data?.length ? plans.data : local.plans,
-      clients: clients.data?.length ? clients.data : (local.clients?.length ? local.clients : MBI.seed.clients),
+      // /clients e /plans foram await diretos (linhas acima): se chegamos aqui,
+      // o Supabase RESPONDEU. Entao a lista real e autoritativa MESMO vazia —
+      // nunca cair no seed (senao os clientes demo apagados reaparecem na tela).
+      clients: Array.isArray(clients.data) ? clients.data : (local.synced ? (local.clients || []) : MBI.seed.clients),
       users: mergeUsers(local.users, users.data, me.user),
       documents: documents.data || [],
       imports: imports.data || [],
