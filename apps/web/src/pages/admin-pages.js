@@ -102,7 +102,7 @@
     const selected = MBI.services.clients.current();
     if (!selected) return emptyClients();
     const data = MBI.services.finance.get(selected.id);
-    const plan = MBI.services.plans.get(selected.planId);
+    const plan = MBI.services.plans.get(selected.planId) || { name: selected.planId || "—" };
     const selectedDocs = MBI.services.documents.listByClient(selected.id);
     const selectedImports = MBI.services.imports.list(selected.id);
     const selectedTasks = db.tasks.filter((task) => task.clientId === selected.id);
