@@ -220,6 +220,10 @@
           expenses,
           result,
           cash: Number(row.cash || 0),
+          // taxes e score por competencia: necessarios para o delta (variacao
+          // mes a mes) dos KPIs de Impostos e Score nao cair em "sem variacao".
+          taxes: Number(row.taxes || 0),
+          score: row.score != null ? Number(row.score) : calculateScore({ ...row, result }).total,
           label: monthLabel(row.competence),
           margin: revenue ? Math.round((result / revenue) * 1000) / 10 : 0
         };

@@ -646,6 +646,10 @@ function financeToApi(row, dreLines, cashRow, historyRows) {
         expenses: Number(item.expenses || 0),
         result: Number(item.result || 0),
         cash: Number(item.cash || 0),
+        // taxes e score por competencia: usados no delta (variacao mes a mes)
+        // dos KPIs de Impostos e Score no dashboard do cliente.
+        taxes: Number(item.taxes || 0),
+        score: calculateFinancialScore(item).total,
         margin: Number(item.margin || 0),
         confidence: item.confidence || "Media",
         status: item.status || "Publicado"
