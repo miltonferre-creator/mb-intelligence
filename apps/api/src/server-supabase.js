@@ -259,6 +259,17 @@ function hasExtension(fileName) {
   return /\.[a-z0-9]{2,8}$/i.test(String(fileName || ""));
 }
 
+// Monta a URL absoluta de Storage a partir do signedURL relativo do Supabase,
+// garantindo o prefixo /storage/v1 (sem ele o Storage retorna "requested path is invalid").
+function buildStorageUrl(signedUrl) {
+  if (!signedUrl) return null;
+  if (/^https?:\/\//i.test(signedUrl)) return signedUrl;
+  const base = String(getConfig().url || "").replace(/\/+$/, "");
+  let pathPart = signedUrl.startsWith("/") ? signedUrl : `/${signedUrl}`;
+  if (!pathPart.startsWith("/storage/v1")) pathPart = `/storage/v1${pathPart}`;
+  return `${base}${pathPart}`;
+}
+
 function documentToApi(row) {
   const storageFileName = fileNameFromStoragePath(row.storage_path);
   const fileName = hasExtension(row.file_name) ? row.file_name : (storageFileName || row.file_name);
@@ -915,8 +926,9 @@ async function handleDocuments(req, res, segments) {
     const storagePath = `client/${body.clientId}/documents/${competenceFolder(competence)}/${safeFileName(category)}/${crypto.randomUUID()}-${safeFileName(body.fileName)}`;
     const result = await createSignedUploadUrl(storagePath);
     const signedUrl = result?.url || result?.signedURL || result?.signed_url;
-    if (!signedUrl) return error(res, 500, "Nao foi possivel gerar URL de upload.");
-    return ok(res, { uploadUrl: signedUrl, storagePath, token: result?.token });
+    const uploadUrl = buildStorageUrl(signedUrl);
+    if (!uploadUrl) return error(res, 500, "Nao foi possivel gerar URL de upload.");
+    return ok(res, { uploadUrl, storagePath, token: result?.token });
   }
 
   if (req.method === "GET" && segments[1] && segments[2] === "download") {
@@ -930,7 +942,10 @@ async function handleDocuments(req, res, segments) {
     if (!document.storage_path) return error(res, 404, "Arquivo fisico ainda nao foi armazenado para este documento.");
     const signed = await createSignedDocumentUrl(document.storage_path, 300);
     const signedUrl = signed?.signedURL || signed?.signedUrl || signed?.signed_url;
-    const url = signedUrl?.startsWith("/") ? `${getConfig().url}${signedUrl}` : signedUrl;
+    // O Supabase devolve a URL assinada RELATIVA e SEM o prefixo /storage/v1
+    // (ex.: "/object/sign/bucket/path?token=..."). Montar so com a host gera
+    // "requested path is invalid". Garante o prefixo /storage/v1 corretamente.
+    const url = buildStorageUrl(signedUrl);
     if (!url) return error(res, 500, "Nao foi possivel gerar o link de download do Storage.");
     const downloadFileName = hasExtension(document.file_name) ? document.file_name : (fileNameFromStoragePath(document.storage_path) || document.file_name);
     await logAudit(ctx.profile, "Gerou link de download", downloadFileName, "URL assinada por 5 minutos");
