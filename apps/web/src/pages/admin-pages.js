@@ -473,7 +473,7 @@
 
   function audit() {
     const rows = MBI.services.audit.list().map((row) => [
-      MBI.ui.escape(row.at),
+      MBI.ui.escape(MBI.ui.dateTime(row.at || row.created_at)),
       MBI.ui.escape(row.action),
       MBI.ui.escape(row.user),
       MBI.ui.escape(row.target),

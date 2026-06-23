@@ -15,6 +15,13 @@
     return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(Number(value || 0));
   }
 
+  // Formata data/hora ISO (ou Date) para "21/06/2026 22:32". Devolve o valor cru
+  // (string) quando nao for uma data valida, para nunca quebrar a tela.
+  function dateTime(value) {
+    const d = new Date(value);
+    return isNaN(d) ? String(value || "") : d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  }
+
   // ===== Moeda em formularios: digitacao estilo calculadora (centavos) =====
   function moneyFromCents(cents) {
     const n = (Number(cents) || 0) / 100;
@@ -539,5 +546,5 @@
     return message ? `<div class="toast">${message}</div>` : "";
   }
 
-  MBI.ui = { icon, escape, money, moneyFromCents, moneyParse, moneyInputValue, moneyField, modal, pill, metric, kpi, table, docList, fileIcon, bars, lineChart, execLineChart, groupedBars, cashFlowChart, scoreGauge, runway, donut, waterfall, radar, dreTable, shell, nav, toast, statusClass };
+  MBI.ui = { icon, escape, money, dateTime, moneyFromCents, moneyParse, moneyInputValue, moneyField, modal, pill, metric, kpi, table, docList, fileIcon, bars, lineChart, execLineChart, groupedBars, cashFlowChart, scoreGauge, runway, donut, waterfall, radar, dreTable, shell, nav, toast, statusClass };
 })();
