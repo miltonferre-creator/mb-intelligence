@@ -707,9 +707,11 @@ async function handleAuth(req, res, segments) {
     const session = sessionFromTokenData(data, profile, body.clientId);
     await clearLoginRateLimit(req, body.email);
     if (profile.type === "client" && profile.client_id) {
+      // Acesso ja fica registrado em last_access_at; nao poluimos a trilha de
+      // auditoria com um evento por login (era ~80% do ruido). A auditoria fica
+      // reservada a acoes relevantes (publicar/editar/excluir, usuarios, etc.).
       await rest(`/clients?id=eq.${profile.client_id}`, { method: "PATCH", body: { last_access_at: new Date().toISOString() } });
     }
-    await logAudit(profile, "Realizou login", profile.type === "mb" ? "Administração MB" : "Portal do Cliente", "Sessão iniciada");
     return ok(res, { session, user: profileToApi(profile) });
   }
 
