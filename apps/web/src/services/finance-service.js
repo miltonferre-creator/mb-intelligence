@@ -353,14 +353,5 @@
     return data;
   }
 
-  function approveInsight(approvalId) {
-    return MBI.storage.updateDatabase((db) => {
-      const item = db.approvals.find((row) => row.id === approvalId);
-      if (!item) return null;
-      item.status = "Aprovado";
-      return item;
-    });
-  }
-
-  MBI.services.finance = { get, update, approveInsight, currentMonth, listCompetences, listPeriods, selectedCompetence, setSelectedCompetence, monthLabel };
+  MBI.services.finance = { get, update, currentMonth, listCompetences, listPeriods, selectedCompetence, setSelectedCompetence, monthLabel };
 })();
