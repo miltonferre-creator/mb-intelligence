@@ -241,6 +241,11 @@
     const computedResult = Number(data.revenue || 0) - Number(data.expenses || 0);
     const result = Number(data.result) || computedResult;
     const margin = Number(data.revenue || 0) ? Math.round((result / Number(data.revenue || 0)) * 1000) / 10 : 0;
+    // Folego de caixa: deriva do caixa quando o banco nao trouxe runway_days
+    // (mesma formula de calculateScore). Evita "0 dias" com caixa cheio.
+    const runwayExpenses = Number(data.expenses || 0);
+    const runwayCash = Number(data.cash || 0);
+    const runway = Number(data.runway) || (runwayExpenses ? Math.round(runwayCash / (runwayExpenses / 30)) : 0);
     // Fonte de verdade do score = backend (server-supabase.js::calculateFinancialScore).
     // Quando o dado veio do servidor (score + breakdown presentes), usamos os dois JUNTOS
     // para o numero e o radar nunca se contradizerem. calculateScore local so atua offline/demo.
@@ -255,6 +260,7 @@
       competences: listCompetences(clientId),
       result,
       margin,
+      runway,
       score: score.total,
       scoreBreakdown: score.dimensions,
       dre: data.dre?.length ? data.dre : buildDre({ ...data, result, margin, competence }),

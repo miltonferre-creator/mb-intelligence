@@ -628,7 +628,8 @@ function financeToApi(row, dreLines, cashRow, historyRows) {
     score: score.total,
     scoreBreakdown: score.dimensions,
     operationalScore: Number(row.operational_score || 0),
-    runway: Number(row.runway_days || 0),
+    // Folego de caixa: deriva do caixa quando runway_days nao foi gravado.
+    runway: Number(row.runway_days) || (Number(row.expenses || 0) ? Math.round(Number(row.cash || 0) / (Number(row.expenses || 0) / 30)) : 0),
     investmentCapacity: Number(row.investment_capacity || 0),
     marginTarget: Number(row.margin_target || 20),
     workingCapitalDays: Number(row.working_capital_days || 0),
