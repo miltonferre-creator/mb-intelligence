@@ -129,6 +129,51 @@
     `;
   }
 
+  // ===== Lista moderna de documentos (cliente e admin) =====
+  function fileIcon(doc) {
+    const f = String(doc.fileName || doc.originalFileName || doc.name || "");
+    const m = f.match(/\.([a-z0-9]+)$/i);
+    const ext = m ? m[1].toLowerCase() : "";
+    if (/pdf/.test(ext)) return "file-text";
+    if (/xlsx?|csv|ods/.test(ext)) return "sheet";
+    if (/docx?|odt|rtf|txt/.test(ext)) return "file-type-2";
+    if (/png|jpe?g|gif|webp|svg/.test(ext)) return "image";
+    if (/zip|rar|7z/.test(ext)) return "folder-archive";
+    if (/xml|ofx|json/.test(ext)) return "file-code-2";
+    return "file";
+  }
+
+  function docCategoryClass(category) {
+    const t = String(category || "").toLowerCase();
+    if (t.includes("fisc")) return "is-fiscal";
+    if (t.includes("trab") || t.includes("folha")) return "is-trab";
+    if (t.includes("cont")) return "is-cont";
+    if (t.includes("financ")) return "is-fin";
+    if (t.includes("societ") || t.includes("contrat")) return "is-soc";
+    return "is-other";
+  }
+
+  function docList(docs, actionsFor) {
+    if (!docs || !docs.length) {
+      return `<div class="empty-lock">${icon("folder-open")}<h3>Nenhum documento</h3><p>Os arquivos publicados pela MB aparecem aqui.</p></div>`;
+    }
+    return `<div class="doc-list">${docs.map((doc) => {
+      const name = escape(doc.description || doc.name || doc.fileName || "Documento");
+      const original = doc.fileName || doc.originalFileName;
+      const comp = doc.competence ? `Comp. ${escape(doc.competence)}` : "";
+      const due = (doc.dueDate || doc.due) ? `Vence ${escape(doc.dueDate || doc.due)}` : "";
+      const meta = [escape(doc.category || "Documento"), comp, due].filter(Boolean).join(" &middot; ");
+      return `<div class="doc-card">
+        <div class="doc-icon ${docCategoryClass(doc.category)}">${icon(fileIcon(doc))}</div>
+        <div class="doc-info">
+          <strong>${name}</strong>
+          <span class="doc-meta">${meta}${original && original !== name ? ` &middot; <em>${escape(original)}</em>` : ""}</span>
+        </div>
+        <div class="doc-actions">${pill(doc.status || "Disponível")}${actionsFor ? actionsFor(doc) : ""}</div>
+      </div>`;
+    }).join("")}</div>`;
+  }
+
   function bars(items) {
     return `
       <div class="bar-chart">
@@ -298,6 +343,45 @@
     `;
   }
 
+  // Fluxo de caixa mensal: barras pareadas (entradas x saidas) em tema escuro.
+  // months = [label, entradasMil, saidasMil]
+  function cashFlowChart(months) {
+    if (!months || !months.length) {
+      return `<div class="empty-lock">${icon("waves")}<h3>Sem fluxo de caixa</h3><p>O gráfico aparece quando a MB registrar entradas e saídas mensais.</p></div>`;
+    }
+    const W = 600, H = 206, padL = 54, padR = 18, padT = 16, padB = 28;
+    const inflow = months.map((m) => Number(m[1] || 0));
+    const outflow = months.map((m) => Number(m[2] || 0));
+    const maxV = Math.max(...inflow, ...outflow, 1);
+    const n = months.length;
+    const plotW = W - padL - padR, plotH = H - padT - padB, baseY = padT + plotH;
+    const slot = plotW / n;
+    const bw = Math.min(slot * 0.3, 17);
+    const gap = 4;
+    const yFor = (v) => baseY - (v / maxV) * plotH;
+    const grid = [0, 1, 2, 3].map((i) => (maxV * i) / 3);
+    return `
+      <svg class="exec-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Fluxo de caixa mensal">
+        <defs>
+          <linearGradient id="cfIn" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#34d399"></stop><stop offset="100%" stop-color="#10b981" stop-opacity=".7"></stop></linearGradient>
+          <linearGradient id="cfOut" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fbbf24"></stop><stop offset="100%" stop-color="#e0606a" stop-opacity=".85"></stop></linearGradient>
+        </defs>
+        ${grid.map((v) => { const y = yFor(v); return `<line x1="${padL}" x2="${W - padR}" y1="${y}" y2="${y}" stroke="rgba(255,255,255,.08)"></line><text x="${padL - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="rgba(255,255,255,.42)">${chartValue(v)}</text>`; }).join("")}
+        ${months.map((m, i) => {
+          const cx = padL + slot * i + slot / 2;
+          const yIn = yFor(inflow[i]), yOut = yFor(outflow[i]);
+          const net = inflow[i] - outflow[i];
+          const x1 = cx - bw - gap / 2, x2 = cx + gap / 2;
+          return `<g><title>${escape(String(m[0]))} · Entradas ${chartValue(inflow[i])} · Saídas ${chartValue(outflow[i])} · Saldo ${chartValue(net)}</title>
+            <rect x="${x1}" y="${yIn}" width="${bw}" height="${Math.max(baseY - yIn, 2)}" rx="3" fill="url(#cfIn)"></rect>
+            <rect x="${x2}" y="${yOut}" width="${bw}" height="${Math.max(baseY - yOut, 2)}" rx="3" fill="url(#cfOut)"></rect>
+          </g>`;
+        }).join("")}
+        ${months.map((m, i) => (i % 2 === 0 || i === n - 1) ? `<text x="${padL + slot * i + slot / 2}" y="${H - 8}" text-anchor="middle" font-size="10" fill="rgba(255,255,255,.5)">${String(m[0]).split(" ")[0]}</text>` : "").join("")}
+      </svg>
+    `;
+  }
+
   function scoreGauge(score, title) {
     const value = Math.max(0, Math.min(Number(score || 0), 100));
     return `
@@ -456,5 +540,5 @@
     return message ? `<div class="toast">${message}</div>` : "";
   }
 
-  MBI.ui = { icon, escape, money, moneyFromCents, moneyParse, moneyInputValue, moneyField, modal, pill, metric, kpi, table, bars, lineChart, execLineChart, groupedBars, scoreGauge, runway, donut, waterfall, radar, dreTable, shell, nav, toast, statusClass };
+  MBI.ui = { icon, escape, money, moneyFromCents, moneyParse, moneyInputValue, moneyField, modal, pill, metric, kpi, table, docList, fileIcon, bars, lineChart, execLineChart, groupedBars, cashFlowChart, scoreGauge, runway, donut, waterfall, radar, dreTable, shell, nav, toast, statusClass };
 })();

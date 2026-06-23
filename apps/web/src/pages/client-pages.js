@@ -281,17 +281,24 @@
       <div class="exec-dash">
       ${competenceSelector(client, data)}
       ${kpiGrid(client, data)}
-      <section class="grid dash-trio" style="margin-top:12px">
+      <section class="grid dash-split" style="margin-top:12px">
         <article class="panel chart">
           <div class="panel-header"><div><h3>Receita ao longo do tempo</h3><p>Evolução de faturamento.</p></div></div>
           ${MBI.ui.execLineChart(data.months)}
           <div class="chart-legend"><span><i class="legend-dot brand"></i> Receita</span><span><i class="legend-dot dashed"></i> Tendência</span></div>
         </article>
+        ${scorePanel}
+      </section>
+      <section class="grid dash-split" style="margin-top:12px">
+        <article class="panel chart">
+          <div class="panel-header"><div><h3>Fluxo de caixa</h3><p>Entradas e saídas por competência.</p></div></div>
+          ${MBI.ui.cashFlowChart(data.cashMonths)}
+          <div class="chart-legend"><span><i class="legend-dot teal"></i> Entradas</span><span><i class="legend-dot amber"></i> Saídas</span></div>
+        </article>
         <article class="panel">
           <div class="panel-header"><div><h3>Onde você mais gasta</h3><p>Maiores despesas.</p></div></div>
           ${expenseRanking(data)}
         </article>
-        ${scorePanel}
       </section>
       <section style="margin-top:12px">
         ${(() => {
@@ -300,10 +307,10 @@
         })()}
       </section>
       <details class="report-detail" style="margin-top:14px">
-        <summary>Ver relatórios completos — DRE e fluxo de caixa</summary>
+        <summary>Ver relatórios completos — DRE e DFC detalhada</summary>
         <section class="grid grid-2" style="margin-top:14px">
           <article class="panel"><div class="panel-header"><div><h3>DRE em cascata</h3><p>Como a receita vira resultado.</p></div></div>${MBI.ui.waterfall(data.dre)}</article>
-          <article class="panel"><div class="panel-header"><div><h3>Fluxo de caixa</h3><p>Entradas, saídas e saldo.</p></div></div>${MBI.ui.waterfall(data.cashBridge)}</article>
+          <article class="panel"><div class="panel-header"><div><h3>Fluxo de caixa detalhado</h3><p>Entradas, saídas e saldo.</p></div></div>${MBI.ui.waterfall(data.cashBridge)}</article>
         </section>
       </details>
       </div>
@@ -358,10 +365,12 @@
       .filter((doc) => !filters.competence || String(doc.competence || doc.due || "").startsWith(filters.competence))
       .sort((a, b) => String(b.competence || b.due || "").localeCompare(String(a.competence || a.due || "")));
     return `
-      <section class="grid grid-2">
-        <article class="panel"><div class="panel-header"><div><h3>Documentos liberados</h3><p>Arquivos publicados pela equipe MB para consulta e download.</p></div></div><form class="filter-row" data-form="document-filters"><input type="hidden" name="scope" value="client"><select name="category"><option>Todas</option>${["Fiscal", "Trabalhista", "Contábil", "Financeiro", "Societário", "Contratos", "Certidões"].map((item) => `<option ${filters.category === item ? "selected" : ""}>${item}</option>`).join("")}</select><input type="month" name="competence" value="${filters.competence || ""}"><button class="btn btn-primary" type="submit">${MBI.ui.icon("filter")} Filtrar</button></form>${MBI.ui.table(["Descricao", "Arquivo original", "Categoria", "Status", "Competencia", "Vencimento", "Arquivo"], docs.map((doc) => [MBI.ui.escape(doc.description || doc.name || "-"), MBI.ui.escape(doc.fileName || doc.originalFileName || doc.name || "-"), MBI.ui.escape(doc.category), MBI.ui.pill(doc.status), MBI.ui.escape(doc.competence || "-"), MBI.ui.escape(doc.dueDate || doc.due || "-"), `<button class="btn btn-soft btn-mini" type="button" data-action="document-download" data-document-id="${MBI.ui.escape(doc.id)}">${MBI.ui.icon("download")} Baixar</button>`]))}</article>
-        <article class="panel"><div class="panel-header"><div><h3>Como a MB envia documentos</h3><p>O envio oficial acontece do escritorio para o cliente.</p></div>${MBI.ui.pill("Somente visualizacao")}</div><div class="flow-map"><div><strong>1. MB publica</strong><span>DAS, guias, folha, relatorios e documentos ficam disponiveis nesta tela.</span></div><div><strong>2. Cliente visualiza</strong><span>O empresario baixa arquivos, acompanha vencimentos e consulta o historico.</span></div><div><strong>3. Solicitacoes</strong><span>Se a MB precisar de algum arquivo, a solicitacao aparece como pendencia ou mensagem.</span></div></div><button class="btn btn-primary" type="button" data-route="#/cliente/comunicacao">${MBI.ui.icon("messages-square")} Falar com a MB</button></article>
+      <section class="panel">
+        <div class="panel-header"><div><h3>Seus documentos</h3><p>Arquivos publicados pela equipe MB para consulta e download.</p></div>${MBI.ui.pill(`${docs.length} arquivo(s)`)}</div>
+        <form class="filter-row" data-form="document-filters" style="margin-bottom:14px"><input type="hidden" name="scope" value="client"><select name="category"><option>Todas</option>${["Fiscal", "Trabalhista", "Contábil", "Financeiro", "Societário", "Contratos", "Certidões"].map((item) => `<option ${filters.category === item ? "selected" : ""}>${item}</option>`).join("")}</select><input type="month" name="competence" value="${filters.competence || ""}"><button class="btn btn-primary" type="submit">${MBI.ui.icon("filter")} Filtrar</button></form>
+        ${MBI.ui.docList(docs, (doc) => `<button class="btn btn-primary btn-mini" type="button" data-action="document-download" data-document-id="${MBI.ui.escape(doc.id)}">${MBI.ui.icon("download")} Baixar</button>`)}
       </section>
+      <p class="doc-hint">${MBI.ui.icon("shield-check")} O envio é feito pela MB e os arquivos ficam disponíveis aqui. Precisa de algo? <button class="btn-link" type="button" data-route="#/cliente/comunicacao">Fale com a MB</button>.</p>
     `;
   }
 

@@ -265,6 +265,11 @@
       if (!user) return null;
       return { title: `Editar — ${user.name}`, subtitle: "Nome, perfil e status do acesso.", icon: "pencil", body: userModalBody(user) };
     }
+    if (kind === "publish-doc") {
+      const client = MBI.services.clients.current();
+      if (!client) return null;
+      return { title: `Publicar documento — ${client.name}`, subtitle: "O arquivo é salvo no Storage e fica disponível para o cliente.", icon: "file-up", size: "lg", body: publishDocModalBody(client) };
+    }
     if (kind === "finance") {
       const client = MBI.services.clients.current();
       if (!client) return null;
@@ -413,27 +418,39 @@
       .filter((doc) => !filters.competence || String(doc.competence || doc.due || "").startsWith(filters.competence))
       .sort((a, b) => String(b.competence || b.due || "").localeCompare(String(a.competence || a.due || "")));
     return `
-      <section>
-        <form class="panel" data-form="publish-document" enctype="multipart/form-data">
-          <input type="hidden" name="clientId" value="${client.id}">
-          <div class="panel-header"><div><h3>Publicar documento</h3><p>Envio principal realizado pela equipe MB com arquivo salvo no Storage.</p></div></div>
-          <label class="upload-zone"><input class="sr-only" type="file" name="file" required>${MBI.ui.icon("file-up")}<div><strong>Selecionar arquivo para o cliente</strong><p>DAS, guias, folha, relatórios, certidões, contratos e comprovantes. Limite atual: 25 MB.</p></div></label>
-          <input type="hidden" name="status" value="Disponivel">
-          <div class="form-section two" style="margin-top:14px"><label><span>Descricao para o cliente</span><input name="name" placeholder="Ex.: DAS Maio/2026, Folha, Contrato social"></label><label><span>Categoria</span><select name="category"><option>Fiscal</option><option>Trabalhista</option><option>Contábil</option><option>Financeiro</option><option>Societário</option><option>Contratos</option><option>Certidões</option></select></label><label><span>Tipo</span><input name="type" value="DAS"></label><label><span>Competência</span><input type="month" name="competence" value="${currentMonthValue()}"></label><label><span>Vencimento</span><input type="date" name="dueDate" value="${currentDateValue()}"></label><label><span>Status</span><input value="Publicado diretamente ao cliente" readonly></label><label><span>Visibilidade</span><select name="visibility"><option>Cliente</option><option>Somente MB</option></select></label></div>
-          <button class="btn btn-primary" style="margin-top:14px" type="submit">${MBI.ui.icon("upload")} Publicar documento</button>
-        </form>
-      </section>
-      <section class="panel" style="margin-top:14px">
-        <div class="panel-header"><div><h3>Documentos do cliente</h3><p>Historico publicado com filtros por categoria, status e competencia.</p></div></div>
-        <form class="filter-row" data-form="document-filters">
+      <section class="panel">
+        <div class="panel-header"><div><h3>Documentos &middot; ${MBI.ui.escape(client.name)}</h3><p>Histórico publicado para o cliente. O upload abre só quando você pede.</p></div><div class="panel-header-actions">${MBI.ui.pill(`${docs.length} arquivo(s)`)}<button class="btn btn-primary btn-mini" type="button" data-action="open-modal" data-modal="publish-doc">${MBI.ui.icon("file-up")} Publicar documento</button></div></div>
+        <form class="filter-row" data-form="document-filters" style="margin-bottom:14px">
           <input type="hidden" name="scope" value="admin">
           <select name="category"><option>Todas</option>${["Fiscal", "Trabalhista", "Contábil", "Financeiro", "Societário", "Contratos", "Certidões"].map((item) => `<option ${filters.category === item ? "selected" : ""}>${item}</option>`).join("")}</select>
           <select name="status"><option>Todos</option>${["Disponivel", "Pendente", "Pago", "Vencido"].map((item) => `<option ${filters.status === item ? "selected" : ""}>${item}</option>`).join("")}</select>
           <input type="month" name="competence" value="${filters.competence || ""}">
           <button class="btn btn-primary" type="submit">${MBI.ui.icon("filter")} Aplicar</button>
         </form>
-        ${MBI.ui.table(["Descricao", "Arquivo original", "Categoria", "Status", "Competencia", "Vencimento", "Visibilidade", "Acoes"], docs.map((doc) => [MBI.ui.escape(doc.description || doc.name || "-"), MBI.ui.escape(doc.fileName || doc.originalFileName || doc.name || "-"), MBI.ui.escape(doc.category), MBI.ui.pill(doc.status), MBI.ui.escape(doc.competence || "-"), MBI.ui.escape(doc.dueDate || doc.due || "-"), MBI.ui.escape(doc.visibility), `<button class="btn btn-soft btn-mini" type="button" data-action="document-download" data-document-id="${MBI.ui.escape(doc.id)}">${MBI.ui.icon("download")} Baixar</button> <button class="btn btn-ghost btn-mini" type="button" data-action="delete-document" data-document-id="${MBI.ui.escape(doc.id)}">${MBI.ui.icon("trash-2")} Excluir</button>`]))}
+        ${MBI.ui.docList(docs, (doc) => `<button class="btn btn-soft btn-mini" type="button" data-action="document-download" data-document-id="${MBI.ui.escape(doc.id)}">${MBI.ui.icon("download")} Baixar</button> <button class="btn btn-ghost btn-mini" type="button" data-action="delete-document" data-document-id="${MBI.ui.escape(doc.id)}">${MBI.ui.icon("trash-2")} Excluir</button>`)}
       </section>
+    `;
+  }
+
+  function publishDocModalBody(client) {
+    return `
+      <form data-form="publish-document" enctype="multipart/form-data">
+        <input type="hidden" name="clientId" value="${MBI.ui.escape(client.id)}">
+        <input type="hidden" name="status" value="Disponivel">
+        <label class="upload-zone"><input class="sr-only" type="file" name="file" required>${MBI.ui.icon("file-up")}<div><strong>Selecionar arquivo para o cliente</strong><p>DAS, guias, folha, relatórios, certidões, contratos e comprovantes. Limite: 25 MB.</p></div></label>
+        <div class="form-section two" style="margin-top:14px">
+          <label><span>Descrição para o cliente</span><input name="name" placeholder="Ex.: DAS Maio/2026, Folha, Contrato social"></label>
+          <label><span>Categoria</span><select name="category"><option>Fiscal</option><option>Trabalhista</option><option>Contábil</option><option>Financeiro</option><option>Societário</option><option>Contratos</option><option>Certidões</option></select></label>
+          <label><span>Tipo</span><input name="type" value="DAS"></label>
+          <label><span>Competência</span><input type="month" name="competence" value="${currentMonthValue()}"></label>
+          <label><span>Vencimento</span><input type="date" name="dueDate" value="${currentDateValue()}"></label>
+          <label><span>Visibilidade</span><select name="visibility"><option>Cliente</option><option>Somente MB</option></select></label>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" type="button" data-action="modal-close">Cancelar</button>
+          <button class="btn btn-primary" type="submit">${MBI.ui.icon("upload")} Publicar documento</button>
+        </div>
+      </form>
     `;
   }
 

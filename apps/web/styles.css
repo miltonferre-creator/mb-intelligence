@@ -2684,6 +2684,8 @@ button.workflow-step:hover { border-color: var(--brand-3); }
 
 /* Versao compacta do dashboard p/ caber na tela */
 .exec-dash { padding: 16px; }
+/* KPIs envolvem em vez de estourar a largura quando a tela aperta */
+.exec-dash .kpi-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
 .exec-dash .kpi-card { min-height: 88px; gap: 3px; padding: 12px 14px; }
 .exec-dash .kpi-value { font-size: clamp(19px, 2vw, 26px); }
 .exec-dash .kpi-card .kpi-spark { height: 30px; }
@@ -3094,3 +3096,59 @@ body.modal-open { overflow: hidden; }
   color: #101828;
 }
 .money-input:focus { box-shadow: none !important; }
+
+/* ===== Lista moderna de documentos ===== */
+.doc-list { display: flex; flex-direction: column; gap: 10px; }
+.doc-card {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: #fff;
+  transition: border-color .12s ease, box-shadow .12s ease, transform .12s ease;
+}
+.doc-card:hover {
+  border-color: rgba(91, 7, 11, .22);
+  box-shadow: 0 6px 18px rgba(16, 24, 40, .07);
+  transform: translateY(-1px);
+}
+.doc-icon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #f2f4f7;
+  color: #475467;
+}
+.doc-icon svg { width: 22px; height: 22px; }
+.doc-icon.is-fiscal { background: rgba(180, 35, 24, .10); color: #b42318; }
+.doc-icon.is-trab { background: rgba(18, 128, 92, .12); color: #12805c; }
+.doc-icon.is-cont { background: rgba(37, 99, 235, .10); color: #2563eb; }
+.doc-icon.is-fin { background: rgba(183, 121, 31, .14); color: #b7791f; }
+.doc-icon.is-soc { background: rgba(124, 58, 237, .12); color: #7c3aed; }
+.doc-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.doc-info strong { font-size: 14px; font-weight: 650; color: #101828; overflow-wrap: anywhere; }
+.doc-meta { font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+.doc-meta em { font-style: normal; opacity: .8; }
+.doc-actions { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end; }
+.doc-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.doc-hint svg { width: 16px; height: 16px; flex: 0 0 auto; color: var(--success); }
+@media (max-width: 560px) {
+  .doc-card { grid-template-columns: 40px minmax(0, 1fr); }
+  .doc-icon { width: 40px; height: 40px; }
+  .doc-actions { grid-column: 1 / -1; justify-content: flex-start; }
+}

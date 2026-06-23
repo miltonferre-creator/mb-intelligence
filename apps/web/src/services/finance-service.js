@@ -262,7 +262,23 @@
     };
     withComputed.months = monthsFromSnapshots(MBI.storage.getDatabase().financials[clientId] || {});
     if (!withComputed.months.length && data.months?.length) withComputed.months = data.months;
+    withComputed.cashMonths = cashFlowFromSnapshots(MBI.storage.getDatabase().financials[clientId] || {});
     return withComputed;
+  }
+
+  // Serie mensal de fluxo de caixa: [label, entradas, saidas] (em milhares, p/ o grafico)
+  function cashFlowFromSnapshots(item) {
+    return Object.entries(item.snapshots || {})
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-12)
+      .map(([competence, s]) => {
+        const revenue = Number(s.revenue || 0);
+        const expenses = Number(s.expenses || 0);
+        const taxes = Number(s.taxes || 0);
+        const inflow = Number(s.receipts || revenue);
+        const outflow = Number(s.payments || Math.max(expenses - taxes, 0)) + Number(s.cashTaxes || taxes);
+        return [monthLabel(competence), inflow / 1000, outflow / 1000];
+      });
   }
 
   function get(clientId) {

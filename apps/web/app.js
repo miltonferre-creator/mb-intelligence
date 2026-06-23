@@ -534,6 +534,7 @@
           },
           () => publishDocumentLocal(form, data)
         );
+        if (inModal) dismissModal();
         showToast("Documento publicado no portal do cliente.");
         return;
       }
