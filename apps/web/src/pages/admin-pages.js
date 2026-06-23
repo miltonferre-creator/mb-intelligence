@@ -73,14 +73,17 @@
   }
 
   function render(route) {
-    if (!MBI.services.clients.list().length) return shell("#/admin/clientes", emptyClients());
-    if (route === "#/admin/clientes") return shell(route, clients());
-    if (route === "#/admin/novo-cliente") return shell("#/admin/clientes", clients());
+    // Rotas que NAO dependem de um cliente cadastrado funcionam sempre
+    // (mesmo com a carteira vazia) — senao a navegacao "trava" tudo na tela
+    // de carteira vazia e clicar no menu parece nao fazer nada.
+    if (route === "#/admin/clientes" || route === "#/admin/novo-cliente") return shell("#/admin/clientes", clients());
     if (route === "#/admin/planos") return shell(route, plans());
-    if (route === "#/admin/alimentar-portal") return shell(route, publicationCenter());
-    if (route === "#/admin/documentos") return shell(route, documents());
     if (route === "#/admin/usuarios") return shell(route, users());
     if (route === "#/admin/auditoria") return shell(route, audit());
+    // Rotas que dependem de um cliente em operacao
+    if (!MBI.services.clients.list().length) return shell("#/admin/clientes", emptyClients());
+    if (route === "#/admin/alimentar-portal") return shell(route, publicationCenter());
+    if (route === "#/admin/documentos") return shell(route, documents());
     return shell("#/admin/operacao", operationV2());
   }
 
