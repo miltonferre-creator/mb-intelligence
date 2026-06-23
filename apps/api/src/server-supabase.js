@@ -1375,11 +1375,34 @@ async function route(req, res) {
   return error(res, 404, "Rota não encontrada.");
 }
 
+// Log estruturado de erro (Sentry-ready). Erros de negocio (statusCode)
+// nao sao "falhas" — so logamos as falhas inesperadas (500).
+function logError(context, err, extra = {}) {
+  const payload = {
+    level: "error",
+    context,
+    message: err && err.message ? err.message : String(err),
+    stack: err && err.stack ? err.stack : undefined,
+    at: new Date().toISOString(),
+    ...extra
+  };
+  console.error("[mbi-api]", JSON.stringify(payload));
+  // Integracao opcional: se o SDK do Sentry estiver instalado/inicializado,
+  // encaminha. (Owner-action: adicionar @sentry/node + SENTRY_DSN.)
+  try {
+    const Sentry = global.__mbiSentry;
+    if (Sentry && typeof Sentry.captureException === "function") {
+      Sentry.captureException(err, { extra: { context, ...extra } });
+    }
+  } catch (_) { /* nunca deixar o logger derrubar a request */ }
+}
+
 async function requestHandler(req, res) {
   try {
     await route(req, res);
   } catch (err) {
     if (err.statusCode) return error(res, err.statusCode, err.message);
+    logError("requestHandler", err, { method: req.method, url: req.url });
     error(res, 500, "Erro interno da API Supabase.", err.message);
   }
 }

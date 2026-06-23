@@ -346,7 +346,10 @@
         await MBI.sync.refreshIfPossible();
         return result;
       } catch (error) {
+        // So caimos no modo local quando a causa e CONHECIDA (API offline).
+        // Qualquer outro erro sobe — nada de mascarar falha real em silencio.
         if (!error.apiUnavailable) throw error;
+        MBI.observability?.warn("remoteOrLocal", "API offline — usando dados locais como fallback");
       }
     }
     return localFn();
@@ -662,7 +665,10 @@
           MBI.storage.updateDatabase((db) => {
             db.financials[clientId] = { ...(db.financials[clientId] || {}), ...(finance.data || {}) };
           });
-        } catch (error) {}
+        } catch (error) {
+          // Nao bloqueia abrir o modal de edicao, mas a falha fica visivel.
+          MBI.observability?.capture("edit-finance-period:load", error, { clientId, competence });
+        }
       }
       openModal(MBI.pages.admin.buildModal("finance", { competence }));
       return;
