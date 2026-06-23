@@ -7,7 +7,14 @@
   const DEFAULT_API_URL = window.location.protocol === "file:" ? "http://localhost:3333" : "";
 
   function baseUrl() {
-    return localStorage.getItem(API_URL_KEY) || DEFAULT_API_URL;
+    // Em producao (app e API no mesmo dominio), IGNORA qualquer override salvo
+    // em localStorage para o portal nunca apontar para outra API/banco por
+    // engano (ex.: uma URL de teste antiga que ficou gravada no navegador).
+    // O override so e respeitado em desenvolvimento local (file://).
+    if (window.location.protocol === "file:") {
+      return localStorage.getItem(API_URL_KEY) || DEFAULT_API_URL;
+    }
+    return DEFAULT_API_URL;
   }
 
   function setBaseUrl(url) {
