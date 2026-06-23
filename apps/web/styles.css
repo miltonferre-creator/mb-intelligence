@@ -2696,40 +2696,33 @@ button.workflow-step:hover { border-color: var(--brand-3); }
 .exec-dash .panel-header { margin-bottom: 4px; }
 .exec-dash .panel-header h3 { font-size: 15px; }
 .exec-dash .panel-header p { font-size: 11.5px; }
-.exec-dash > section { margin-top: 10px !important; }
-.exec-dash .dash-split { gap: 10px; align-items: stretch; }
-.exec-dash .chart-legend { margin-top: 6px; font-size: 11px; }
-/* Linha e fluxo de caixa preenchem a LARGURA do painel (altura pela proporcao) */
-.exec-dash .panel.chart > .exec-chart { width: 100%; height: auto; display: block; }
-/* Radar preenche o painel da direita, centralizado */
-.exec-dash .panel > .radar-chart { display: block; width: 100%; max-width: 280px; height: auto; min-height: 0; margin: 2px auto; }
-.exec-dash .bar-chart { max-width: 100%; }
+.exec-dash > section { margin-top: 12px; }
+.exec-dash .dash-split { gap: 12px; align-items: stretch; }
+.exec-dash .chart-legend { margin-top: 8px; font-size: 11px; }
 
-/* Preenche o quadro: paineis da linha com altura igual e conteudo curto centralizado */
+/* Paineis em coluna; graficos centralizados na altura quando o card e mais alto */
 .exec-dash .panel { display: flex; flex-direction: column; }
+
+/* SVG RESPONSIVO (padrao simples e confiavel): preenche 100% da largura do
+   painel e a altura sai da proporcao do viewBox. SEM flex/max-height no svg. */
+.exec-dash .panel.chart > .exec-chart {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin: auto 0;
+}
+/* Radar: preenche a largura ate 320px, centralizado nos dois eixos */
+.exec-dash .panel > .radar-chart {
+  display: block;
+  width: 100%;
+  max-width: 280px;
+  height: auto;
+  min-height: 0;
+  margin: auto;
+}
 .exec-dash .panel > .bar-chart,
 .exec-dash .panel > .score-gauge,
-.exec-dash .panel > .radar-chart,
-.exec-dash .panel > .donut-wrap { margin-block: auto; }
-
-/* No desktop o dashboard ocupa a altura da viewport e os graficos se ajustam
-   ao espaco disponivel — cabe sem rolagem em qualquer resolucao. */
-@media (min-width: 901px) {
-  .exec-dash {
-    min-height: calc(100vh - 102px);
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .exec-dash > * { flex: 0 0 auto; }
-  .exec-dash > section { margin-top: 0 !important; }
-  .exec-dash > .dash-split { flex: 1 1 0; min-height: 0; }
-  .exec-dash .dash-split > .panel { min-height: 0; overflow: hidden; }
-  /* So centraliza na altura da fileira; a LARGURA ja vem das regras base.
-     Nada de flex/height no <svg> (encolhe). */
-  .exec-dash .panel.chart > .exec-chart,
-  .exec-dash .panel > .radar-chart { margin-block: auto; }
-}
+.exec-dash .panel > .donut-wrap { margin: auto; max-width: 100%; }
 
 /* ============================================================
    DASHBOARD EXECUTIVO (tema escuro com brilho, cor MB)

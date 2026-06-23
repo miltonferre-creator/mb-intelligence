@@ -251,64 +251,68 @@
     return document;
   }
 
+  // Baixa o arquivo real guardado localmente no navegador (modo local/offline).
+  // Retorna true se baixou; false se nao ha arquivo (sem gerar .txt).
   async function localDocumentDownload(documentId) {
     const db = MBI.storage.getDatabase();
     const doc = (db.documents || []).find((item) => String(item.id) === String(documentId));
-    if (!doc) throw new Error("Documento nao encontrado no ambiente local.");
     const stored = await getLocalDocumentFile(documentId);
     if (stored?.file) {
-      triggerBlobDownload(stored.fileName || doc.fileName || doc.name, stored.file);
-      showToast("Arquivo original baixado.");
-      return;
+      triggerBlobDownload(stored.fileName || doc?.fileName || doc?.name || "Documento_MB", stored.file);
+      showToast("Download iniciado.");
+      return true;
     }
-    const client = MBI.services.clients.get(doc.clientId);
-    const lines = [
-      "MB Intelligence - Registro local de documento",
-      "",
-      `Cliente: ${client?.name || doc.clientId || "-"}`,
-      `Descricao: ${doc.description || doc.name || "-"}`,
-      `Arquivo original: ${doc.fileName || doc.originalFileName || doc.name || "Documento MB"}`,
-      `Categoria: ${doc.category || "-"}`,
-      `Competencia: ${doc.competence || "-"}`,
-      `Vencimento: ${doc.dueDate || doc.due || "-"}`,
-      `Status: ${doc.status || "-"}`,
-      `Visibilidade: ${doc.visibility || "Cliente"}`,
-      "",
-      "Observacao:",
-      "Este arquivo foi gerado pelo modo local da plataforma. Em producao, o download abre o arquivo original enviado pela equipe MB no Supabase Storage."
-    ];
-    triggerTextDownload(`${safeDownloadName(doc.fileName || doc.name)}.txt`, lines.join("\n"));
-    showToast("Arquivo original nao foi localizado no modo local; baixei o registro do documento.");
+    return false;
+  }
+
+  // Baixa direto pela URL assinada (forca Content-Disposition: attachment).
+  function forceUrlDownload(url, fileName) {
+    const sep = url.includes("?") ? "&" : "?";
+    const a = document.createElement("a");
+    a.href = `${url}${sep}download=${encodeURIComponent(fileName || "documento")}`;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   }
 
   async function remoteDocumentDownload(documentId) {
     const result = await MBI.api.request(`/documents/${documentId}/download`);
-    if (!result?.url) throw new Error("Link de download nao encontrado.");
-    const response = await fetch(result.url);
-    if (!response.ok) throw new Error("Arquivo indisponivel no Storage.");
+    if (!result?.url) throw new Error("sem-arquivo");
+    const name = result.fileName || "Documento_MB";
+    let response;
+    try {
+      response = await fetch(result.url);
+    } catch (networkError) {
+      // fetch bloqueado por CORS, mas a URL assinada e valida: baixa direto por ela
+      forceUrlDownload(result.url, name);
+      showToast("Download iniciado.");
+      return;
+    }
+    if (!response.ok) throw new Error("sem-arquivo");
     const blob = await response.blob();
-    triggerBlobDownload(result.fileName || "Documento_MB", blob);
+    triggerBlobDownload(name, blob);
     showToast("Download iniciado.");
   }
 
   async function downloadDocument(documentId) {
     const session = MBI.auth.currentSession();
-    if (!session?.token) {
-      await localDocumentDownload(documentId);
-      return;
-    }
-
-    try {
-      await remoteDocumentDownload(documentId);
-    } catch (error) {
-      const expired = error.status === 401 || /sess[aã]o|expirad/i.test(error.message || "");
-      if (expired && session.refreshToken) {
-        showToast("Sessao expirada. Entre novamente para baixar documentos.");
+    if (session?.token) {
+      try {
+        await remoteDocumentDownload(documentId);
         return;
+      } catch (error) {
+        const expired = error.status === 401 || /sess[aã]o|expirad/i.test(error.message || "");
+        if (expired && session.refreshToken) {
+          showToast("Sessao expirada. Entre novamente para baixar documentos.");
+          return;
+        }
+        // segue para tentar a copia local guardada no navegador
       }
-      // Falha de Storage (path invalido, arquivo nao armazenado, doc de exemplo)
-      // ou API indisponivel: cai no registro local em vez de erro tecnico cru.
-      await localDocumentDownload(documentId);
+    }
+    const gotLocal = await localDocumentDownload(documentId);
+    if (!gotLocal) {
+      showToast("Este documento ainda nao tem arquivo disponivel para download.");
     }
   }
 
