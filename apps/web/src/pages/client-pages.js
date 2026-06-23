@@ -26,31 +26,35 @@
     return MBI.auth.currentSession()?.uiFilters?.[key] || {};
   }
 
-  function competenceSelector(client, data) {
+  // Seletor de competencia no topo (ao lado de notificacao/ajuda), estilo escuro da topbar.
+  function competenceTopbar(client, data) {
     const options = data.competences?.length ? data.competences : MBI.services.finance.listCompetences(client.id);
+    if (!options.length) return "";
     return `
-      <div class="competence-bar">
-        <form class="competence-filter" data-form="select-competence">
-          <input type="hidden" name="clientId" value="${MBI.ui.escape(client.id)}">
-          <span class="competence-filter-ic">${MBI.ui.icon("calendar-days")}</span>
-          <span class="competence-filter-tag">Competência</span>
-          <select name="competence" aria-label="Competência" onchange="this.form.requestSubmit()">${options.map((item) => `<option value="${MBI.ui.escape(item.value)}" ${item.value === data.competence ? "selected" : ""}>${MBI.ui.escape(item.label)}</option>`).join("")}</select>
-          <button class="competence-filter-go" type="submit" aria-label="Aplicar competência">Ver</button>
-        </form>
-      </div>
+      <form class="topbar-client" data-form="select-competence">
+        <input type="hidden" name="clientId" value="${MBI.ui.escape(client.id)}">
+        <span class="topbar-client-tag">${MBI.ui.icon("calendar-days")} Competência</span>
+        <select name="competence" aria-label="Competência" onchange="this.form.requestSubmit()">${options.map((item) => `<option value="${MBI.ui.escape(item.value)}" ${item.value === data.competence ? "selected" : ""}>${MBI.ui.escape(item.label)}</option>`).join("")}</select>
+        <button class="competence-filter-go" type="submit" aria-label="Aplicar competência">Ver</button>
+      </form>
     `;
   }
 
   function shell(route, content) {
     const client = MBI.services.clients.current();
     const plan = MBI.services.plans.get(client.planId);
+    let topbarExtra = "";
+    if (route === "#/cliente/inteligencia" && tabAllowed(client, "finance")) {
+      topbarExtra = competenceTopbar(client, MBI.services.finance.get(client.id));
+    }
     return MBI.ui.shell({
       title: routeTitles[route] || "Portal do Cliente",
       subtitle: `${MBI.ui.escape(client.name)} · ${MBI.ui.escape(plan.name)} · Confiança ${MBI.ui.escape(client.confidence)}`,
       menu: menu(route, client),
       content,
       sessionLabel: plan.name,
-      sessionName: client.owner
+      sessionName: client.owner,
+      topbarExtra
     });
   }
 
@@ -279,9 +283,8 @@
     const scorePanel = `<article class="panel"><div class="panel-header"><div><h3>Radar do score</h3><p>Seis dimensões financeiras.</p></div></div>${MBI.ui.radar(data.scoreBreakdown)}</article>`;
     return `
       <div class="exec-dash">
-      ${competenceSelector(client, data)}
       ${kpiGrid(client, data)}
-      <section class="grid dash-split" style="margin-top:12px">
+      <section class="grid dash-split">
         <article class="panel chart">
           <div class="panel-header"><div><h3>Receita ao longo do tempo</h3><p>Evolução de faturamento.</p></div></div>
           ${MBI.ui.execLineChart(data.months)}
