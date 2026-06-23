@@ -5,6 +5,9 @@
     try {
       return await MBI.api.request(path);
     } catch (error) {
+      // Nao mascarar: a falha fica visivel. O fallback (ver refresh) NUNCA
+      // injeta dado de seed/demonstracao para um usuario autenticado.
+      MBI.observability?.warn("sync.optional", `Falha ao buscar ${path}; usando fallback seguro`, { error: error?.message });
       return fallback;
     }
   }
@@ -21,19 +24,25 @@
     if (!session?.token) return { remote: false };
 
     const local = MBI.storage.getDatabase();
+    // Quando o banco local ainda e o SEED (nunca sincronizado), o fallback de
+    // falha NAO pode trazer dados de demonstracao no lugar dos reais — senao
+    // dois usuarios veem listas diferentes (real x demo). Usa-se vazio ate que
+    // a sincronizacao real aconteca. Se ja sincronizou antes, mantem o ultimo
+    // dado real conhecido como fallback.
+    const lastGood = (collection) => (local.synced ? (local[collection] || []) : []);
     const me = await MBI.api.request("/auth/me");
     const plans = await MBI.api.request("/plans");
     const clients = await MBI.api.request("/clients");
-    const documents = await optional("/documents", { data: local.documents || [] });
-    const imports = await optional("/imports", { data: local.imports || [] });
-    const tasks = await optional("/tasks", { data: local.tasks || [] });
-    const messages = await optional("/messages", { data: local.messages || [] });
-    const approvals = await optional("/approvals", { data: local.approvals || [] });
-    const audit = await optional("/audit", { data: local.audit || [] });
+    const documents = await optional("/documents", { data: lastGood("documents") });
+    const imports = await optional("/imports", { data: lastGood("imports") });
+    const tasks = await optional("/tasks", { data: lastGood("tasks") });
+    const messages = await optional("/messages", { data: lastGood("messages") });
+    const approvals = await optional("/approvals", { data: lastGood("approvals") });
+    const audit = await optional("/audit", { data: lastGood("audit") });
     const users = await optional("/users", { data: [] });
 
     const financeBatch = await optional("/finance", { data: null });
-    const financials = { ...(local.financials || {}), ...(financeBatch.data || {}) };
+    const financials = { ...(local.synced ? (local.financials || {}) : {}), ...(financeBatch.data || {}) };
     if (!financeBatch.data) {
       const financeRows = await Promise.all((clients.data || []).map(async (client) => {
         try {
@@ -50,6 +59,9 @@
 
     const db = {
       ...local,
+      // Marca que este banco local agora reflete o Supabase (deixou de ser seed).
+      // A partir daqui, falhas de fetch caem no ultimo dado REAL, nunca no demo.
+      synced: true,
       version: local.version || MBI.seed.version,
       plans: plans.data?.length ? plans.data : local.plans,
       clients: clients.data?.length ? clients.data : (local.clients?.length ? local.clients : MBI.seed.clients),
