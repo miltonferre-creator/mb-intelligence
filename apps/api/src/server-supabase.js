@@ -1407,6 +1407,15 @@ async function requestHandler(req, res) {
   }
 }
 
+// Funcoes puras expostas para teste (sem efeito de rede). O handler continua
+// sendo o export principal usado pelo Vercel (api/handler.js).
+requestHandler.__test = {
+  canAccessClient,
+  financeToApi,
+  buildStorageUrl,
+  calculateFinancialScore
+};
+
 if (require.main === module) {
   const server = http.createServer(requestHandler);
   server.listen(port, () => {
