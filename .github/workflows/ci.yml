@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    name: Lint + Testes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Sem dependencias instaladas: o projeto nao usa pacotes npm em runtime,
+      # os testes usam o runner nativo (node:test). Se um package-lock surgir,
+      # trocar por "npm ci".
+
+      - name: Lint (checagem de sintaxe de todos os .js)
+        run: npm run lint
+
+      - name: Testes (unitarios + regressao)
+        run: npm test
+
+      # Prova de isolamento de tenant contra a API real. A suite se auto-pula
+      # quando os segredos de staging nao estao configurados (Settings >
+      # Secrets and variables > Actions), entao este passo nunca quebra o CI
+      # por falta de ambiente — so roda de verdade quando ha staging.
+      - name: Prova de isolamento de tenant (staging, se configurado)
+        env:
+          MBI_TEST_API_URL: ${{ secrets.MBI_TEST_API_URL }}
+          MBI_TEST_TOKEN_CLIENT_A: ${{ secrets.MBI_TEST_TOKEN_CLIENT_A }}
+          MBI_TEST_CLIENT_ID_B: ${{ secrets.MBI_TEST_CLIENT_ID_B }}
+        run: npm run test:isolation
