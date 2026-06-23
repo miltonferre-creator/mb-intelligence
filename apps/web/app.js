@@ -79,10 +79,32 @@
       return;
     }
 
-    if (session.type === "mb") {
-      root.innerHTML = MBI.pages.admin.render(currentRoute);
-    } else {
-      root.innerHTML = MBI.pages.client.render(currentRoute);
+    // Sessao ativa mas o usuario nao esta no espelho local (sync falhou/expirou,
+    // ou os dados ainda nao chegaram do Supabase). Em vez de quebrar a tela,
+    // volta ao login com aviso — NUNCA tela branca.
+    if (!MBI.auth.currentUser()) {
+      MBI.observability?.warn("render", "Sessao sem usuario resolvido — voltando ao login");
+      MBI.storage.clearSession();
+      root.innerHTML = MBI.pages.auth.login();
+      root.insertAdjacentHTML("beforeend", MBI.ui.toast("Sua sessão expirou. Entre novamente."));
+      refreshIcons();
+      return;
+    }
+
+    // Rede de seguranca: qualquer erro ao montar a tela cai no login em vez de
+    // deixar #root vazio (tela branca).
+    try {
+      if (session.type === "mb") {
+        root.innerHTML = MBI.pages.admin.render(currentRoute);
+      } else {
+        root.innerHTML = MBI.pages.client.render(currentRoute);
+      }
+    } catch (renderError) {
+      MBI.observability?.capture("render", renderError, { route: currentRoute, type: session.type });
+      root.innerHTML = MBI.pages.auth.login();
+      root.insertAdjacentHTML("beforeend", MBI.ui.toast("Não foi possível carregar a tela. Entre novamente."));
+      refreshIcons();
+      return;
     }
 
     root.insertAdjacentHTML("beforeend", MBI.ui.toast(toastMessage));
