@@ -284,41 +284,31 @@
   async function remoteDocumentDownload(documentId) {
     const result = await MBI.api.request(`/documents/${documentId}/download`);
     if (!result?.url) throw new Error("Link de download nao encontrado.");
-    try {
-      const response = await fetch(result.url);
-      if (!response.ok) throw new Error("Storage indisponivel.");
-      const blob = await response.blob();
-      triggerBlobDownload(result.fileName || "Documento_MB", blob);
-    } catch (error) {
-      window.open(result.url, "_blank", "noopener");
-    }
-    showToast("Link de download gerado.");
+    const response = await fetch(result.url);
+    if (!response.ok) throw new Error("Arquivo indisponivel no Storage.");
+    const blob = await response.blob();
+    triggerBlobDownload(result.fileName || "Documento_MB", blob);
+    showToast("Download iniciado.");
   }
 
   async function downloadDocument(documentId) {
     const session = MBI.auth.currentSession();
     if (!session?.token) {
-      localDocumentDownload(documentId);
+      await localDocumentDownload(documentId);
       return;
     }
 
     try {
       await remoteDocumentDownload(documentId);
     } catch (error) {
-      if (error.apiUnavailable) {
-        localDocumentDownload(documentId);
-        return;
-      }
       const expired = error.status === 401 || /sess[aã]o|expirad/i.test(error.message || "");
-      if (expired) {
-        if (!session.refreshToken) {
-          localDocumentDownload(documentId);
-          return;
-        }
-        showToast("Sessao expirada. Entre novamente para baixar documentos reais.");
+      if (expired && session.refreshToken) {
+        showToast("Sessao expirada. Entre novamente para baixar documentos.");
         return;
       }
-      throw error;
+      // Falha de Storage (path invalido, arquivo nao armazenado, doc de exemplo)
+      // ou API indisponivel: cai no registro local em vez de erro tecnico cru.
+      await localDocumentDownload(documentId);
     }
   }
 
