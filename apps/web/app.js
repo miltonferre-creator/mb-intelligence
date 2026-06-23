@@ -100,12 +100,11 @@
         root.innerHTML = MBI.pages.client.render(currentRoute);
       }
     } catch (renderError) {
+      // O erro real vai para a observabilidade (console/Sentry), nao para o
+      // usuario. Mensagem limpa em vez de detalhe tecnico.
       MBI.observability?.capture("render", renderError, { route: currentRoute, type: session.type });
-      // Diagnostico temporario: mostra a mensagem real do erro para identificar
-      // a causa rapido (em vez de uma mensagem generica).
-      const detalhe = renderError && renderError.message ? renderError.message : "erro desconhecido";
       root.innerHTML = MBI.pages.auth.login();
-      root.insertAdjacentHTML("beforeend", MBI.ui.toast(`Erro ao carregar (${currentRoute}): ${detalhe}`));
+      root.insertAdjacentHTML("beforeend", MBI.ui.toast("Não foi possível carregar a tela. Entre novamente."));
       refreshIcons();
       return;
     }
