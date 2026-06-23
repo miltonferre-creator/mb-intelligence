@@ -263,6 +263,11 @@
     withComputed.months = monthsFromSnapshots(MBI.storage.getDatabase().financials[clientId] || {});
     if (!withComputed.months.length && data.months?.length) withComputed.months = data.months;
     withComputed.cashMonths = cashFlowFromSnapshots(MBI.storage.getDatabase().financials[clientId] || {});
+    // Fallback: quando nao ha snapshots locais (dados vieram do servidor so como
+    // serie de receita/despesa), usa entradas≈receita e saidas≈despesa por mes.
+    if (!withComputed.cashMonths.length && withComputed.months?.length) {
+      withComputed.cashMonths = withComputed.months;
+    }
     return withComputed;
   }
 

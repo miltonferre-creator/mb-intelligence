@@ -306,16 +306,15 @@
     return `
       <svg class="exec-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Receita ao longo do tempo">
         <defs>
-          <linearGradient id="execArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e0606a" stop-opacity="0.34"></stop><stop offset="100%" stop-color="#e0606a" stop-opacity="0"></stop></linearGradient>
-          <filter id="execGlow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.4" result="b"></feGaussianBlur><feMerge><feMergeNode in="b"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter>
+          <linearGradient id="execArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c2727a" stop-opacity="0.16"></stop><stop offset="100%" stop-color="#c2727a" stop-opacity="0"></stop></linearGradient>
         </defs>
-        ${grid.map((v) => { const y = yFor(v); return `<line x1="${padL}" x2="${W - padR}" y1="${y}" y2="${y}" stroke="rgba(255,255,255,.08)" stroke-width="1"></line><text x="${padL - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="rgba(255,255,255,.42)">${chartValue(v)}</text>`; }).join("")}
+        ${grid.map((v) => { const y = yFor(v); return `<line x1="${padL}" x2="${W - padR}" y1="${y}" y2="${y}" stroke="rgba(255,255,255,.07)" stroke-width="1"></line><text x="${padL - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="rgba(255,255,255,.4)">${chartValue(v)}</text>`; }).join("")}
         <path d="${area}" fill="url(#execArea)"></path>
-        <path d="M ${xFor(0)} ${yFor(trend[0])} L ${xFor(n - 1)} ${yFor(trend[n - 1])}" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2" stroke-dasharray="6 5"></path>
-        <path d="${revLine}" fill="none" stroke="#e0606a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" filter="url(#execGlow)"></path>
-        ${revPts.map((p, i) => `<circle cx="${p[0]}" cy="${p[1]}" r="${i === n - 1 ? 5 : 3.2}" fill="#13101a" stroke="#e0606a" stroke-width="2"></circle>`).join("")}
-        ${months.map((m, i) => (i % 2 === 0 || i === n - 1) ? `<text x="${xFor(i)}" y="${H - 8}" text-anchor="middle" font-size="10" fill="rgba(255,255,255,.5)">${String(m[0]).split(" ")[0]}</text>` : "").join("")}
-        <g transform="translate(${cx}, ${cy})"><rect width="104" height="26" rx="13" fill="#8f121b"></rect><text x="52" y="17" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">${chartValue(rev[n - 1])}</text></g>
+        <path d="M ${xFor(0)} ${yFor(trend[0])} L ${xFor(n - 1)} ${yFor(trend[n - 1])}" fill="none" stroke="rgba(255,255,255,.32)" stroke-width="1.5" stroke-dasharray="6 5"></path>
+        <path d="${revLine}" fill="none" stroke="#cc7a82" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
+        ${revPts.map((p, i) => `<circle cx="${p[0]}" cy="${p[1]}" r="${i === n - 1 ? 4.5 : 3}" fill="#13101a" stroke="#cc7a82" stroke-width="2"></circle>`).join("")}
+        ${months.map((m, i) => (i % 2 === 0 || i === n - 1) ? `<text x="${xFor(i)}" y="${H - 8}" text-anchor="middle" font-size="10" fill="rgba(255,255,255,.48)">${String(m[0]).split(" ")[0]}</text>` : "").join("")}
+        <g transform="translate(${cx}, ${cy})"><rect width="104" height="24" rx="7" fill="rgba(255,255,255,.10)"></rect><text x="52" y="16" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">${chartValue(rev[n - 1])}</text></g>
       </svg>
     `;
   }
@@ -363,8 +362,8 @@
     return `
       <svg class="exec-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Fluxo de caixa mensal">
         <defs>
-          <linearGradient id="cfIn" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#34d399"></stop><stop offset="100%" stop-color="#10b981" stop-opacity=".7"></stop></linearGradient>
-          <linearGradient id="cfOut" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fbbf24"></stop><stop offset="100%" stop-color="#e0606a" stop-opacity=".85"></stop></linearGradient>
+          <linearGradient id="cfIn" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4cae93" stop-opacity=".95"></stop><stop offset="100%" stop-color="#3a8f78" stop-opacity=".7"></stop></linearGradient>
+          <linearGradient id="cfOut" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c79a5a" stop-opacity=".92"></stop><stop offset="100%" stop-color="#b3737a" stop-opacity=".72"></stop></linearGradient>
         </defs>
         ${grid.map((v) => { const y = yFor(v); return `<line x1="${padL}" x2="${W - padR}" y1="${y}" y2="${y}" stroke="rgba(255,255,255,.08)"></line><text x="${padL - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="rgba(255,255,255,.42)">${chartValue(v)}</text>`; }).join("")}
         ${months.map((m, i) => {
