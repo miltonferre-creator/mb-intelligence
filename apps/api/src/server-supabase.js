@@ -650,7 +650,9 @@ function financeToApi(row, dreLines, cashRow, historyRows) {
         // dos KPIs de Impostos e Score no dashboard do cliente.
         taxes: Number(item.taxes || 0),
         score: calculateFinancialScore(item).total,
-        margin: Number(item.margin || 0),
+        // Margem DERIVADA de result/revenue (fonte unica), nao a coluna gravada
+        // que pode estar como placeholder (ex.: igual ao marginTarget).
+        margin: Number(item.revenue || 0) ? Math.round((Number(item.result || 0) / Number(item.revenue || 0)) * 1000) / 10 : 0,
         confidence: item.confidence || "Media",
         status: item.status || "Publicado"
       })),
