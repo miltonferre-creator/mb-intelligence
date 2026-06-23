@@ -2695,6 +2695,8 @@ button.workflow-step:hover { border-color: var(--brand-3); }
 .exec-dash .dash-split { gap: 12px; }
 /* Limita a altura dos graficos para caber mais conteudo sem rolar */
 .exec-dash .exec-chart { max-height: 184px; }
+/* Radar nao pode escalar para a largura inteira (virava ~440px de altura) */
+.exec-dash .radar-chart { display: block; width: 100%; max-width: 250px; min-height: 0; margin: auto; }
 
 /* Preenche o quadro: paineis da linha com altura igual e conteudo curto centralizado */
 .exec-dash .panel { display: flex; flex-direction: column; }
