@@ -2686,17 +2686,25 @@ button.workflow-step:hover { border-color: var(--brand-3); }
 
 /* Versao compacta do dashboard p/ caber na tela */
 /* KPIs envolvem em vez de estourar a largura quando a tela aperta */
-.exec-dash .kpi-grid { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
-.exec-dash .kpi-card { min-height: 72px; gap: 2px; padding: 11px 13px; }
-.exec-dash .kpi-value { font-size: clamp(18px, 1.7vw, 23px); }
-.exec-dash .kpi-card .kpi-spark { height: 22px; }
-.exec-dash .panel { padding: 13px; }
-.exec-dash .panel-header { margin-bottom: 6px; }
-.exec-dash .dash-split { gap: 12px; }
-/* Limita a altura dos graficos para caber mais conteudo sem rolar */
-.exec-dash .exec-chart { max-height: 184px; }
+.exec-dash { padding: 14px; }
+.exec-dash .kpi-grid { grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); gap: 10px; }
+.exec-dash .kpi-card { min-height: 62px; gap: 1px; padding: 9px 12px; }
+.exec-dash .kpi-value { font-size: clamp(17px, 1.6vw, 21px); }
+.exec-dash .kpi-card .kpi-spark { height: 18px; }
+.exec-dash .kpi-card .metric-top span { font-size: 11px; }
+.exec-dash .panel { padding: 12px; }
+.exec-dash .panel-header { margin-bottom: 4px; }
+.exec-dash .panel-header h3 { font-size: 15px; }
+.exec-dash .panel-header p { font-size: 11.5px; }
+.exec-dash > section { margin-top: 10px !important; }
+.exec-dash .dash-split { gap: 10px; align-items: stretch; }
+/* Graficos ja sao baixos pela geometria (viewBox 600x150); so um teto de seguranca */
+.exec-dash .exec-chart { max-height: 180px; }
+.exec-dash .chart-legend { margin-top: 6px; font-size: 11px; }
 /* Radar nao pode escalar para a largura inteira (virava ~440px de altura) */
-.exec-dash .radar-chart { display: block; width: 100%; max-width: 250px; min-height: 0; margin: auto; }
+.exec-dash .radar-chart { display: block; width: 100%; max-width: 190px; min-height: 0; margin: auto; }
+/* Ranking de despesas tambem nao pode esticar demais */
+.exec-dash .bar-chart { max-width: 100%; }
 
 /* Preenche o quadro: paineis da linha com altura igual e conteudo curto centralizado */
 .exec-dash .panel { display: flex; flex-direction: column; }
