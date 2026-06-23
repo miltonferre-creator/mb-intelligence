@@ -272,7 +272,7 @@
     if (!months || months.length < 2) {
       return `<div class="empty-lock">${icon("activity")}<h3>Aguardando histórico</h3><p>O gráfico aparece quando houver competências suficientes.</p></div>`;
     }
-    const W = 600, H = 150, padL = 54, padR = 22, padT = 14, padB = 22;
+    const W = 600, H = 188, padL = 54, padR = 22, padT = 18, padB = 26;
     const rev = months.map((m) => Number(m[1] || 0));
     const n = rev.length;
     const meanX = (n - 1) / 2;
@@ -348,7 +348,7 @@
     if (!months || !months.length) {
       return `<div class="empty-lock">${icon("waves")}<h3>Sem fluxo de caixa</h3><p>O gráfico aparece quando a MB registrar entradas e saídas mensais.</p></div>`;
     }
-    const W = 600, H = 150, padL = 54, padR = 18, padT = 12, padB = 24;
+    const W = 600, H = 188, padL = 54, padR = 18, padT = 16, padB = 26;
     const inflow = months.map((m) => Number(m[1] || 0));
     const outflow = months.map((m) => Number(m[2] || 0));
     const maxV = Math.max(...inflow, ...outflow, 1);
