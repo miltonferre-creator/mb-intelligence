@@ -2721,6 +2721,25 @@ textarea:focus {
 .home-row-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .home-row-main > strong { color: var(--ink); font-size: 15px; }
 .home-row-main > span { color: var(--muted); font-size: 13px; }
+.home-due { color: var(--warning); font-weight: 800; }
+
+/* Perfil: lista de dados rotulo/valor */
+.profile-fields { display: grid; gap: 0; margin-top: 4px; }
+.profile-fields > div {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 12px;
+  align-items: baseline;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.profile-fields > div:last-child { border-bottom: none; }
+.profile-fields dt { color: var(--muted); font-size: 13px; font-weight: 600; }
+.profile-fields dd { margin: 0; color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+.profile-security { grid-column: 1 / -1; }
+@media (max-width: 560px) {
+  .profile-fields > div { grid-template-columns: 1fr; gap: 2px; }
+}
 .home-empty {
   display: flex;
   flex-direction: column;

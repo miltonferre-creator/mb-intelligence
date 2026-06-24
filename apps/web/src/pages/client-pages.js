@@ -222,32 +222,28 @@
   function home(client) {
     const data = MBI.services.finance.get(client.id);
     const guias = guiasToPay(client);
-    const recents = recentDocs(client);
+    const allDocs = MBI.services.documents.listByClient(client.id);
+    const latest = recentDocs(client)[0] || null;
     const tasks = openTasks(client);
     const statusTone = tasks.length ? "is-warn" : "is-good";
     const statusText = tasks.length
       ? `${tasks.length} pendência(s) aguardando você ou a MB`
       : guias.length ? "Suas guias do mês estão disponíveis para pagamento" : "Tudo em dia este mês";
 
-    const guiasPanel = `
-      <article class="panel home-panel">
-        <div class="panel-header"><div><h3>Guias e impostos a pagar</h3><p>Publicados pela MB para você pagar no prazo.</p></div>${MBI.ui.pill(String(guias.length))}</div>
-        ${guias.length ? `<div class="home-list">${guias.map((doc) => `
-          <div class="home-row">
-            <div class="home-row-main"><strong>${MBI.ui.escape(doc.name || doc.fileName)}</strong><span>Vence ${MBI.ui.escape(dueLabel(doc.dueDate || doc.due))}</span></div>
-            <button class="btn btn-soft btn-mini" type="button" data-action="document-download" data-document-id="${MBI.ui.escape(doc.id)}">${MBI.ui.icon("download")} Baixar</button>
-          </div>`).join("")}</div>`
-          : `<div class="home-empty">${MBI.ui.icon("check-circle")}<p>Nenhuma guia em aberto. Assim que a MB publicar suas guias do mês, elas aparecem aqui.</p></div>`}
-      </article>`;
-
+    // Um unico painel de documentos: o mais recente em destaque + "Ver todos".
+    // Se o ultimo arquivo for uma guia com vencimento, o selo "vence dd/mm"
+    // preserva o lembrete de pagamento sem repetir o documento em outro painel.
+    const latestDue = latest && isGuia(latest) && (latest.dueDate || /\d{2}/.test(String(latest.due || "")))
+      ? dueLabel(latest.dueDate || latest.due)
+      : "";
     const docsPanel = `
       <article class="panel home-panel">
-        <div class="panel-header"><div><h3>Documentos recentes</h3><p>Últimos arquivos liberados pela MB.</p></div><button class="btn btn-ghost btn-mini" type="button" data-route="#/cliente/documentos">Ver todos</button></div>
-        ${recents.length ? `<div class="home-list">${recents.map((doc) => `
+        <div class="panel-header"><div><h3>Documento mais recente</h3><p>Último arquivo liberado pela MB para você.</p></div>${allDocs.length > 1 ? `<button class="btn btn-ghost btn-mini" type="button" data-route="#/cliente/documentos">Ver todos (${allDocs.length})</button>` : ""}</div>
+        ${latest ? `<div class="home-list">
           <div class="home-row">
-            <div class="home-row-main"><strong>${MBI.ui.escape(doc.name || doc.fileName)}</strong><span>${MBI.ui.escape(doc.category || "Documento")}${doc.competence ? ` · ${MBI.ui.escape(doc.competence)}` : ""}</span></div>
-            <button class="btn btn-soft btn-mini" type="button" data-action="document-download" data-document-id="${MBI.ui.escape(doc.id)}">${MBI.ui.icon("download")} Baixar</button>
-          </div>`).join("")}</div>`
+            <div class="home-row-main"><strong>${MBI.ui.escape(latest.name || latest.fileName)}</strong><span>${MBI.ui.escape(latest.category || "Documento")}${latest.competence ? ` · ${MBI.ui.escape(latest.competence)}` : ""}${latestDue ? ` · <b class="home-due">vence ${MBI.ui.escape(latestDue)}</b>` : ""}</span></div>
+            <button class="btn btn-primary btn-mini" type="button" data-action="document-download" data-document-id="${MBI.ui.escape(latest.id)}">${MBI.ui.icon("download")} Baixar</button>
+          </div></div>`
           : `<div class="home-empty">${MBI.ui.icon("folder-open")}<p>Nenhum documento publicado ainda. A MB disponibiliza seus documentos aqui.</p></div>`}
       </article>`;
 
@@ -267,7 +263,7 @@
         <div class="home-hero-text"><span>${greeting()}, ${MBI.ui.escape(client.owner || client.name)}.</span><strong>${MBI.ui.escape(client.name)} · ${MBI.ui.escape(data.competenceLabel || "")}</strong></div>
         <div class="home-status ${statusTone}">${MBI.ui.icon(tasks.length ? "alert-triangle" : "check-circle")}<span>${statusText}</span></div>
       </section>
-      <section class="grid grid-2" style="margin-top:14px">${guiasPanel}${docsPanel}</section>
+      <section style="margin-top:14px">${docsPanel}</section>
       ${quickActions}
       <section style="margin-top:14px">${financeBlock}</section>
     `;
@@ -414,13 +410,35 @@
     `;
   }
 
+  // Lista de campos rotulo/valor; esconde o que estiver vazio em vez de mostrar
+  // celula em branco (parece dado faltando/quebrado).
+  function fieldList(rows) {
+    const visible = rows.filter(([, value]) => String(value || "").trim() && !/^a definir$/i.test(String(value).trim()));
+    if (!visible.length) return `<p class="comm-hint">${MBI.ui.icon("info")} Dados ainda não preenchidos pela MB.</p>`;
+    return `<dl class="profile-fields">${visible.map(([label, value]) => `<div><dt>${MBI.ui.escape(label)}</dt><dd>${MBI.ui.escape(value)}</dd></div>`).join("")}</dl>`;
+  }
+
   function profile(client) {
     const plan = MBI.services.plans.get(client.planId);
+    const empresa = fieldList([
+      ["Razão social", client.name],
+      ["Nome fantasia", client.tradeName],
+      ["CNPJ", MBI.ui.cnpj(client.cnpj)],
+      ["Cidade/UF", client.city],
+      ["Segmento", client.segment],
+      ["Regime tributário", client.taxRegime]
+    ]);
+    const responsavel = fieldList([
+      ["Responsável", client.owner],
+      ["E-mail de acesso", client.email],
+      ["WhatsApp", client.phone],
+      ["Plano contratado", `${plan.name} · ${MBI.ui.money(plan.price)}/mês`]
+    ]);
     return `
       <section class="grid grid-2">
-        <article class="panel"><div class="panel-header"><div><h3>Empresa</h3><p>Dados cadastrais principais.</p></div></div>${MBI.ui.table(["Campo", "Informação", ""], [["Razão social", client.name, ""], ["CNPJ", client.cnpj, ""], ["Cidade/UF", client.city, ""], ["Segmento", client.segment, ""], ["Plano", plan.name, ""]])}</article>
-        <article class="panel"><div class="panel-header"><div><h3>Módulos liberados</h3><p>Permissões calculadas pelo plano contratado.</p></div></div><div class="module-chips">${plan.modules.map((module) => `<span class="chip is-on">${module}</span>`).join("")}</div><div class="metric-analysis" style="margin-top:14px"><strong>MB:</strong> módulos adicionais dependem do plano e da qualidade dos dados enviados.</div></article>
-        <form class="panel" data-form="change-password"><div class="panel-header"><div><h3>Alterar senha</h3><p>Atualize seu acesso sem acionar a equipe MB.</p></div><button class="btn btn-primary" type="submit">${MBI.ui.icon("key-round")} Salvar senha</button></div><div class="form-section two"><label><span>Senha atual</span><input type="password" name="currentPassword" required></label><label><span>Nova senha</span><input type="password" name="newPassword" required minlength="6"></label><label><span>Confirmar nova senha</span><input type="password" name="confirmPassword" required minlength="6"></label></div></form>
+        <article class="panel"><div class="panel-header"><div><h3>Dados da empresa</h3><p>Cadastro principal mantido pela MB.</p></div>${MBI.ui.icon("building-2")}</div>${empresa}</article>
+        <article class="panel"><div class="panel-header"><div><h3>Responsável e plano</h3><p>Contato e plano contratado.</p></div>${MBI.ui.icon("user-round")}</div>${responsavel}<div class="module-chips" style="margin-top:14px">${plan.modules.map((module) => `<span class="chip is-on">${MBI.ui.escape(module)}</span>`).join("")}</div></article>
+        <form class="panel profile-security" data-form="change-password"><div class="panel-header"><div><h3>Segurança e senha</h3><p>Atualize seu acesso sem acionar a equipe MB.</p></div><button class="btn btn-primary" type="submit">${MBI.ui.icon("key-round")} Salvar senha</button></div><div class="form-section"><label><span>Senha atual</span><input type="password" name="currentPassword" autocomplete="current-password" required></label><label><span>Nova senha</span><input type="password" name="newPassword" autocomplete="new-password" required minlength="6"></label><label><span>Confirmar nova senha</span><input type="password" name="confirmPassword" autocomplete="new-password" required minlength="6"></label></div><p class="doc-hint" style="margin-top:4px">${MBI.ui.icon("shield-check")} Precisa corrigir algum dado cadastral? <button class="btn-link" type="button" data-route="#/cliente/comunicacao">Fale com a MB</button>.</p></form>
       </section>
     `;
   }
