@@ -953,7 +953,15 @@
   async function boot() {
     try { if (localStorage.getItem("mbi.ui.nav") !== "expanded") document.body.classList.add("nav-collapsed"); } catch (error) {}
     MBI.storage.getDatabase();
-    if (MBI.auth.currentSession()?.token) {
+    const session = MBI.auth.currentSession();
+    if (session?.token) {
+      // Renova o token PROATIVAMENTE se expirou / esta perto de expirar, ANTES de
+      // sincronizar. Evita o caso "reload mostra dado velho porque o token venceu
+      // e o sync falhou em silencio" — sem depender de re-login.
+      const expMs = session.expiresAt ? Date.parse(session.expiresAt) : 0;
+      if (session.refreshToken && expMs && (expMs - Date.now() < 60000)) {
+        try { await MBI.auth.refreshSession(); } catch (error) { MBI.observability?.warn("boot", "refresh proativo falhou"); }
+      }
       await MBI.sync.refreshIfPossible();
       lastSyncAt = Date.now();
     }
