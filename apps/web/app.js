@@ -963,6 +963,30 @@
     if (event.key === "Escape" && activeModal) closeModal();
   });
 
+  // ===== Expiracao por inatividade =====
+  // Por seguranca, encerra a sessao apos um periodo sem interacao do usuario.
+  // Marcamos a ultima atividade (barato) e checamos 1x por minuto; assim evitamos
+  // recriar timers a cada mousemove. So vale para sessao ativa.
+  const IDLE_LIMIT_MS = 30 * 60 * 1000; // 30 minutos
+  let lastActivityAt = Date.now();
+  let idleLoggingOut = false;
+  function markActivity() { lastActivityAt = Date.now(); }
+  ["click", "keydown", "mousemove", "scroll", "touchstart", "visibilitychange"].forEach((evt) => {
+    document.addEventListener(evt, markActivity, { passive: true });
+  });
+  async function checkIdle() {
+    if (idleLoggingOut) return;
+    if (!MBI.auth.currentSession()) return;
+    if (Date.now() - lastActivityAt < IDLE_LIMIT_MS) return;
+    idleLoggingOut = true;
+    try { await MBI.auth.logout(); } catch (error) {}
+    navigate("#/login");
+    render();
+    showToast("Sessão encerrada por inatividade. Entre novamente.");
+    idleLoggingOut = false;
+  }
+  window.setInterval(checkIdle, 60 * 1000);
+
   async function boot() {
     try { if (localStorage.getItem("mbi.ui.nav") !== "expanded") document.body.classList.add("nav-collapsed"); } catch (error) {}
     MBI.storage.getDatabase();

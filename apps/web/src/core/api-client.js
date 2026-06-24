@@ -51,7 +51,19 @@
     }
 
     const text = await response.text();
-    const data = text ? JSON.parse(text) : null;
+    let data = null;
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch (parseError) {
+        // Resposta nao-JSON (ex.: pagina 404 HTML de rota nao mapeada). Em vez de
+        // estourar "Unexpected token", devolve um erro legivel com o status.
+        const err = new Error(`Resposta inesperada do servidor (${response.status}). Tente novamente em instantes.`);
+        err.status = response.status;
+        err.nonJson = true;
+        throw err;
+      }
+    }
 
     if (response.status === 401 && !options.skipRefresh && options.auth !== false && MBI.auth?.refreshSession) {
       try {
