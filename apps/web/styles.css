@@ -620,6 +620,20 @@ textarea:focus {
   background: #1da851;
 }
 
+/* Tela de comunicacao: WhatsApp como canal principal */
+.comm-channel { display: flex; flex-direction: column; }
+.comm-wa { margin-top: 4px; justify-content: center; padding: 13px 18px; font-size: 15px; }
+.comm-contacts { margin-top: 14px; display: grid; gap: 10px; }
+.comm-hint {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.comm-hint i { width: 16px; height: 16px; flex: 0 0 auto; }
+
 .form-legal {
   font-size: 12px;
   color: var(--muted);
@@ -702,7 +716,7 @@ textarea:focus {
 .app-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
+  grid-template-columns: 248px minmax(0, 1fr);
 }
 
 .app-backdrop { display: none; }
@@ -831,7 +845,7 @@ textarea:focus {
 
 .content {
   min-width: 0;
-  padding: 24px;
+  padding: 18px 20px;
 }
 
 .topbar {
@@ -2651,8 +2665,19 @@ textarea:focus {
 .exec-alert.is-warn { background: rgba(183, 121, 31, .10); border-color: rgba(183, 121, 31, .40); color: #8a5a12; }
 .exec-alert.is-bad { background: rgba(180, 35, 24, .08); border-color: rgba(180, 35, 24, .35); color: #8c1d14; }
 
+/* Alerta + CTA na mesma linha (economiza altura no dashboard) */
+.exec-action--inline {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.exec-action--inline .exec-alert { flex: 1 1 320px; align-items: center; padding: 9px 12px; }
+.exec-action--inline .btn { flex: 0 0 auto; align-self: center; white-space: nowrap; }
+
 @media (max-width: 760px) {
   .exec-headline { grid-template-columns: repeat(2, 1fr); }
+  .exec-action--inline .btn { flex: 1 1 100%; justify-content: center; }
 }
 
 /* ===== Tela inicial do cliente (task-first) ===== */
@@ -3067,27 +3092,35 @@ button.workflow-step:hover { border-color: var(--brand-3); }
     linear-gradient(135deg, var(--brand), #18090d);
 }
 .login-solo-card {
-  width: min(420px, 100%);
+  width: min(440px, 100%);
   display: flex;
   flex-direction: column;
   gap: 18px;
-  padding: 30px;
-  border-radius: 16px;
+  padding: 34px;
+  border-radius: 18px;
   overflow: hidden;
-  background: rgba(255, 255, 255, .97);
+  background: rgba(255, 255, 255, .98);
   box-shadow: 0 30px 80px rgba(0, 0, 0, .45);
 }
 .login-brandbar {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 16px;
-  margin: -30px -30px 6px;
-  background: linear-gradient(135deg, var(--brand), var(--brand-2));
+  padding: 30px 24px;
+  margin: -34px -34px 4px;
+  background:
+    radial-gradient(120% 140% at 50% -20%, rgba(255, 255, 255, .14), rgba(255, 255, 255, 0) 60%),
+    linear-gradient(135deg, var(--brand), var(--brand-2));
 }
-.login-brandbar img { width: auto; height: 30px; max-width: 78%; }
+.login-brandbar img {
+  width: auto;
+  height: 52px;
+  max-width: 90%;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, .28));
+}
 .login-solo-card .section-title { text-align: center; }
-.login-solo-btn { width: 100%; justify-content: center; }
+.login-solo-card .section-title p { margin-top: 4px; }
+.login-solo-btn { width: 100%; justify-content: center; margin-top: 2px; }
 .login-solo-card .login-footer-links { justify-content: center; }
 
 /* ===== Menu lateral recolhivel ===== */
@@ -3139,8 +3172,8 @@ button.workflow-step:hover { border-color: var(--brand-3); }
 
 /* ===== Header (topbar) escuro com identidade MB — fosco, compacto ===== */
 .topbar {
-  margin: -24px -24px 16px;
-  padding: 11px 24px;
+  margin: -18px -20px 14px;
+  padding: 9px 20px;
   border-radius: 0 0 14px 14px;
   background: linear-gradient(100deg, #1a1320 0%, #14151c 42%, #111218 100%);
   border-bottom: 1px solid rgba(255, 255, 255, .06);

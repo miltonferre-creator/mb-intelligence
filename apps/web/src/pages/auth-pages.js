@@ -10,7 +10,8 @@
             <img src="assets/mb-logo-premium.svg" alt="MB Assessoria Empresarial">
           </div>
           <div class="section-title">
-            <h2>Entrar</h2>
+            <h2>Acesse seu portal</h2>
+            <p>Documentos, guias e inteligência financeira da sua empresa em um só lugar.</p>
           </div>
           <form class="login-form" data-form="login">
             <div class="form-grid">
@@ -60,7 +61,7 @@
               <span>Se voce ja tem contador, a MB cuida de toda a migracao sem custo adicional.</span>
             </div>
           </div>
-          <a class="btn btn-whatsapp" href="https://wa.me/5500000000000?text=Ola%2C%20tenho%20duvidas%20sobre%20os%20planos%20da%20MB" target="_blank" rel="noopener">
+          <a class="btn btn-whatsapp" href="${MBI.ui.whatsappUrl("Olá, tenho dúvidas sobre os planos da MB.")}" target="_blank" rel="noopener">
             ${MBI.ui.icon("message-circle")} Tirar duvidas no WhatsApp
           </a>
         </section>

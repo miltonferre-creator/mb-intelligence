@@ -260,7 +260,7 @@
 
     const financeBlock = tabAllowed(client, "finance")
       ? `<article class="panel"><div class="panel-header"><div><h3>Resumo financeiro · ${MBI.ui.escape(data.competenceLabel || "competência atual")}</h3><p>Leitura rápida. Detalhes completos em Financeiro.</p></div></div>${executiveBrief(client, data)}</article>`
-      : `<article class="panel home-invite"><div class="home-invite-icon">${MBI.ui.icon("trending-up")}</div><div class="home-invite-text"><h3>Quer enxergar o financeiro da sua empresa?</h3><p>O Plano Gestão libera faturamento, lucro, margem, indicadores e alertas automáticos — além de tudo que você já tem no Contabilidade.</p></div><a class="btn btn-primary" href="https://wa.me/5500000000000?text=Quero%20conhecer%20o%20Plano%20Gest%C3%A3o%20da%20MB" target="_blank" rel="noopener">${MBI.ui.icon("message-circle")} Conhecer o Plano Gestão</a></article>`;
+      : `<article class="panel home-invite"><div class="home-invite-icon">${MBI.ui.icon("trending-up")}</div><div class="home-invite-text"><h3>Quer enxergar o financeiro da sua empresa?</h3><p>O Plano Gestão libera faturamento, lucro, margem, indicadores e alertas automáticos — além de tudo que você já tem no Contabilidade.</p></div><a class="btn btn-primary" href="${MBI.ui.whatsappUrl("Quero conhecer o Plano Gestão da MB.")}" target="_blank" rel="noopener">${MBI.ui.icon("message-circle")} Conhecer o Plano Gestão</a></article>`;
 
     return `
       <section class="home-hero ${statusTone}">
@@ -282,37 +282,35 @@
     }
     const scoreWord = (s) => (s >= 80 ? "Excelente" : s >= 65 ? "Bom" : s >= 50 ? "Regular" : "Atenção");
     const scorePanel = `<article class="panel score-panel"><div class="panel-header"><div><h3>Saúde financeira</h3><p>Score consolidado MB · ${(data.scoreBreakdown || []).length} dimensões</p></div></div>${MBI.ui.scoreGauge(data.score, `${scoreWord(Number(data.score || 0))} · meta 80`)}${MBI.ui.scoreBars(data.scoreBreakdown)}</article>`;
+    const [alertTone, alertTxt] = executiveAlert(data);
     return `
       <div class="exec-dash">
       ${kpiGrid(client, data)}
-      ${(() => {
-        const [tone, txt] = executiveAlert(data);
-        return `<section class="exec-action" style="margin-top:12px">
-        <div class="exec-alert ${tone}">${MBI.ui.icon(tone === "is-good" ? "check-circle" : "alert-triangle")}<span><strong>Inteligência MB · ${tone === "is-good" ? "Situação" : "Atenção"}:</strong> ${txt}</span></div>
-        <div class="button-row"><button class="btn btn-primary" type="button" data-route="#/cliente/comunicacao">${MBI.ui.icon("messages-square")} Falar com a MB sobre ${MBI.ui.escape(data.competenceLabel || "este mês")}</button></div>
-      </section>`;
-      })()}
-      <section class="grid dash-split">
+      <section class="exec-action exec-action--inline" style="margin-top:10px">
+        <div class="exec-alert ${alertTone}">${MBI.ui.icon(alertTone === "is-good" ? "check-circle" : "alert-triangle")}<span><strong>Inteligência MB · ${alertTone === "is-good" ? "Situação" : "Atenção"}:</strong> ${alertTxt}</span></div>
+        <button class="btn btn-primary btn-mini" type="button" data-route="#/cliente/comunicacao">${MBI.ui.icon("messages-square")} Falar com a MB</button>
+      </section>
+      <section class="grid dash-split" style="margin-top:10px">
         <article class="panel chart">
-          <div class="panel-header"><div><h3>Receita, Despesa e Resultado</h3><p>Linha temporal — passe o mouse ou clique numa competência para ver os valores.</p></div></div>
+          <div class="panel-header"><div><h3>Receita, Despesa e Resultado</h3><p>Linha temporal — passe o mouse ou clique numa competência.</p></div></div>
           ${MBI.ui.execTimeChart(data.months)}
           <div class="chart-legend"><span><i class="legend-dot blue"></i> Receita</span><span><i class="legend-dot amber"></i> Despesa</span><span><i class="legend-dot teal"></i> Resultado</span></div>
         </article>
         ${scorePanel}
       </section>
-      <section class="grid dash-split" style="margin-top:12px">
-        <article class="panel chart">
-          <div class="panel-header"><div><h3>Fluxo de caixa</h3><p>Entradas e saídas por competência.</p></div></div>
-          ${MBI.ui.cashFlowChart(data.cashMonths)}
-          <div class="chart-legend"><span><i class="legend-dot teal"></i> Entradas</span><span><i class="legend-dot amber"></i> Saídas</span></div>
-        </article>
-        <article class="panel">
-          <div class="panel-header"><div><h3>Onde você mais gasta</h3><p>Maiores despesas.</p></div></div>
-          ${expenseRanking(data)}
-        </article>
-      </section>
-      <details class="report-detail" style="margin-top:14px">
-        <summary>Ver relatórios completos — DRE e DFC detalhada</summary>
+      <details class="report-detail" style="margin-top:10px">
+        <summary>Ver relatórios completos — fluxo de caixa, onde você gasta e DRE/DFC</summary>
+        <section class="grid dash-split" style="margin-top:14px">
+          <article class="panel chart">
+            <div class="panel-header"><div><h3>Fluxo de caixa</h3><p>Entradas e saídas por competência.</p></div></div>
+            ${MBI.ui.cashFlowChart(data.cashMonths)}
+            <div class="chart-legend"><span><i class="legend-dot teal"></i> Entradas</span><span><i class="legend-dot amber"></i> Saídas</span></div>
+          </article>
+          <article class="panel">
+            <div class="panel-header"><div><h3>Onde você mais gasta</h3><p>Maiores despesas.</p></div></div>
+            ${expenseRanking(data)}
+          </article>
+        </section>
         <section class="grid grid-2" style="margin-top:14px">
           <article class="panel"><div class="panel-header"><div><h3>DRE em cascata</h3><p>Como a receita vira resultado.</p></div></div>${MBI.ui.waterfall(data.dre)}</article>
           <article class="panel"><div class="panel-header"><div><h3>Fluxo de caixa detalhado</h3><p>Entradas, saídas e saldo.</p></div></div>${MBI.ui.waterfall(data.cashBridge)}</article>
@@ -384,12 +382,34 @@
     return `<section class="panel"><div class="panel-header"><div><h3>Histórico de importações</h3><p>Arquivos recebidos e status de validação.</p></div></div>${MBI.ui.table(["Arquivo", "Tipo", "Status", "Responsável", "Resultado"], rows.map((row) => [MBI.ui.escape(row.fileName), MBI.ui.escape(row.type), MBI.ui.pill(row.status), MBI.ui.escape(row.owner), MBI.ui.escape(row.result)]))}</section>`;
   }
 
+  // Pessoa de contato so aparece quando ha um nome real (nao "A definir"/vazio),
+  // para nao parecer dado ficticio.
+  function namedContact(name, role) {
+    const value = String(name || "").trim();
+    if (!value || /a definir/i.test(value)) return "";
+    return `<div class="notification-item"><strong>${MBI.ui.escape(value)}</strong><span>${MBI.ui.escape(role)}</span></div>`;
+  }
+
   function communication(client) {
-    const messages = MBI.storage.getDatabase().messages.filter((message) => message.clientId === client.id);
+    const notices = MBI.storage.getDatabase().messages
+      .filter((message) => message.clientId === client.id)
+      .slice()
+      .reverse();
+    const waText = `Olá, MB! Sou ${client.owner || client.name} (${client.name}) e preciso de ajuda.`;
+    const contacts = `${namedContact(client.consultant, "Consultor responsável")}${namedContact(client.analyst, "Responsável financeiro")}`;
     return `
-      <section class="grid grid-2">
-        <article class="panel"><div class="panel-header"><div><h3>Seu consultor MB</h3><p>Canal operacional centralizado.</p></div></div><div class="notification-item"><strong>${MBI.ui.escape(client.consultant)}</strong><span>Responsável principal</span></div><div class="notification-item"><strong>${MBI.ui.escape(client.analyst)}</strong><span>Responsável financeiro</span></div></article>
-        <article class="panel"><div class="panel-header"><div><h3>Mensagens</h3><p>Histórico cliente x MB.</p></div></div><div class="insight-list">${messages.map((msg) => `<div class="insight-item"><strong>${MBI.ui.escape(msg.from)}</strong><span>${MBI.ui.escape(msg.text)}</span><em>${MBI.ui.escape(MBI.ui.dateTime(msg.at))}</em></div>`).join("")}</div><form class="button-row" style="margin-top:14px" data-form="message"><input type="hidden" name="clientId" value="${MBI.ui.escape(client.id)}"><input name="text" placeholder="Escrever mensagem para a MB"><button class="btn btn-primary" type="submit">${MBI.ui.icon("send")} Enviar</button></form></article>
+      <section class="grid dash-split">
+        <article class="panel comm-channel">
+          <div class="panel-header"><div><h3>Fale com a MB</h3><p>Atendimento direto pelo WhatsApp — é o nosso canal oficial.</p></div></div>
+          <a class="btn btn-whatsapp comm-wa" href="${MBI.ui.whatsappUrl(waText)}" target="_blank" rel="noopener">${MBI.ui.icon("message-circle")} Conversar no WhatsApp</a>
+          ${contacts ? `<div class="comm-contacts">${contacts}</div>` : `<p class="comm-hint">${MBI.ui.icon("info")} Sua equipe de atendimento aparece aqui assim que for definida pela MB.</p>`}
+        </article>
+        <article class="panel">
+          <div class="panel-header"><div><h3>Avisos da MB</h3><p>Comunicados e mensagens registrados no portal.</p></div>${MBI.ui.pill(String(notices.length))}</div>
+          ${notices.length
+            ? `<div class="insight-list">${notices.map((msg) => `<div class="insight-item"><strong>${MBI.ui.escape(msg.from)}</strong><span>${MBI.ui.escape(msg.text)}</span><em>${MBI.ui.escape(MBI.ui.dateTime(msg.at))}</em></div>`).join("")}</div>`
+            : `<div class="home-empty">${MBI.ui.icon("bell")}<p>Nenhum aviso ainda. Comunicados importantes da MB aparecem aqui.</p></div>`}
+        </article>
       </section>
     `;
   }

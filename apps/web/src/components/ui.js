@@ -15,6 +15,25 @@
     return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(Number(value || 0));
   }
 
+  // Canal oficial da MB. Numero real configuravel via window.MB_CONTACT.whatsapp
+  // (so digitos, com DDI 55). Enquanto nao for definido usa um placeholder —
+  // TROCAR pelo numero real antes de divulgar para clientes.
+  function whatsappNumber() {
+    const digits = String(window.MB_CONTACT?.whatsapp || "5500000000000").replace(/\D/g, "");
+    return digits || "5500000000000";
+  }
+
+  function whatsappUrl(message) {
+    return `https://wa.me/${whatsappNumber()}?text=${encodeURIComponent(message || "Olá, MB!")}`;
+  }
+
+  // Formata CNPJ (14 digitos) como 00.000.000/0001-00; devolve cru se incompleto.
+  function cnpj(value) {
+    const d = String(value || "").replace(/\D/g, "");
+    if (d.length !== 14) return String(value || "");
+    return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
+  }
+
   // Formata data/hora ISO (ou Date) para "21/06/2026 22:32". Devolve o valor cru
   // (string) quando nao for uma data valida, para nunca quebrar a tela.
   function dateTime(value) {
@@ -634,5 +653,5 @@
     return message ? `<div class="toast">${message}</div>` : "";
   }
 
-  MBI.ui = { icon, escape, money, dateTime, moneyFromCents, moneyParse, moneyInputValue, moneyField, modal, pill, metric, kpi, table, docList, fileIcon, bars, lineChart, execLineChart, groupedBars, cashFlowChart, execTimeChart, scoreGauge, scoreBars, runway, donut, waterfall, radar, dreTable, shell, nav, toast, statusClass };
+  MBI.ui = { icon, escape, money, cnpj, whatsappUrl, dateTime, moneyFromCents, moneyParse, moneyInputValue, moneyField, modal, pill, metric, kpi, table, docList, fileIcon, bars, lineChart, execLineChart, groupedBars, cashFlowChart, execTimeChart, scoreGauge, scoreBars, runway, donut, waterfall, radar, dreTable, shell, nav, toast, statusClass };
 })();
