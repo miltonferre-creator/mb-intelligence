@@ -32,7 +32,11 @@
     const lastGood = (collection) => (local.synced ? (local[collection] || []) : []);
     const me = await MBI.api.request("/auth/me");
     const plans = await MBI.api.request("/plans");
-    const clients = await MBI.api.request("/clients");
+    const isClient = me.user?.type === "client";
+    // /clients e tolerante a falha: server antigo barrava o cliente com 403 e
+    // derrubava o sync inteiro (tela branca / volta ao login). Agora o cliente
+    // continua com o proprio registro (injetado no login + me.client).
+    const clients = await optional("/clients", { data: null });
     const documents = await optional("/documents", { data: lastGood("documents") });
     const imports = await optional("/imports", { data: lastGood("imports") });
     const tasks = await optional("/tasks", { data: lastGood("tasks") });
@@ -41,10 +45,27 @@
     const audit = await optional("/audit", { data: lastGood("audit") });
     const users = await optional("/users", { data: [] });
 
+    // Resolve a lista de clientes:
+    // - Admin: a resposta de /clients e autoritativa MESMO vazia (nunca cair no
+    //   seed, senao clientes demo apagados reaparecem).
+    // - Cliente: /clients pode ter falhado (server antigo) -> mantem o espelho
+    //   local e garante o proprio cliente (me.client) presente.
+    let clientsList;
+    if (Array.isArray(clients.data)) {
+      clientsList = clients.data;
+    } else {
+      clientsList = local.synced ? (local.clients || []) : (isClient ? (local.clients || []) : MBI.seed.clients);
+    }
+    if (isClient && me.client) {
+      const idx = clientsList.findIndex((c) => c.id === me.client.id);
+      if (idx >= 0) clientsList[idx] = { ...clientsList[idx], ...me.client };
+      else clientsList = [...clientsList, me.client];
+    }
+
     const financeBatch = await optional("/finance", { data: null });
     const financials = { ...(local.synced ? (local.financials || {}) : {}), ...(financeBatch.data || {}) };
     if (!financeBatch.data) {
-      const financeRows = await Promise.all((clients.data || []).map(async (client) => {
+      const financeRows = await Promise.all(clientsList.map(async (client) => {
         try {
           const finance = await MBI.api.request(`/finance/${client.id}`);
           return [client.id, finance.data || financials[client.id] || {}];
@@ -64,10 +85,7 @@
       synced: true,
       version: local.version || MBI.seed.version,
       plans: plans.data?.length ? plans.data : local.plans,
-      // /clients e /plans foram await diretos (linhas acima): se chegamos aqui,
-      // o Supabase RESPONDEU. Entao a lista real e autoritativa MESMO vazia —
-      // nunca cair no seed (senao os clientes demo apagados reaparecem na tela).
-      clients: Array.isArray(clients.data) ? clients.data : (local.synced ? (local.clients || []) : MBI.seed.clients),
+      clients: clientsList,
       users: mergeUsers(local.users, users.data, me.user),
       documents: documents.data || [],
       imports: imports.data || [],

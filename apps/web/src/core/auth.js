@@ -61,6 +61,13 @@
         const existing = db.users.find((user) => user.id === result.user.id);
         if (existing) Object.assign(existing, result.user);
         else db.users.push(result.user);
+        // Cliente: garante o proprio registro no espelho local JA no login, para
+        // o portal montar a 1a tela mesmo num navegador limpo (antes do sync).
+        if (result.client) {
+          const existingClient = db.clients.find((client) => client.id === result.client.id);
+          if (existingClient) Object.assign(existingClient, result.client);
+          else db.clients.push(result.client);
+        }
       });
       MBI.storage.setSession(session);
       await MBI.sync.refreshIfPossible();

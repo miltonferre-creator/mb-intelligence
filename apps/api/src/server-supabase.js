@@ -706,13 +706,18 @@ async function handleAuth(req, res, segments) {
     if (profile.status !== "Ativo") return error(res, 403, "Usuário desativado. Fale com a administração MB.");
     const session = sessionFromTokenData(data, profile, body.clientId);
     await clearLoginRateLimit(req, body.email);
+    let client = null;
     if (profile.type === "client" && profile.client_id) {
       // Acesso ja fica registrado em last_access_at; nao poluimos a trilha de
       // auditoria com um evento por login (era ~80% do ruido). A auditoria fica
       // reservada a acoes relevantes (publicar/editar/excluir, usuarios, etc.).
       await rest(`/clients?id=eq.${profile.client_id}`, { method: "PATCH", body: { last_access_at: new Date().toISOString() } });
+      // Devolve o proprio cliente ja no login: o portal monta a 1a tela sem
+      // depender do sync (que, num navegador limpo, ainda nem rodou).
+      const rows = await rest(`/clients?id=eq.${profile.client_id}&select=*&limit=1`);
+      if (rows[0]) client = clientToApi(rows[0]);
     }
-    return ok(res, { session, user: profileToApi(profile) });
+    return ok(res, { session, user: profileToApi(profile), client });
   }
 
   if (req.method === "POST" && segments[1] === "logout") return noContent(res);
@@ -787,7 +792,12 @@ async function handleAuth(req, res, segments) {
       type: ctx.profile.type,
       clientId: ctx.profile.type === "client" ? ctx.profile.client_id : null
     };
-    return ok(res, { user: profileToApi(ctx.profile), session, client: null });
+    let client = null;
+    if (ctx.profile.type === "client" && ctx.profile.client_id) {
+      const rows = await rest(`/clients?id=eq.${ctx.profile.client_id}&select=*&limit=1`);
+      if (rows[0]) client = clientToApi(rows[0]);
+    }
+    return ok(res, { user: profileToApi(ctx.profile), session, client });
   }
 
   if (req.method === "POST" && segments[1] === "register-client") {
@@ -869,7 +879,11 @@ async function handlePlans(req, res, segments) {
 }
 
 async function handleClients(req, res, segments) {
-  const ctx = await requireMb(req, res);
+  // Leitura (GET) e permitida tambem ao cliente — ele so enxerga o proprio
+  // client_id (branch abaixo). As mutacoes (POST/PATCH) continuam restritas a MB,
+  // cada uma re-checando ctx.profile.type. Antes isto usava requireMb e barrava o
+  // cliente com 403, quebrando o sync/login em navegador limpo.
+  const ctx = await authContext(req, res);
   if (!ctx) return;
   if (req.method === "GET" && segments.length === 1) {
     const { url: listUrl } = parseUrl(req);
