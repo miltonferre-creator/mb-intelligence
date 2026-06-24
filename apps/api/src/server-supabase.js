@@ -889,10 +889,14 @@ async function readAppSettings() {
 }
 
 async function writeAppSettings(next) {
+  // O bucket mb-documents restringe mime types e NAO permite application/json.
+  // O conteudo e JSON, mas enviamos como text/plain (que e permitido) — a leitura
+  // (readAppSettings) faz JSON.parse do texto de qualquer forma.
+  const buffer = Buffer.from(JSON.stringify(next), "utf8");
   await supabaseRequest(`/storage/v1/object/${settingsBucket()}/${SETTINGS_OBJECT_PATH}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "x-upsert": "true" },
-    body: JSON.stringify(next)
+    headers: { "Content-Type": "text/plain", "x-upsert": "true", "cache-control": "no-cache" },
+    body: buffer
   });
 }
 
@@ -912,7 +916,8 @@ async function handleSettings(req, res) {
     try {
       await writeAppSettings(next);
     } catch (err) {
-      return error(res, 500, "Não foi possível salvar a configuração. Tente novamente.");
+      // Expoe o motivo real do Supabase (rota so-MB) para diagnostico rapido.
+      return error(res, 500, `Não foi possível salvar a configuração: ${err?.message || "erro desconhecido"}`);
     }
     await logAudit(ctx.profile, "Atualizou configurações", "Contato WhatsApp", "Contato global do portal");
     return ok(res, { data: next });
