@@ -294,8 +294,8 @@
       })()}
       <section class="grid dash-split">
         <article class="panel chart">
-          <div class="panel-header"><div><h3>Receita × Despesa × Resultado</h3><p>Comparativo por competência — passe o mouse para ver os valores.</p></div></div>
-          ${MBI.ui.groupedBars(data.months)}
+          <div class="panel-header"><div><h3>Receita, Despesa e Resultado</h3><p>Linha temporal — passe o mouse ou clique numa competência para ver os valores.</p></div></div>
+          ${MBI.ui.execTimeChart(data.months)}
           <div class="chart-legend"><span><i class="legend-dot blue"></i> Receita</span><span><i class="legend-dot amber"></i> Despesa</span><span><i class="legend-dot teal"></i> Resultado</span></div>
         </article>
         ${scorePanel}

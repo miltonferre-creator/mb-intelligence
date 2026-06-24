@@ -326,6 +326,69 @@
     `;
   }
 
+  // Linha temporal interativa (tema escuro): Receita, Despesa e Resultado.
+  // Hover/click numa competencia destaca os pontos e mostra um tooltip com R$.
+  function execTimeChart(months) {
+    if (!months || months.length < 2) {
+      return `<div class="empty-lock">${icon("activity")}<h3>Aguardando histórico</h3><p>O gráfico aparece quando houver competências suficientes.</p></div>`;
+    }
+    const W = 600, H = 190, padL = 52, padR = 16, padT = 14, padB = 26;
+    const series = [
+      { label: "Receita", color: "#7ea6d8", get: (m) => Number(m[1] || 0) },
+      { label: "Despesa", color: "#d2a865", get: (m) => Number(m[2] || 0) },
+      { label: "Resultado", color: "#6cbfac", get: (m) => Number(m[1] || 0) - Number(m[2] || 0) }
+    ];
+    const n = months.length;
+    const vals = months.flatMap((m) => series.map((s) => s.get(m)));
+    let maxV = Math.max(...vals), minV = Math.min(...vals, 0);
+    if (maxV === minV) { maxV = maxV || 1; minV = 0; }
+    const sp = (maxV - minV) || 1;
+    const top = maxV + sp * 0.16, bottom = minV - sp * 0.10;
+    const range = (top - bottom) || 1;
+    const xFor = (i) => padL + (i / (n - 1)) * (W - padL - padR);
+    const yFor = (v) => padT + (1 - (v - bottom) / range) * (H - padT - padB);
+    const smooth = (p) => {
+      let d = `M ${p[0][0]} ${p[0][1]}`;
+      for (let i = 0; i < p.length - 1; i++) {
+        const p0 = p[i - 1] || p[i], p1 = p[i], p2 = p[i + 1], p3 = p[i + 2] || p2, t = 0.16;
+        d += ` C ${p1[0] + (p2[0] - p0[0]) * t} ${p1[1] + (p2[1] - p0[1]) * t} ${p2[0] - (p3[0] - p1[0]) * t} ${p2[1] - (p3[1] - p1[1]) * t} ${p2[0]} ${p2[1]}`;
+      }
+      return d;
+    };
+    const grid = [0, 1, 2, 3].map((i) => bottom + (range * i) / 3);
+    const lines = series.map((s) => {
+      const pts = months.map((m, i) => [xFor(i), yFor(s.get(m))]);
+      return `<path d="${smooth(pts)}" fill="none" stroke="${s.color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>`;
+    }).join("");
+    const colW = (W - padL - padR) / n;
+    const cols = months.map((m, i) => {
+      const x = xFor(i);
+      const tipW = 148, tipH = 72;
+      const tx = Math.max(padL, Math.min(x - tipW / 2, W - padR - tipW));
+      const topY = Math.min(...series.map((s) => yFor(s.get(m))));
+      const ty = Math.max(4, topY - tipH - 8);
+      const circles = series.map((s) => `<circle class="tdot" cx="${x}" cy="${yFor(s.get(m))}" r="3" fill="${s.color}" stroke="#13141a" stroke-width="1.5"></circle>`).join("");
+      const tipRows = series.map((s, k) => `<text x="${tx + 11}" y="${ty + 31 + k * 15}" font-size="11" fill="${s.color}">${s.label}: ${money(s.get(m))}</text>`).join("");
+      return `<g class="tcol" tabindex="0"><title>${escape(String(m[0]))}</title>
+        <line class="tguide" x1="${x}" x2="${x}" y1="${padT}" y2="${H - padB}" stroke="rgba(255,255,255,.2)" stroke-width="1"></line>
+        ${circles}
+        <rect class="thit" x="${x - colW / 2}" y="0" width="${colW}" height="${H}" fill="transparent"></rect>
+        <g class="ttip"><rect x="${tx}" y="${ty}" width="${tipW}" height="${tipH}" rx="8" fill="#0f1014" stroke="rgba(255,255,255,.16)"></rect>
+          <text x="${tx + 11}" y="${ty + 16}" font-size="11.5" font-weight="700" fill="#fff">${escape(String(m[0]))}</text>
+          ${tipRows}
+        </g>
+      </g>`;
+    }).join("");
+    return `
+      <svg class="exec-chart exec-tchart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Receita, despesa e resultado ao longo do tempo">
+        ${grid.map((v) => { const y = yFor(v); return `<line x1="${padL}" x2="${W - padR}" y1="${y}" y2="${y}" stroke="rgba(255,255,255,.07)"></line><text x="${padL - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="rgba(255,255,255,.42)">${chartValue(v)}</text>`; }).join("")}
+        ${lines}
+        ${months.map((m, i) => `<text x="${xFor(i)}" y="${H - 8}" text-anchor="middle" font-size="10" fill="rgba(255,255,255,.5)">${escape(String(m[0]).split(" ")[0])}</text>`).join("")}
+        ${cols}
+      </svg>
+    `;
+  }
+
   function groupedBars(months) {
     if (!months || !months.length) return `<div class="empty-lock">${icon("bar-chart-3")}<h3>Sem histórico</h3><p>A MB ainda não salvou competências suficientes.</p></div>`;
     const max = Math.max(...months.flatMap((item) => [Number(item[1] || 0), Number(item[2] || 0), Math.abs(Number(item[1] || 0) - Number(item[2] || 0))]), 1);
@@ -571,5 +634,5 @@
     return message ? `<div class="toast">${message}</div>` : "";
   }
 
-  MBI.ui = { icon, escape, money, dateTime, moneyFromCents, moneyParse, moneyInputValue, moneyField, modal, pill, metric, kpi, table, docList, fileIcon, bars, lineChart, execLineChart, groupedBars, cashFlowChart, scoreGauge, scoreBars, runway, donut, waterfall, radar, dreTable, shell, nav, toast, statusClass };
+  MBI.ui = { icon, escape, money, dateTime, moneyFromCents, moneyParse, moneyInputValue, moneyField, modal, pill, metric, kpi, table, docList, fileIcon, bars, lineChart, execLineChart, groupedBars, cashFlowChart, execTimeChart, scoreGauge, scoreBars, runway, donut, waterfall, radar, dreTable, shell, nav, toast, statusClass };
 })();
