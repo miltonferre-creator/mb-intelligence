@@ -8,7 +8,9 @@ const { execFileSync } = require("node:child_process");
 
 const ROOT = path.resolve(__dirname, "..");
 const IGNORE_DIRS = new Set(["node_modules", ".git", ".vercel"]);
-const IGNORE_FILES = [/\.min\.js$/i, /lucide/i, /app\.prototype\.js$/i];
+// ESM (import/export) nao passa em `node --check` (que assume CommonJS); o Vite
+// cuida desses. Ignoramos main.js, o config do Vite e libs minificadas.
+const IGNORE_FILES = [/\.min\.js$/i, /lucide/i, /app\.prototype\.js$/i, /apps[\\/]web[\\/]main\.js$/i, /vite\.config\.js$/i];
 
 function collect(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

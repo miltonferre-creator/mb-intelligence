@@ -6,31 +6,13 @@
     <title>MB Intelligence | Produto</title>
     <meta name="description" content="MB Intelligence: plataforma de inteligencia financeira e gestao operacional para PMEs.">
     <meta name="theme-color" content="#5b070b">
-    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-    <!-- ?v=… faz cache-busting: ao mudar o codigo, BUMPAR esta versao para o
-         navegador (inclusive celular) baixar os arquivos novos em vez do cache. -->
-    <link rel="stylesheet" href="styles.css?v=20260623g">
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
   </head>
   <body>
     <div id="root"></div>
-    <script src="assets/lucide.min.js"></script>
-    <script src="src/core/observability.js?v=20260623g"></script>
-    <script src="src/data/seed.js?v=20260623g"></script>
-    <script src="src/core/storage.js?v=20260623g"></script>
-    <script src="src/core/api-client.js?v=20260623g"></script>
-    <script src="src/core/sync.js?v=20260623g"></script>
-    <script src="src/core/auth.js?v=20260623g"></script>
-    <script src="src/services/audit-service.js?v=20260623g"></script>
-    <script src="src/services/plan-service.js?v=20260623g"></script>
-    <script src="src/services/client-service.js?v=20260623g"></script>
-    <script src="src/services/document-service.js?v=20260623g"></script>
-    <script src="src/services/import-service.js?v=20260623g"></script>
-    <script src="src/services/user-service.js?v=20260623g"></script>
-    <script src="src/services/finance-service.js?v=20260623g"></script>
-    <script src="src/components/ui.js?v=20260623g"></script>
-    <script src="src/pages/auth-pages.js?v=20260623g"></script>
-    <script src="src/pages/client-pages.js?v=20260623g"></script>
-    <script src="src/pages/admin-pages.js?v=20260623g"></script>
-    <script src="app.js?v=20260623g"></script>
+    <!-- lucide e UMD/global: carregado como script classico (define window.lucide) -->
+    <script src="/assets/lucide.min.js"></script>
+    <!-- entry do app; Vite faz bundle + hashing automatico (fim do cache velho) -->
+    <script type="module" src="/main.js"></script>
   </body>
 </html>

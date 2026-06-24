@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Relatório Técnico — MB Intelligence</title>
+<style>
+  :root{
+    --brand:#5b070b; --brand2:#8f121b; --brand3:#c53b43;
+    --ink:#15181d; --muted:#5f6b7a; --line:#e2e6ec; --bg:#ffffff; --soft:#f7f8fa;
+    --ok:#12805c; --warn:#b7791f; --bad:#b42318;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.5}
+  h1,h2,h3{font-weight:800;color:var(--brand);line-height:1.2;margin:0 0 8px}
+  h2{font-size:18px;border-bottom:2px solid var(--brand2);padding-bottom:6px;margin:0 0 14px}
+  h3{font-size:14px;color:var(--brand2);margin:18px 0 6px}
+  p{margin:0 0 8px}
+  small{color:var(--muted)}
+  .page{padding:34px 40px;max-width:980px;margin:0 auto}
+  .break{page-break-before:always}
+  table{width:100%;border-collapse:collapse;margin:6px 0 14px;font-size:11px}
+  th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+  th{background:var(--brand);color:#fff;font-weight:700}
+  tr:nth-child(even) td{background:var(--soft)}
+  .tag{display:inline-block;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:700;white-space:nowrap}
+  .t-ok{background:rgba(18,128,92,.12);color:var(--ok)}
+  .t-warn{background:rgba(183,121,31,.14);color:var(--warn)}
+  .t-bad{background:rgba(180,35,24,.12);color:var(--bad)}
+  .t-dead{background:#eceff3;color:#6b7280}
+  .lead{font-size:13px;color:#333}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}
+  .kpi{border:1px solid var(--line);border-radius:8px;padding:12px;background:var(--soft)}
+  .kpi b{display:block;font-size:22px;color:var(--brand2)}
+  .kpi span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .cover{height:980px;background:linear-gradient(150deg,var(--brand),#2a0306);color:#fff;padding:70px 56px;display:flex;flex-direction:column;justify-content:space-between}
+  .cover .mark{display:flex;align-items:center;gap:14px}
+  .cover .logo{width:48px;height:48px;border:2px solid #fff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px}
+  .cover h1{color:#fff;font-size:46px;margin-top:120px;max-width:760px}
+  .cover .sub{color:#f0c9cc;font-size:18px;margin-top:10px}
+  .cover .meta{color:#e7b9bd;font-size:13px}
+  .note{border-left:4px solid var(--brand2);background:var(--soft);padding:10px 14px;border-radius:0 6px 6px 0;margin:10px 0}
+  .flow{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;margin:12px 0}
+  .step{flex:1;min-width:120px;border:1px solid var(--line);border-radius:8px;padding:10px;background:#fff}
+  .step b{color:var(--brand2);display:block;margin-bottom:2px}
+  .step small{display:block;color:var(--muted)}
+  .arrow{display:flex;align-items:center;color:var(--brand3);font-weight:800;font-size:16px}
+  ul{margin:4px 0 10px 18px;padding:0}
+  li{margin:2px 0}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  code{background:#eef1f5;border-radius:3px;padding:1px 5px;font-family:Consolas,monospace;font-size:11px}
+  .foot{margin-top:24px;border-top:1px solid var(--line);padding-top:8px;color:var(--muted);font-size:10px}
+</style>
+</head>
+<body>
+
+<!-- CAPA -->
+<section class="cover">
+  <div class="mark">
+    <div class="logo">MB</div>
+    <div><strong style="font-size:18px">MB Intelligence</strong><br><span style="color:#e7b9bd;font-size:12px">Portal do cliente · MB Assessoria Empresarial</span></div>
+  </div>
+  <div>
+    <h1>Relatório Técnico do Sistema</h1>
+    <div class="sub">Funcionalidades · Arquitetura · Banco de dados · Rotinas · Inventário · Código morto</div>
+  </div>
+  <div class="meta">Gerado em 23/06/2026 · Repositório: github.com/miltonferre-creator/mb-intelligence · branch master · 50 commits</div>
+</section>
+
+<!-- 1. SUMARIO -->
+<section class="page break">
+  <h2>1. Sumário executivo</h2>
+  <p class="lead">O <strong>MB Intelligence</strong> é um <strong>portal de entrega + inteligência da contabilidade</strong> — não um ERP financeiro transacional. A MB valida e publica dados (DRE, fluxo, score, documentos, guias) e o cliente consulta pelo portal. Funciona em produção; o esqueleto é sólido. O maior débito não é técnico, é de <strong>valor percebido</strong> (ainda mostra mais "dados" que "inteligência") e de <strong>higiene</strong> (código legado/protótipo convivendo com o de produção).</p>
+  <div class="kpis">
+    <div class="kpi"><b>2</b><span>Planos ativos</span><small>Básico R$500 · Gestão R$770</small></div>
+    <div class="kpi"><b>15</b><span>Tabelas no banco</span><small>Supabase / PostgreSQL</small></div>
+    <div class="kpi"><b>33</b><span>Rotinas</span><small>18 formulários · 15 ações</small></div>
+    <div class="kpi"><b>13</b><span>Endpoints API</span><small>1 função serverless</small></div>
+  </div>
+  <table>
+    <tr><th>Pergunta</th><th>Resposta</th></tr>
+    <tr><td>Funciona?</td><td><span class="tag t-ok">Sim</span> Login, sincronização, telas e deploy operam em produção (verificado ao vivo).</td></tr>
+    <tr><td>Está organizado como produto?</td><td><span class="tag t-warn">Parcial</span> Jornada do cliente já clara; falta a camada de inteligência e remover o legado.</td></tr>
+    <tr><td>Pronto para vender?</td><td><span class="tag t-warn">Ainda não</span> Faltam: contato real (WhatsApp), "Inteligência MB", separar staging do banco de produção.</td></tr>
+    <tr><td>Maior risco</td><td><span class="tag t-bad">Isolamento entre clientes sem teste</span> backend usa service_role (ignora RLS); depende 100% do código.</td></tr>
+  </table>
+</section>
+
+<!-- 2. ARQUITETURA -->
+<section class="page break">
+  <h2>2. Arquitetura e stack</h2>
+  <div class="flow">
+    <div class="step"><b>Navegador</b><small>SPA em JavaScript puro (sem framework). Renderiza via innerHTML, namespace global <code>window.MBI</code>. localStorage como espelho offline.</small></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>Vercel</b><small>Estático (apps/web) + 1 função serverless <code>api/handler.js</code> que carrega <code>server-supabase.js</code>.</small></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>Backend Node</b><small>server-supabase.js (1.385 linhas) — roteamento, regra de negócio e acesso a dados em um arquivo. Valida token contra o Supabase.</small></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>Supabase</b><small>PostgreSQL + Auth + Storage. 15 tabelas, RLS habilitada. Backend acessa via service_role.</small></div>
+  </div>
+  <table>
+    <tr><th>Camada</th><th>Tecnologia</th><th>Observação</th></tr>
+    <tr><td>Frontend</td><td>HTML + CSS + JavaScript (vanilla, ES2020)</td><td>Sem build, sem bundler; 19 scripts carregados em sequência no index.html. Ícones: Lucide.</td></tr>
+    <tr><td>Backend</td><td>Node.js ≥ 20 (http nativo)</td><td>Sem framework (Express etc.). 1 função serverless na Vercel.</td></tr>
+    <tr><td>Banco / Auth / Storage</td><td>Supabase (PostgreSQL 15)</td><td>RLS por tabela; bucket privado <code>mb-documents</code> com URLs assinadas.</td></tr>
+    <tr><td>Deploy</td><td>Vercel (estático + serverless)</td><td>Branch master → produção. Sem CI/CD, sem testes automatizados.</td></tr>
+    <tr><td>Tamanho do código</td><td>apps/web 793 KB · apps/api 193 KB · infra 71 KB</td><td>~24 mil linhas no total (inclui legado e protótipo — ver seção 8).</td></tr>
+  </table>
+  <div class="note"><strong>Idiomas/linguagens no repositório:</strong> JavaScript (35 arquivos), Markdown (22 docs), SQL (10 migrations), Python (6 scripts utilitários), SVG (4), HTML (2), CSS (2), além de PowerShell/CMD e Dockerfile.</div>
+</section>
+
+<!-- 3. INVENTARIO DE ARQUIVOS -->
+<section class="page break">
+  <h2>3. Inventário de arquivos (principais)</h2>
+  <h3>Frontend — produção (carregado pelo index.html)</h3>
+  <table>
+    <tr><th>Arquivo</th><th>Linhas</th><th>Papel</th><th>Status</th></tr>
+    <tr><td>apps/web/index.html</td><td>~</td><td>Shell da SPA, carrega todos os scripts</td><td><span class="tag t-ok">Ativo</span></td></tr>
+    <tr><td>apps/web/styles.css</td><td>3.183</td><td>Toda a identidade visual e componentes</td><td><span class="tag t-ok">Ativo</span></td></tr>
+    <tr><td>apps/web/app.js</td><td>913</td><td>Controlador central: roteamento, formulários e ações (rotinas)</td><td><span class="tag t-ok">Ativo</span></td></tr>
+    <tr><td>src/components/ui.js</td><td>543</td><td>Biblioteca de UI: cards, KPIs, gráficos, tabelas, modal, escape XSS</td><td><span class="tag t-ok">Ativo</span></td></tr>
+    <tr><td>src/pages/admin-pages.js</td><td>491</td><td>Todas as telas do admin MB</td><td><span class="tag t-ok">Ativo</span></td></tr>
+    <tr><td>src/pages/client-pages.js</td><td>407</td><td>Todas as telas do cliente</td><td><span class="tag t-ok">Ativo</span></td></tr>
+    <tr><td>src/pages/auth-pages.js</td><td>~210</td><td>Login, cadastro, recuperar senha, privacidade</td><td><span class="tag t-ok">Ativo</span></td></tr>
+    <tr><td>src/services/finance-service.js</td><td>356</td><td>Cálculo financeiro/score (espelho offline do backend)</td><td><span class="tag t-ok">Ativo</span></td></tr>
+    <tr><td>src/services/* (client, plan, document, import, user, audit)</td><td>291</td><td>Serviços de dados por domínio</td><td><span class="tag t-ok">Ativo</span></td></tr>
+    <tr><td>src/core/* (auth, sync, storage, api-client)</td><td>485</td><td>Sessão, sincronização com a API, persistência local, HTTP</td><td><span class="tag t-ok">Ativo</span></td></tr>
+    <tr><td>src/data/seed.js</td><td>207</td><td>Dados de demonstração (fallback offline)</td><td><span class="tag t-warn">Ativo (demo)</span></td></tr>
+    <tr><td>apps/web/app.prototype.js</td><td>1.787</td><td>Versão antiga do app — <strong>não é carregada</strong> pelo index.html</td><td><span class="tag t-dead">Morto</span></td></tr>
+  </table>
+  <h3>Backend e infraestrutura</h3>
+  <table>
+    <tr><th>Arquivo</th><th>Linhas</th><th>Papel</th><th>Status</th></tr>
+    <tr><td>api/handler.js</td><td>2</td><td>Entrada serverless da Vercel → server-supabase.js</td><td><span class="tag t-ok">Ativo</span></td></tr>
+    <tr><td>apps/api/src/server-supabase.js</td><td>1.385</td><td>Backend real (API + regra + dados)</td><td><span class="tag t-ok">Ativo</span></td></tr>
+    <tr><td>apps/api/src/lib/ (http, env, supabase-client)</td><td>189</td><td>Utilitários usados pelo backend</td><td><span class="tag t-ok">Ativo</span></td></tr>
+    <tr><td>apps/api/src/server.js</td><td>620</td><td>Servidor antigo com persistência em JSON — <strong>não usado</strong> pela Vercel</td><td><span class="tag t-dead">Legado</span></td></tr>
+    <tr><td>apps/api/src/lib/ (store, domain, security)</td><td>183</td><td>Apoio do servidor antigo (JSON) — provável legado</td><td><span class="tag t-warn">Revisar</span></td></tr>
+    <tr><td>apps/api/src/seed.js + scripts/seed-supabase.js</td><td>478</td><td>Scripts de carga de dados</td><td><span class="tag t-warn">Utilitário</span></td></tr>
+    <tr><td>infra/supabase/migrations/*.sql</td><td>~900</td><td>10 migrations (schema, RLS, storage, demo)</td><td><span class="tag t-ok">Ativo</span></td></tr>
+  </table>
+</section>
+
+<!-- 4. BANCO DE DADOS -->
+<section class="page break">
+  <h2>4. Banco de dados (Supabase / PostgreSQL)</h2>
+  <p>15 tabelas no schema <code>public</code>. RLS habilitada em 14 (a exceção, <code>login_rate_limits</code>, é acessada só pela service_role). Colunas financeiras em <code>numeric(14,2)</code>; <code>result</code> e <code>margin</code> são colunas geradas.</p>
+  <table>
+    <tr><th>Tabela</th><th>Colunas</th><th>Políticas RLS</th><th>Papel</th></tr>
+    <tr><td>clients</td><td>20</td><td>2</td><td>Empresas clientes (carteira)</td></tr>
+    <tr><td>companies</td><td>12</td><td>2</td><td>Dados cadastrais/CNPJ por cliente</td></tr>
+    <tr><td>user_profiles</td><td>9</td><td>2</td><td>Usuários (tipo mb/client) e vínculo ao cliente</td></tr>
+    <tr><td>plans</td><td>9</td><td>2</td><td>Planos e preços (Básico, Gestão)</td></tr>
+    <tr><td>financial_snapshots</td><td>22</td><td>2</td><td>Foto financeira mensal validada pela MB</td></tr>
+    <tr><td>dre_reports / dre_report_lines</td><td>10 / 7</td><td>2 / 2</td><td>DRE gerencial por competência</td></tr>
+    <tr><td>cash_flow_reports</td><td>16</td><td>2</td><td>Fluxo de caixa (DFC) por competência</td></tr>
+    <tr><td>documents</td><td>19</td><td>2</td><td>Documentos/guias publicados ao cliente</td></tr>
+    <tr><td>import_jobs</td><td>12</td><td>3</td><td>Registro de importações (metadados)</td></tr>
+    <tr><td>tasks</td><td>12</td><td>2</td><td>Pendências/ações por cliente</td></tr>
+    <tr><td>ai_insights</td><td>15</td><td>2</td><td>Insights/aprovações de IA</td></tr>
+    <tr><td>messages</td><td>6</td><td>2</td><td>Conversa cliente × MB</td></tr>
+    <tr><td>audit_logs</td><td>11</td><td>2</td><td>Trilha de auditoria</td></tr>
+    <tr><td>login_rate_limits</td><td>4</td><td>0</td><td>Controle de tentativas de login</td></tr>
+  </table>
+  <div class="note"><strong>Atenção:</strong> o backend usa a chave <code>service_role</code>, que <strong>ignora a RLS</strong>. O isolamento entre clientes hoje depende inteiramente do código da aplicação (verificado: é consistente) — mas <strong>não há teste automatizado</strong> que garanta isso ao longo do tempo. É o maior risco técnico.</div>
+</section>
+
+<!-- 5. TELAS -->
+<section class="page break">
+  <h2>5. Telas e navegação</h2>
+  <h3>Portal do cliente (5 telas)</h3>
+  <table>
+    <tr><th>Rota</th><th>Tela</th><th>Função</th><th>Status</th></tr>
+    <tr><td>#/cliente/inicio</td><td>Início</td><td>Painel de tarefas: guias a pagar, documentos recentes, status, ações</td><td><span class="tag t-ok">Boa (nova)</span></td></tr>
+    <tr><td>#/cliente/inteligencia</td><td>Dashboard</td><td>Abas: Visão Geral, Financeiro (DRE/DFC), Análise, Histórico, Cenários — só plano Gestão</td><td><span class="tag t-warn">Densa</span></td></tr>
+    <tr><td>#/cliente/documentos</td><td>Documentos e guias</td><td>Tabela + download de arquivos</td><td><span class="tag t-warn">Modernizar</span></td></tr>
+    <tr><td>#/cliente/comunicacao</td><td>Comunicação MB</td><td>Mensagens cliente × MB + consultor</td><td><span class="tag t-warn">Sem notificação</span></td></tr>
+    <tr><td>#/cliente/perfil</td><td>Perfil e acessos</td><td>Dados da empresa e troca de senha</td><td><span class="tag t-ok">Ok</span></td></tr>
+  </table>
+  <h3>Operação MB / admin (telas)</h3>
+  <table>
+    <tr><th>Rota</th><th>Tela</th><th>Função</th><th>Status</th></tr>
+    <tr><td>#/admin/operacao</td><td>Painel</td><td>Fluxo de trabalho numerado + filas + cliente em operação</td><td><span class="tag t-ok">Boa (nova)</span></td></tr>
+    <tr><td>#/admin/clientes</td><td>Clientes</td><td>Carteira, cadastro e ficha do cliente</td><td><span class="tag t-ok">Ok</span></td></tr>
+    <tr><td>#/admin/alimentar-portal</td><td>Dados &amp; importações</td><td>Editar finanças, criar tarefa/análise, importar arquivos</td><td><span class="tag t-warn">Tela densa</span></td></tr>
+    <tr><td>#/admin/documentos</td><td>Documentos</td><td>Publicar documento + tabela</td><td><span class="tag t-bad">Upload datado</span></td></tr>
+    <tr><td>#/admin/aprovacoes</td><td>Aprovações</td><td>Governança de insights antes de liberar</td><td><span class="tag t-ok">Ok</span></td></tr>
+    <tr><td>#/admin/planos · usuarios · relatorios · auditoria</td><td>Configuração / Registros</td><td>Preços, usuários, indicadores, trilha</td><td><span class="tag t-ok">Ok</span></td></tr>
+  </table>
+  <p><small>Prints visuais de cada tela serão anexados em passagem dedicada (o navegador estava em uso na geração deste relatório).</small></p>
+</section>
+
+<!-- 6. ROTINAS -->
+<section class="page break">
+  <h2>6. Rotinas do sistema</h2>
+  <p>Toda ação do sistema passa por <strong>33 rotinas</strong> centralizadas no <code>app.js</code>: 18 formulários e 15 ações. O ciclo é sempre o mesmo:</p>
+  <div class="flow">
+    <div class="step"><b>1 · Cadastrar</b><small>MB cria o cliente e o plano</small></div><div class="arrow">→</div>
+    <div class="step"><b>2 · Alimentar</b><small>finanças e importações</small></div><div class="arrow">→</div>
+    <div class="step"><b>3 · Publicar</b><small>guias, DRE, documentos</small></div><div class="arrow">→</div>
+    <div class="step"><b>4 · Aprovar</b><small>validação humana + IA</small></div><div class="arrow">→</div>
+    <div class="step"><b>5 · Entregar</b><small>cliente consulta no portal</small></div>
+  </div>
+  <div class="two">
+    <div>
+      <h3>Formulários (18)</h3>
+      <ul>
+        <li>login · register-client · reset-password · change-password</li>
+        <li>admin-create-client · update-client-profile</li>
+        <li>update-finance · create-task · create-approval · approval-review</li>
+        <li>publish-document · admin-import · update-plan-prices · create-user</li>
+        <li>select-competence · select-admin-client · *-filters · message</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Ações (15)</h3>
+      <ul>
+        <li>set-intelligence-tab · set-client · edit-finance-period</li>
+        <li>document-download · delete-document</li>
+        <li>print-report · export-report · export-operational-report</li>
+        <li>simulate-cfo-scenario · approval-status</li>
+        <li>edit-user · deactivate-user · logout · focus-admin-imports</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note"><strong>Onde NÃO há rotina automática:</strong> a importação só registra metadados (não processa o arquivo); não existe contas a pagar/receber; não há alertas automáticos nem e-mail/WhatsApp ao publicar. <strong>Tudo depende da MB inserir manualmente.</strong> É aqui que está a maior oportunidade (a "Inteligência MB") e a maior fragilidade operacional.</div>
+</section>
+
+<!-- 7. FUNCIONALIDADES -->
+<section class="page break">
+  <h2>7. Funcionalidades — valor x situação</h2>
+  <table>
+    <tr><th>Funcionalidade</th><th>Valor</th><th>Situação</th></tr>
+    <tr><td>Entrega de documentos e guias</td><td>Alto (dor real)</td><td><span class="tag t-ok">Funciona, subaproveitado no discurso</span></td></tr>
+    <tr><td>Leitura executiva + KPIs com tendência</td><td>Alto (Gestão)</td><td><span class="tag t-ok">Implementado e verificado</span></td></tr>
+    <tr><td>Gráfico de evolução (receita × despesa)</td><td>Médio-alto</td><td><span class="tag t-ok">Modernizado (área/gradiente/escala)</span></td></tr>
+    <tr><td>DRE e DFC em cascata</td><td>Médio</td><td><span class="tag t-warn">Jargão técnico p/ leigo</span></td></tr>
+    <tr><td>MB Financial Score + radar</td><td>Médio</td><td><span class="tag t-ok">Ok (fonte única: backend)</span></td></tr>
+    <tr><td>Comunicação com a MB</td><td>Médio</td><td><span class="tag t-warn">Sem notificação externa</span></td></tr>
+    <tr><td>Diagnóstico/alertas automáticos ("Inteligência MB")</td><td>Muito alto (faz pagar)</td><td><span class="tag t-bad">Não existe ainda</span></td></tr>
+    <tr><td>Contas a pagar/receber, inadimplência, conciliação</td><td>—</td><td><span class="tag t-dead">Fora do escopo (não é ERP)</span></td></tr>
+  </table>
+</section>
+
+<!-- 8. LIXO -->
+<section class="page break">
+  <h2>8. Código morto, legado e desconectado (o "lixo")</h2>
+  <p class="lead">Cerca de <strong>metade das linhas do repositório não chega ao produto</strong>. Limpar isto reduz confusão, risco e tempo de manutenção.</p>
+  <table>
+    <tr><th>Item</th><th>Linhas aprox.</th><th>Por que é lixo/legado</th><th>Recomendação</th></tr>
+    <tr><td>reference/prototipo-atual/ (css+html+js)</td><td>7.258</td><td>Protótipo antigo, não faz parte do app. Só referência.</td><td><span class="tag t-bad">Arquivar fora do repo</span></td></tr>
+    <tr><td>apps/web/app.prototype.js</td><td>1.787</td><td>Versão antiga do app; não é carregada pelo index.html</td><td><span class="tag t-bad">Remover</span></td></tr>
+    <tr><td>apps/api/src/server.js</td><td>620</td><td>Servidor antigo (JSON em disco); a Vercel usa server-supabase.js</td><td><span class="tag t-bad">Remover</span></td></tr>
+    <tr><td>apps/api/src/lib/store.js, domain.js, security.js</td><td>183</td><td>Apoio do servidor antigo (JSON)</td><td><span class="tag t-warn">Confirmar e remover</span></td></tr>
+    <tr><td>Dois seeds (apps/api/src/seed.js e src/data/seed.js)</td><td>436</td><td>Dados de demonstração duplicados em dois lugares</td><td><span class="tag t-warn">Unificar</span></td></tr>
+    <tr><td>Docs desatualizados (ex.: VERIFICACAO_25_05, MAPA_TELAS)</td><td>—</td><td>Refletem versões anteriores do produto</td><td><span class="tag t-warn">Revisar/arquivar</span></td></tr>
+    <tr><td>Dados fictícios de teste no banco de produção</td><td>—</td><td>3 clientes demo convivem com o ambiente real</td><td><span class="tag t-warn">Segregar antes de vender</span></td></tr>
+  </table>
+  <div class="note"><strong>function intelligenceLegacy()</strong> em client-pages.js e helpers órfãos também são candidatos a remoção — não estão no fluxo de render atual.</div>
+</section>
+
+<!-- 9. AJUSTES -->
+<section class="page break">
+  <h2>9. Ajustes reportados nesta data</h2>
+  <table>
+    <tr><th>#</th><th>Problema</th><th>Diagnóstico</th><th>Ação recomendada</th></tr>
+    <tr><td>1</td><td>Falta gráfico de fluxo de caixa no Dashboard</td><td>Os dados existem (cash_flow_reports / DFC, 16 linhas por cliente), mas não há um gráfico de caixa na Visão Geral</td><td>Adicionar gráfico de evolução do caixa (saldo mês a mês) usando o componente já modernizado</td></tr>
+    <tr><td>2</td><td>Indicadores não cabem na tela</td><td>A grade de KPIs/indicadores estoura em larguras menores — falta responsividade</td><td>Tornar a grade responsiva (quebrar em 2 colunas, depois 1) e revisar o painel de Indicadores do admin</td></tr>
+    <tr><td>3</td><td>Upload (admin) e visualização (cliente) datados; checar se funciona</td><td>A área de documentos/upload tem visual ultrapassado; o fluxo de upload direto ao Storage precisa ser validado de ponta a ponta</td><td>Modernizar a tela (cards/preview, arrastar-e-soltar, ícones por tipo) e testar upload → publicação → download real</td></tr>
+  </table>
+</section>
+
+<!-- 10. RISCOS -->
+<section class="page break">
+  <h2>10. Pendências e riscos</h2>
+  <table>
+    <tr><th>Pendência</th><th>Severidade</th><th>Status</th></tr>
+    <tr><td>Staging escreve no mesmo banco de produção</td><td><span class="tag t-bad">Alta</span></td><td>Aberto — criar 2º projeto Supabase</td></tr>
+    <tr><td>Sem teste de isolamento entre clientes</td><td><span class="tag t-bad">Alta</span></td><td>Aberto</td></tr>
+    <tr><td>Backup automático + restore não verificados</td><td><span class="tag t-warn">Média</span></td><td>Aberto — confirmar plano Supabase</td></tr>
+    <tr><td>WhatsApp ainda é placeholder (5500000000000)</td><td><span class="tag t-warn">Média</span></td><td>Aberto — precisa do número real</td></tr>
+    <tr><td>Sem CI/CD, sem observabilidade/erro</td><td><span class="tag t-warn">Média</span></td><td>Aberto</td></tr>
+    <tr><td>XSS armazenado · Score duplicado</td><td><span class="tag t-ok">Baixa</span></td><td>Corrigido nesta sprint</td></tr>
+  </table>
+  <h3>Conclusão</h3>
+  <p>O sistema <strong>funciona e tem uma base sólida</strong>. Para virar um produto que vende, a prioridade não é mais "fazer funcionar" — é (1) <strong>entregar inteligência</strong> (diagnóstico + alertas com a marca MB), (2) <strong>limpar o legado</strong> e (3) <strong>fechar os bloqueadores de produção</strong> (staging, testes, backup, contato real). Posicionar a MB como <em>a inteligência contábil do empresário</em> — não como mais um ERP.</p>
+  <div class="foot">MB Intelligence · Relatório Técnico · uso interno · 23/06/2026</div>
+</section>
+
+</body>
+</html>
