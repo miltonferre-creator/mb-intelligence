@@ -284,6 +284,13 @@
     return `
       <div class="exec-dash">
       ${kpiGrid(client, data)}
+      ${(() => {
+        const [tone, txt] = executiveAlert(data);
+        return `<section class="exec-action" style="margin-top:12px">
+        <div class="exec-alert ${tone}">${MBI.ui.icon(tone === "is-good" ? "check-circle" : "alert-triangle")}<span><strong>Inteligência MB · ${tone === "is-good" ? "Situação" : "Atenção"}:</strong> ${txt}</span></div>
+        <div class="button-row"><button class="btn btn-primary" type="button" data-route="#/cliente/comunicacao">${MBI.ui.icon("messages-square")} Falar com a MB sobre ${MBI.ui.escape(data.competenceLabel || "este mês")}</button></div>
+      </section>`;
+      })()}
       <section class="grid dash-split">
         <article class="panel chart">
           <div class="panel-header"><div><h3>Receita ao longo do tempo</h3><p>Evolução de faturamento.</p></div></div>
@@ -302,12 +309,6 @@
           <div class="panel-header"><div><h3>Onde você mais gasta</h3><p>Maiores despesas.</p></div></div>
           ${expenseRanking(data)}
         </article>
-      </section>
-      <section style="margin-top:12px">
-        ${(() => {
-          const [tone, txt] = executiveAlert(data);
-          return `<div class="exec-alert ${tone}">${MBI.ui.icon(tone === "is-good" ? "check-circle" : "alert-triangle")}<span><strong>Inteligência MB · ${tone === "is-good" ? "Situação" : "Atenção"}:</strong> ${txt}</span></div>`;
-        })()}
       </section>
       <details class="report-detail" style="margin-top:14px">
         <summary>Ver relatórios completos — DRE e DFC detalhada</summary>

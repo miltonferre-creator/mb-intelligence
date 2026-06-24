@@ -2922,6 +2922,14 @@ button.workflow-step:hover { border-color: var(--brand-3); }
 .exec-dash .metric-analysis { background: rgba(255, 255, 255, .05); color: rgba(255, 255, 255, .75); border-left-color: #e0606a; }
 .exec-dash .metric-analysis strong { color: #fff; }
 
+/* Alerta executivo legivel no tema escuro (UI/UX Pro Max: insight no topo + contraste).
+   Sem override, herdava texto escuro do tema claro e ficava ilegivel sobre #14151b. */
+.exec-dash .exec-alert.is-good { background: rgba(86, 197, 150, .12); border-color: rgba(86, 197, 150, .42); color: #8fe3bd; }
+.exec-dash .exec-alert.is-warn { background: rgba(210, 168, 101, .14); border-color: rgba(210, 168, 101, .46); color: #e9c891; }
+.exec-dash .exec-alert.is-bad  { background: rgba(227, 121, 111, .14); border-color: rgba(227, 121, 111, .46); color: #f0a59d; }
+.exec-dash .exec-alert strong { color: #fff; }
+.exec-dash .exec-action { display: grid; gap: 10px; }
+
 /* Filtro de competencia moderno (pill escuro, troca ao selecionar) */
 .competence-bar { display: flex; justify-content: flex-end; }
 .competence-filter {
