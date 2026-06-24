@@ -11,7 +11,7 @@
   --surface-2: #f9fafb;
   --ink: #111318;
   --muted: #667085;
-  --soft: #8b94a3;
+  --soft: #6b7280;          /* a11y (UI/UX Pro Max): era #8b94a3 (~3:1, reprovava AA). Agora ~4.8:1 */
   --line: #dfe4ea;
 
   /* ---- Cor: marca ---- */
@@ -36,8 +36,8 @@
   --dark-line: rgba(255, 255, 255, .08);
   --dark-ink: #e8eaf0;
   --dark-strong: #ffffff;
-  --dark-muted: rgba(255, 255, 255, .55);
-  --dark-faint: rgba(255, 255, 255, .4);
+  --dark-muted: rgba(255, 255, 255, .68);  /* a11y: era .55 — sobe p/ ~4.5:1 sobre #14151b */
+  --dark-faint: rgba(255, 255, 255, .55);  /* a11y: era .4 (reprovava) */
   /* acentos foscos (dashboard) */
   --dash-blue: #7ea6d8;
   --dash-teal: #6cbfac;
@@ -126,6 +126,55 @@ button {
 
 .hidden {
   display: none !important;
+}
+
+/* ============================================================================
+   UI/UX Pro Max — melhorias globais (aditivas, valem para todas as telas)
+   ============================================================================ */
+
+/* Numeros tabulares: digitos alinham em colunas, sem "dança" de largura.
+   Critico em finanças (R$, %, scores, datas). */
+.metric-card strong,
+.kpi-value,
+.kpi-value-row,
+.score-radar strong,
+.score-gauge strong,
+.dre-row,
+.data-row,
+.cashflow-row,
+.bar-row,
+.single-chart-bar,
+.single-period-bar,
+.bridge-value,
+.delta-pill,
+.price-card strong,
+.timeline-item time,
+.audit-item time {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+/* Foco visivel para navegacao por teclado (acessibilidade WCAG).
+   :focus-visible nao aparece em clique de mouse — so no teclado. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid rgba(143, 18, 27, .5);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+/* No tema escuro (sidebar/dashboard) o anel usa o vinho fosco p/ contrastar */
+.sidebar :where(a, button, [tabindex]):focus-visible {
+  outline-color: var(--dash-brand);
+}
+
+/* Respeita usuarios que pedem menos movimento */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
 }
 
 .login-page {
