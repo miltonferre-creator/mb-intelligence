@@ -92,7 +92,7 @@
     `;
   }
 
-  function kpi(label, value, hint, analysis, color, delta, sparkValues, invert) {
+  function kpi(label, value, hint, analysis, color, delta, sparkValues, invert, iconName) {
     const direction = Number(delta || 0);
     const deltaText = direction === 0 ? "sem variação" : `${direction > 0 ? "+" : ""}${direction.toFixed(1).replace(".", ",")}%`;
     // invert=true para indicadores onde subir e ruim (impostos, despesas): o sinal segue
@@ -111,7 +111,7 @@
     const area = `0,38 ${line} 100,38`;
     return `
       <article class="metric-card kpi-card ${color || "brand"}" title="${analysis || ""}">
-        <div class="metric-top"><span>${label}</span><em>${hint || ""}</em></div>
+        <div class="metric-top"><span class="kpi-label">${iconName ? `<span class="kpi-dot">${icon(iconName)}</span>` : ""}${label}</span><em>${hint || ""}</em></div>
         <strong class="kpi-value">${value}</strong>
         <div class="kpi-foot">
           <div class="kpi-trend"><span class="delta-pill ${deltaClass}">${arrow}${deltaText}</span><em>vs. mês anterior</em></div>
@@ -400,6 +400,18 @@
     `;
   }
 
+  // Barras horizontais das dimensoes do score (substitui o radar no Painel CFO).
+  function scoreBars(dimensions) {
+    const rows = (dimensions || []).slice(0, 6);
+    if (!rows.length) return "";
+    const band = (s) => (s >= 70 ? "good" : s >= 45 ? "warn" : "bad");
+    return `<div class="score-dims">${rows.map((d) => {
+      const s = Math.round(Math.max(0, Math.min(Number(d.score || 0), 100)));
+      const meta = `${escape(d.label)}${d.value ? ` · ${escape(d.value)}` : ""}`;
+      return `<div class="score-dim"><span class="score-dim-label" title="${meta}">${escape(d.label)}</span><div class="score-dim-track"><i class="${band(s)}" style="width:${s}%"></i></div><b>${s}</b></div>`;
+    }).join("")}</div>`;
+  }
+
   function runway(days) {
     const value = Math.max(0, Number(days || 0));
     const percent = Math.min((value / 60) * 100, 100);
@@ -546,5 +558,5 @@
     return message ? `<div class="toast">${message}</div>` : "";
   }
 
-  MBI.ui = { icon, escape, money, dateTime, moneyFromCents, moneyParse, moneyInputValue, moneyField, modal, pill, metric, kpi, table, docList, fileIcon, bars, lineChart, execLineChart, groupedBars, cashFlowChart, scoreGauge, runway, donut, waterfall, radar, dreTable, shell, nav, toast, statusClass };
+  MBI.ui = { icon, escape, money, dateTime, moneyFromCents, moneyParse, moneyInputValue, moneyField, modal, pill, metric, kpi, table, docList, fileIcon, bars, lineChart, execLineChart, groupedBars, cashFlowChart, scoreGauge, scoreBars, runway, donut, waterfall, radar, dreTable, shell, nav, toast, statusClass };
 })();

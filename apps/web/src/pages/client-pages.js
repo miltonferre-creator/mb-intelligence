@@ -151,10 +151,10 @@
     const { rows, current, previous } = currentAndPrevious(client, data);
     return `
       <section class="grid grid-4 kpi-grid">
-        ${MBI.ui.kpi("Faturamento", MBI.ui.money(data.revenue), data.competenceLabel, data.revenue ? "Receita atualizada para a competência selecionada." : "Aguardando base financeira da MB.", "blue", delta(current, previous, "revenue"), spark(rows, "revenue"))}
-        ${MBI.ui.kpi("Resultado", data.result ? MBI.ui.money(data.result) : "Indisponível", `${data.margin || 0}% margem`, "Resultado calculado com os dados validados pela MB.", "teal", delta(current, previous, "result"), spark(rows, "result"))}
-        ${MBI.ui.kpi("Impostos / DAS", MBI.ui.money(data.taxes), "Fiscal", "Acompanhamento fiscal da MB por competência.", "amber", delta(current, previous, "taxes"), spark(rows, "taxes"), true)}
-        ${MBI.ui.kpi("Score MB", `${data.score || 0}/100`, "Financeiro", "Score financeiro calculado pela MB.", "brand", delta(current, previous, "score"), spark(rows, "score"))}
+        ${MBI.ui.kpi("Faturamento", MBI.ui.money(data.revenue), data.competenceLabel, data.revenue ? "Receita atualizada para a competência selecionada." : "Aguardando base financeira da MB.", "blue", delta(current, previous, "revenue"), spark(rows, "revenue"), false, "banknote")}
+        ${MBI.ui.kpi("Resultado", data.result ? MBI.ui.money(data.result) : "Indisponível", `${data.margin || 0}% margem`, "Resultado calculado com os dados validados pela MB.", "teal", delta(current, previous, "result"), spark(rows, "result"), false, "trending-up")}
+        ${MBI.ui.kpi("Impostos / DAS", MBI.ui.money(data.taxes), "Fiscal", "Acompanhamento fiscal da MB por competência.", "amber", delta(current, previous, "taxes"), spark(rows, "taxes"), true, "receipt")}
+        ${MBI.ui.kpi("Score MB", `${data.score || 0}/100`, "Financeiro", "Score financeiro calculado pela MB.", "brand", delta(current, previous, "score"), spark(rows, "score"), false, "shield")}
       </section>
     `;
   }
@@ -280,7 +280,8 @@
     if (!tabAllowed(client, "finance")) {
       return lockedUpgrade("Dashboard financeiro", "Gestao", "Faturamento, lucro, margem, evolução e indicadores ficam disponíveis no Plano Gestão.");
     }
-    const scorePanel = `<article class="panel"><div class="panel-header"><div><h3>Radar do score</h3><p>Seis dimensões financeiras.</p></div></div>${MBI.ui.radar(data.scoreBreakdown)}</article>`;
+    const scoreWord = (s) => (s >= 80 ? "Excelente" : s >= 65 ? "Bom" : s >= 50 ? "Regular" : "Atenção");
+    const scorePanel = `<article class="panel score-panel"><div class="panel-header"><div><h3>Saúde financeira</h3><p>Score consolidado MB · ${(data.scoreBreakdown || []).length} dimensões</p></div></div>${MBI.ui.scoreGauge(data.score, `${scoreWord(Number(data.score || 0))} · meta 80`)}${MBI.ui.scoreBars(data.scoreBreakdown)}</article>`;
     return `
       <div class="exec-dash">
       ${kpiGrid(client, data)}
