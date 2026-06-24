@@ -921,7 +921,27 @@
     return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
   }
 
-  window.addEventListener("hashchange", () => { activeModal = null; document.body.classList.remove("modal-open"); render(); });
+  // Re-sincroniza em background ao navegar (throttled). Assim, mudancas feitas
+  // no admin (publicar/excluir documento, etc.) aparecem para o cliente ao
+  // trocar de tela, sem depender de um reload completo. Nao bloqueia o render.
+  let lastSyncAt = 0;
+  function backgroundSyncOnNav() {
+    const session = MBI.auth.currentSession();
+    if (!session?.token) return;
+    const now = Date.now();
+    if (now - lastSyncAt < 12000) return; // no maximo 1x a cada 12s
+    lastSyncAt = now;
+    MBI.sync.refreshIfPossible()
+      .then((result) => { if (result && result.remote) render(); })
+      .catch(() => {});
+  }
+
+  window.addEventListener("hashchange", () => {
+    activeModal = null;
+    document.body.classList.remove("modal-open");
+    render();
+    backgroundSyncOnNav();
+  });
   document.addEventListener("submit", handleSubmit);
   document.addEventListener("click", handleClick);
   document.addEventListener("change", handleChange);
@@ -935,6 +955,7 @@
     MBI.storage.getDatabase();
     if (MBI.auth.currentSession()?.token) {
       await MBI.sync.refreshIfPossible();
+      lastSyncAt = Date.now();
     }
     render();
   }
