@@ -291,7 +291,15 @@
 
   function plans() {
     const plans = MBI.services.plans.list();
+    const contactNumber = String(MBI.storage.getDatabase().config?.whatsapp || "").replace(/\D/g, "");
     return `
+      <form class="panel" data-form="update-contact" style="margin-bottom:14px">
+        <div class="panel-header"><div><h3>Contato — WhatsApp da MB</h3><p>Número usado em todos os botões de WhatsApp do portal (cliente e telas públicas).</p></div><button class="btn btn-primary" type="submit">${MBI.ui.icon("save")} Salvar contato</button></div>
+        <div class="form-section two">
+          <label><span>WhatsApp (com DDI 55, só números)</span><input name="whatsapp" value="${MBI.ui.escape(contactNumber)}" placeholder="5585999990000" inputmode="numeric" autocomplete="off"></label>
+          <div class="metric-analysis" style="align-self:end"><strong>Link gerado:</strong> wa.me/${MBI.ui.escape(contactNumber || "—")}</div>
+        </div>
+      </form>
       <form class="grid" data-form="update-plan-prices">
         <article class="panel"><div class="panel-header"><div><h3>Valores dos planos</h3><p>Preços editáveis pela equipe MB.</p></div><button class="btn btn-primary" type="submit">${MBI.ui.icon("save")} Salvar preços</button></div><div class="plan-admin-grid">${plans.map((plan) => `<div class="plan-admin-card"><span class="status-pill ${plan.color}">${plan.name}</span><h3 style="margin-top:12px">${plan.tagline}</h3>${MBI.ui.moneyField("Valor mensal", `price_${plan.id}`, plan.price)}<div class="module-chips">${plan.modules.map((module) => `<span class="chip is-on">${module}</span>`).join("")}</div></div>`).join("")}</div></article>
         <article class="panel"><div class="panel-header"><div><h3>Matriz de permissões</h3><p>Regra de liberação por plano.</p></div></div>${MBI.ui.table(["Módulo", "Básico", "Gestão", "Regra"], MBI.services.plans.matrix())}</article>

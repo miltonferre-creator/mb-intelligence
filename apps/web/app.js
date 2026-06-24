@@ -128,6 +128,7 @@
       "register-client": "Criando cadastro...",
       "admin-create-client": "Cadastrando cliente...",
       "update-plan-prices": "Salvando valores...",
+      "update-contact": "Salvando contato...",
       "update-finance": "Atualizando indicadores...",
       "create-task": "Criando pendencia...",
       "publish-document": "Enviando documento...",
@@ -463,6 +464,18 @@
         MBI.services.clients.setCurrentClient(client.id);
         if (inModal) dismissModal();
         showToast("Cliente cadastrado e selecionado para operação.");
+        return;
+      }
+
+      if (form.dataset.form === "update-contact") {
+        const whatsapp = String(data.whatsapp || "").replace(/\D/g, "");
+        await remoteOrLocal(
+          async () => MBI.api.request("/settings", { method: "PATCH", body: { whatsapp } }),
+          () => {}
+        );
+        // Atualiza o espelho local imediatamente para refletir nos botoes de WhatsApp.
+        MBI.storage.updateDatabase((db) => { db.config = { ...(db.config || {}), whatsapp }; });
+        showToast("Contato de WhatsApp atualizado.");
         return;
       }
 
@@ -953,6 +966,15 @@
   async function boot() {
     try { if (localStorage.getItem("mbi.ui.nav") !== "expanded") document.body.classList.add("nav-collapsed"); } catch (error) {}
     MBI.storage.getDatabase();
+    // Config publica (ex.: WhatsApp) — carrega mesmo sem sessao para as telas
+    // publicas (login/contratar) usarem o numero certo. Nao bloqueia o boot.
+    MBI.api.request("/settings", { auth: false })
+      .then((settings) => {
+        if (!settings?.data) return;
+        MBI.storage.updateDatabase((db) => { db.config = { ...(db.config || {}), ...settings.data }; });
+        render();
+      })
+      .catch(() => {});
     const session = MBI.auth.currentSession();
     if (session?.token) {
       // Renova o token PROATIVAMENTE se expirou / esta perto de expirar, ANTES de

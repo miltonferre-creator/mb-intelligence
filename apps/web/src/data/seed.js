@@ -29,6 +29,7 @@
         color: "status-ok"
       }
     ],
+    config: {},
     clients: [],
     companies: [],
     users: [],

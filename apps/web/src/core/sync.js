@@ -44,6 +44,7 @@
     const approvals = await optional("/approvals", { data: lastGood("approvals") });
     const audit = await optional("/audit", { data: lastGood("audit") });
     const users = await optional("/users", { data: [] });
+    const settings = await optional("/settings", { data: null });
 
     // Resolve a lista de clientes:
     // - Admin: a resposta de /clients e autoritativa MESMO vazia (nunca cair no
@@ -84,6 +85,7 @@
       // A partir daqui, falhas de fetch caem no ultimo dado REAL, nunca no demo.
       synced: true,
       version: local.version || MBI.seed.version,
+      config: settings.data ? { ...(local.config || {}), ...settings.data } : (local.config || {}),
       plans: plans.data?.length ? plans.data : local.plans,
       clients: clientsList,
       users: mergeUsers(local.users, users.data, me.user),

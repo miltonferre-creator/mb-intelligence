@@ -19,7 +19,9 @@
   // (so digitos, com DDI 55). Enquanto nao for definido usa um placeholder —
   // TROCAR pelo numero real antes de divulgar para clientes.
   function whatsappNumber() {
-    const digits = String(window.MB_CONTACT?.whatsapp || "5500000000000").replace(/\D/g, "");
+    let configured = "";
+    try { configured = MBI.storage?.getDatabase?.().config?.whatsapp || ""; } catch (error) {}
+    const digits = String(configured || window.MB_CONTACT?.whatsapp || "5500000000000").replace(/\D/g, "");
     return digits || "5500000000000";
   }
 

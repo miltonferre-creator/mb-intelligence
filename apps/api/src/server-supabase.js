@@ -866,6 +866,47 @@ function profileToApi(row) {
   };
 }
 
+const SETTINGS_DEFAULTS = { whatsapp: "5500000000000" };
+
+// Le as configuracoes globais. Tolerante: se a migration 0009_app_settings ainda
+// nao foi aplicada (tabela ausente), devolve os defaults em vez de quebrar.
+async function readAppSettings() {
+  try {
+    const rows = await rest("/app_settings?select=key,value");
+    const map = { ...SETTINGS_DEFAULTS };
+    (rows || []).forEach((row) => { if (row && row.key) map[row.key] = row.value; });
+    return map;
+  } catch (err) {
+    return { ...SETTINGS_DEFAULTS };
+  }
+}
+
+async function handleSettings(req, res) {
+  // GET publico: portal do cliente e telas publicas (login/contratar) leem o
+  // numero de WhatsApp. Nao expoe nada sensivel.
+  if (req.method === "GET") {
+    return ok(res, { data: await readAppSettings() });
+  }
+  if (req.method === "PATCH") {
+    const ctx = await requireMb(req, res);
+    if (!ctx) return;
+    const body = await readBody(req);
+    const updates = [];
+    if (body.whatsapp !== undefined) {
+      updates.push({ key: "whatsapp", value: String(body.whatsapp || "").replace(/\D/g, ""), updated_at: new Date().toISOString() });
+    }
+    if (!updates.length) return error(res, 400, "Nada para atualizar.");
+    try {
+      await rest("/app_settings", { method: "POST", prefer: "resolution=merge-duplicates,return=representation", body: updates });
+    } catch (err) {
+      return error(res, 500, "Não foi possível salvar. Confirme se a migração 0009_app_settings foi aplicada no Supabase.");
+    }
+    await logAudit(ctx.profile, "Atualizou configurações", "Contato WhatsApp", "Contato global do portal");
+    return ok(res, { data: await readAppSettings() });
+  }
+  return error(res, 404, "Rota de configurações não encontrada.");
+}
+
 async function handlePlans(req, res, segments) {
   if (req.method === "GET" && segments.length === 1) return ok(res, { data: await rest("/plans?select=*") });
   const ctx = await requireMb(req, res);
@@ -1370,6 +1411,7 @@ async function route(req, res) {
   if (req.method === "OPTIONS") return noContent(res);
   if (req.method === "GET" && segments[0] === "health") return ok(res, { status: "ok", name: "MB Intelligence API", driver: "supabase" });
   if (segments[0] === "auth") return handleAuth(req, res, segments);
+  if (segments[0] === "settings") return handleSettings(req, res);
   if (segments[0] === "plans") return handlePlans(req, res, segments);
   if (segments[0] === "clients") return handleClients(req, res, segments);
   if (segments[0] === "documents") return handleDocuments(req, res, segments);
