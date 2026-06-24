@@ -867,18 +867,33 @@ function profileToApi(row) {
 }
 
 const SETTINGS_DEFAULTS = { whatsapp: "5500000000000" };
+// Config global persistida como um unico objeto JSON no Storage do Supabase
+// (bucket de documentos, que ja existe em producao). Evita criar tabela/migration:
+// o servidor le/escreve via service_role; o cliente nunca toca no Storage.
+const SETTINGS_OBJECT_PATH = "_settings/app.json";
 
-// Le as configuracoes globais. Tolerante: se a migration 0009_app_settings ainda
-// nao foi aplicada (tabela ausente), devolve os defaults em vez de quebrar.
+function settingsBucket() {
+  return getConfig().documentsBucket;
+}
+
+// Le as configuracoes globais. Tolerante: se o objeto ainda nao existe, devolve
+// os defaults em vez de quebrar.
 async function readAppSettings() {
   try {
-    const rows = await rest("/app_settings?select=key,value");
-    const map = { ...SETTINGS_DEFAULTS };
-    (rows || []).forEach((row) => { if (row && row.key) map[row.key] = row.value; });
-    return map;
+    const data = await supabaseRequest(`/storage/v1/object/${settingsBucket()}/${SETTINGS_OBJECT_PATH}`);
+    const obj = data && typeof data === "object" ? data : {};
+    return { ...SETTINGS_DEFAULTS, ...obj };
   } catch (err) {
     return { ...SETTINGS_DEFAULTS };
   }
+}
+
+async function writeAppSettings(next) {
+  await supabaseRequest(`/storage/v1/object/${settingsBucket()}/${SETTINGS_OBJECT_PATH}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-upsert": "true" },
+    body: JSON.stringify(next)
+  });
 }
 
 async function handleSettings(req, res) {
@@ -891,18 +906,16 @@ async function handleSettings(req, res) {
     const ctx = await requireMb(req, res);
     if (!ctx) return;
     const body = await readBody(req);
-    const updates = [];
-    if (body.whatsapp !== undefined) {
-      updates.push({ key: "whatsapp", value: String(body.whatsapp || "").replace(/\D/g, ""), updated_at: new Date().toISOString() });
-    }
-    if (!updates.length) return error(res, 400, "Nada para atualizar.");
+    const current = await readAppSettings();
+    const next = { ...current };
+    if (body.whatsapp !== undefined) next.whatsapp = String(body.whatsapp || "").replace(/\D/g, "");
     try {
-      await rest("/app_settings", { method: "POST", prefer: "resolution=merge-duplicates,return=representation", body: updates });
+      await writeAppSettings(next);
     } catch (err) {
-      return error(res, 500, "Não foi possível salvar. Confirme se a migração 0009_app_settings foi aplicada no Supabase.");
+      return error(res, 500, "Não foi possível salvar a configuração. Tente novamente.");
     }
     await logAudit(ctx.profile, "Atualizou configurações", "Contato WhatsApp", "Contato global do portal");
-    return ok(res, { data: await readAppSettings() });
+    return ok(res, { data: next });
   }
   return error(res, 404, "Rota de configurações não encontrada.");
 }
