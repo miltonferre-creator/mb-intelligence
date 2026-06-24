@@ -336,13 +336,20 @@
           const expenses = Number(item[2] || 0);
           const result = revenue - expenses;
           const h = (value) => `${Math.max((Math.abs(value) / max) * 100, 3)}%`;
-          return `<div class="grouped-month" title="${item[0]} | Receita ${chartValue(revenue)} | Despesas ${chartValue(expenses)} | Resultado ${chartValue(result)}">
+          const resultColor = result >= 0 ? "teal" : "brand";
+          return `<div class="grouped-month">
             <div class="grouped-stack">
               <i class="blue" style="--height:${h(revenue)}"></i>
               <i class="amber" style="--height:${h(expenses)}"></i>
-              <i class="${result >= 0 ? "teal" : "brand"}" style="--height:${h(result)}"></i>
+              <i class="${resultColor}" style="--height:${h(result)}"></i>
             </div>
-            <span>${item[0]}</span>
+            <span>${escape(String(item[0]).split(" ")[0])}</span>
+            <div class="gb-tip" role="tooltip">
+              <strong>${escape(String(item[0]))}</strong>
+              <span><i class="gb-dot blue"></i>Receita<b>${money(revenue)}</b></span>
+              <span><i class="gb-dot amber"></i>Despesa<b>${money(expenses)}</b></span>
+              <span><i class="gb-dot ${resultColor}"></i>Resultado<b>${money(result)}</b></span>
+            </div>
           </div>`;
         }).join("")}
       </div>
@@ -388,11 +395,17 @@
     `;
   }
 
+  // Medidor com ponteiro (needle): arco de zonas (vermelho/amber/verde) + agulha
+  // apontando para o score. 0 = -90deg (esq), 100 = +90deg (dir).
   function scoreGauge(score, title) {
     const value = Math.max(0, Math.min(Number(score || 0), 100));
+    const angle = (value * 1.8 - 90).toFixed(1);
     return `
-      <div class="score-gauge" style="--score:${value}%">
-        <div class="score-arc"><span></span></div>
+      <div class="score-gauge needle-gauge">
+        <div class="gauge-arc">
+          <span class="gauge-needle" style="transform:translateX(-50%) rotate(${angle}deg)"></span>
+          <span class="gauge-hub"></span>
+        </div>
         <strong>${Math.round(value)}</strong>
         <em>/100</em>
         <p>${title || "MB Financial Score"}</p>

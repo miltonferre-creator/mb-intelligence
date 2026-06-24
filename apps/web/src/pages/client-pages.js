@@ -294,9 +294,9 @@
       })()}
       <section class="grid dash-split">
         <article class="panel chart">
-          <div class="panel-header"><div><h3>Receita ao longo do tempo</h3><p>Evolução de faturamento.</p></div></div>
-          ${MBI.ui.execLineChart(data.months)}
-          <div class="chart-legend"><span><i class="legend-dot brand"></i> Receita</span><span><i class="legend-dot dashed"></i> Tendência</span></div>
+          <div class="panel-header"><div><h3>Receita × Despesa × Resultado</h3><p>Comparativo por competência — passe o mouse para ver os valores.</p></div></div>
+          ${MBI.ui.groupedBars(data.months)}
+          <div class="chart-legend"><span><i class="legend-dot blue"></i> Receita</span><span><i class="legend-dot amber"></i> Despesa</span><span><i class="legend-dot teal"></i> Resultado</span></div>
         </article>
         ${scorePanel}
       </section>

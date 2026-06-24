@@ -2951,12 +2951,47 @@ button.workflow-step:hover { border-color: var(--brand-3); }
 .exec-dash .score-dim-track i.bad { background: #e3796f; }
 .exec-dash .score-dim b { text-align: right; color: #fff; font-weight: 700; font-variant-numeric: tabular-nums; }
 
-/* Gauge legivel no escuro: numero acima do arco + parte nao-preenchida no tom do painel */
-.exec-dash .score-arc::before { z-index: 0; }
-.exec-dash .score-arc span { z-index: 1; background: conic-gradient(from 270deg at 50% 100%, transparent var(--score), rgba(20, 21, 27, .94) 0); }
-.exec-dash .score-gauge strong { position: relative; z-index: 2; margin-top: -52px; font-size: 36px; }
-.exec-dash .score-gauge em { position: relative; z-index: 2; }
-.exec-dash .score-gauge p { margin-top: 6px; font-size: 12px; color: rgba(255, 255, 255, .65); }
+/* Score: medidor com ponteiro (needle gauge) — referencia validada */
+.needle-gauge { width: min(240px, 100%); margin: 6px auto 14px; text-align: center; }
+.needle-gauge .gauge-arc { position: relative; width: 200px; height: 104px; margin: 0 auto; overflow: hidden; }
+.needle-gauge .gauge-arc::before { content: ""; position: absolute; inset: 0; border-radius: 200px 200px 0 0;
+  background: conic-gradient(from 270deg at 50% 100%, #e3796f 0 30%, #d2a865 30% 62%, #6cbfac 62% 100%); }
+.needle-gauge .gauge-arc::after { content: ""; position: absolute; inset: 17px 17px 0; border-radius: 200px 200px 0 0; background: #1c1d23; }
+.needle-gauge .gauge-needle { position: absolute; left: 50%; bottom: 0; width: 3px; height: 82px; border-radius: 3px; background: #fff; transform-origin: bottom center; z-index: 2; }
+.needle-gauge .gauge-hub { position: absolute; left: 50%; bottom: -5px; width: 12px; height: 12px; border-radius: 50%; background: #fff; transform: translateX(-50%); z-index: 3; }
+.exec-dash .score-gauge.needle-gauge strong { margin-top: 8px; font-size: 34px; color: #fff; }
+.needle-gauge em { color: rgba(255, 255, 255, .55); font-style: normal; font-size: 13px; }
+.needle-gauge p { margin-top: 6px; font-size: 12px; color: rgba(255, 255, 255, .65); }
+
+/* Grafico Receita x Despesa x Resultado no tema escuro + tooltip de valores no hover */
+.exec-dash .grouped-bars { overflow: visible; background: transparent; border-color: rgba(255, 255, 255, .08); }
+.exec-dash .grouped-stack i { width: 14px; }
+.exec-dash .grouped-stack .blue { background: var(--dash-blue); }
+.exec-dash .grouped-stack .amber { background: var(--dash-amber); }
+.exec-dash .grouped-stack .teal { background: var(--dash-teal); }
+.exec-dash .grouped-stack .brand { background: var(--dash-brand); }
+.exec-dash .grouped-month span { color: rgba(255, 255, 255, .6); }
+.exec-dash .legend-dot.blue { background: var(--dash-blue); }
+.grouped-month { position: relative; }
+.gb-tip {
+  position: absolute; bottom: calc(100% + 8px); left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  min-width: 168px; padding: 10px 12px; border-radius: 10px;
+  background: #0f1014; border: 1px solid rgba(255, 255, 255, .14);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .55);
+  opacity: 0; pointer-events: none; transition: opacity .15s var(--ease), transform .15s var(--ease);
+  z-index: 6; display: grid; gap: 5px; text-align: left;
+}
+.grouped-month:hover .gb-tip,
+.grouped-month:focus-within .gb-tip { opacity: 1; transform: translateX(-50%) translateY(0); }
+.gb-tip strong { font-size: 12px; color: #fff; margin-bottom: 2px; }
+.gb-tip span { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; font-size: 12px; color: rgba(255, 255, 255, .72); }
+.gb-tip b { color: #fff; font-weight: 700; font-variant-numeric: tabular-nums; }
+.gb-tip .gb-dot { width: 8px; height: 8px; border-radius: 2px; }
+.gb-tip .gb-dot.blue { background: var(--dash-blue); }
+.gb-tip .gb-dot.amber { background: var(--dash-amber); }
+.gb-tip .gb-dot.teal { background: var(--dash-teal); }
+.gb-tip .gb-dot.brand { background: var(--dash-brand); }
 
 /* Filtro de competencia moderno (pill escuro, troca ao selecionar) */
 .competence-bar { display: flex; justify-content: flex-end; }
