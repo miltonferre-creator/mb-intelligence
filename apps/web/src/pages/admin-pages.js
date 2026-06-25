@@ -6,7 +6,7 @@
     "#/admin/operacao": "Operacao MB",
     "#/admin/clientes": "Gestao de clientes",
     "#/admin/novo-cliente": "Gestao de clientes",
-    "#/admin/planos": "Planos e permissões",
+    "#/admin/configuracao": "Configuração",
     "#/admin/alimentar-portal": "Alimentar portal",
     "#/admin/documentos": "Documentos",
     "#/admin/usuarios": "Usuários e perfis",
@@ -22,7 +22,7 @@
       ["#/admin/alimentar-portal", "panel-top", "Dados & importações"],
       ["#/admin/documentos", "folder-up", "Documentos"],
       [null, null, "Configuração"],
-      ["#/admin/planos", "badge-dollar-sign", "Planos"],
+      ["#/admin/configuracao", "settings", "Configuração"],
       ["#/admin/usuarios", "users-round", "Usuários"],
       [null, null, "Registros"],
       ["#/admin/auditoria", "history", "Auditoria"]
@@ -77,7 +77,7 @@
     // (mesmo com a carteira vazia) — senao a navegacao "trava" tudo na tela
     // de carteira vazia e clicar no menu parece nao fazer nada.
     if (route === "#/admin/clientes" || route === "#/admin/novo-cliente") return shell("#/admin/clientes", clients());
-    if (route === "#/admin/planos") return shell(route, plans());
+    if (route === "#/admin/configuracao") return shell(route, settings());
     if (route === "#/admin/usuarios") return shell(route, users());
     if (route === "#/admin/auditoria") return shell(route, audit());
     // Rotas que dependem de um cliente em operacao
@@ -102,7 +102,7 @@
     const selected = MBI.services.clients.current();
     if (!selected) return emptyClients();
     const data = MBI.services.finance.get(selected.id);
-    const plan = MBI.services.plans.get(selected.planId) || { name: selected.planId || "—" };
+    const feeLabel = selected.monthlyFee != null ? `${MBI.ui.money(selected.monthlyFee)}/mês` : "Mensalidade a definir";
     const selectedDocs = MBI.services.documents.listByClient(selected.id);
     const selectedImports = MBI.services.imports.list(selected.id);
     const selectedTasks = db.tasks.filter((task) => task.clientId === selected.id);
@@ -116,7 +116,7 @@
     ];
     const workflow = `
       <section class="panel workflow-panel">
-        <div class="panel-header"><div><h3>Fluxo de trabalho</h3><p>O passo a passo para deixar o portal deste cliente pronto.</p></div>${MBI.ui.pill(plan.name)}</div>
+        <div class="panel-header"><div><h3>Fluxo de trabalho</h3><p>O passo a passo para deixar o portal deste cliente pronto.</p></div>${MBI.ui.pill(feeLabel)}</div>
         <div class="workflow-steps">
           ${flowSteps.map(([n, title, status, ic, route, done]) => `
             <${route ? "button" : "div"} class="workflow-step ${done ? "is-done" : ""}"${route ? ` type="button" data-route="${route}"` : ""}>
@@ -137,7 +137,7 @@
     return `
       <section>
         <article class="panel selected-client-card">
-          <div class="panel-header"><div><h3>${MBI.ui.escape(selected.name)}</h3><p>${MBI.ui.escape(plan.name)} · ${MBI.ui.escape(selected.status)} · Confianca ${MBI.ui.escape(selected.confidence)} · ${MBI.ui.escape(data.competenceLabel || "")}</p></div>${MBI.ui.pill(selected.confidence)}</div>
+          <div class="panel-header"><div><h3>${MBI.ui.escape(selected.name)}</h3><p>${MBI.ui.escape(feeLabel)} · ${MBI.ui.escape(selected.status)} · Confianca ${MBI.ui.escape(selected.confidence)} · ${MBI.ui.escape(data.competenceLabel || "")}</p></div>${MBI.ui.pill(selected.confidence)}</div>
           ${opStats}
           <div class="brief-actions" style="margin-top:12px">
             <button class="btn btn-primary" type="button" data-route="#/admin/alimentar-portal">${MBI.ui.icon("panel-top")} Alimentar portal</button>
@@ -157,17 +157,15 @@
     const search = String(filters.search || "").toLowerCase();
     const filtered = MBI.services.clients.list()
       .filter((client) => !search || `${client.name} ${client.cnpj} ${client.segment}`.toLowerCase().includes(search))
-      .filter((client) => !filters.planId || filters.planId === "Todos" || client.planId === filters.planId)
       .filter((client) => !filters.status || filters.status === "Todos" || client.status === filters.status)
       .filter((client) => !filters.confidence || filters.confidence === "Todos" || client.confidence === filters.confidence)
       .sort((a, b) => String(a.name).localeCompare(String(b.name), "pt-BR"));
     const rows = filtered.map((client) => {
-      const plan = MBI.services.plans.get(client.planId);
       const suspended = client.status === "Pausado";
       const isCurrent = MBI.services.clients.current()?.id === client.id;
       return [
         MBI.ui.escape(client.name),
-        MBI.ui.escape(plan?.name || client.planId),
+        client.monthlyFee != null ? `${MBI.ui.money(client.monthlyFee)}/mês` : "—",
         MBI.ui.pill(client.status),
         MBI.ui.escape(client.maturity),
         `<button class="btn ${isCurrent ? "btn-primary" : "btn-soft"} btn-mini" type="button" data-action="set-client" data-client-id="${MBI.ui.escape(client.id)}">${MBI.ui.icon(isCurrent ? "check" : "play")} ${isCurrent ? "Operando" : "Operar"}</button> <button class="btn btn-soft btn-mini" type="button" data-action="open-modal" data-modal="edit-client" data-client-id="${MBI.ui.escape(client.id)}">${MBI.ui.icon("pencil")} Editar</button> <button class="btn btn-ghost btn-mini" type="button" data-action="suspend-client" data-client-id="${MBI.ui.escape(client.id)}">${MBI.ui.icon(suspended ? "play" : "pause")} ${suspended ? "Reativar" : "Suspender"}</button>`
@@ -176,13 +174,12 @@
     return `
       <form class="filter-row" data-form="admin-client-filters" style="margin-bottom:14px">
         <input name="search" placeholder="Buscar por nome, CNPJ ou segmento" value="${MBI.ui.escape(filters.search || "")}">
-        <select name="planId"><option>Todos</option>${MBI.services.plans.list().map((plan) => `<option value="${plan.id}" ${filters.planId === plan.id ? "selected" : ""}>${plan.name}</option>`).join("")}</select>
         <select name="status"><option>Todos</option>${["Ativo", "Onboarding", "Pausado", "Risco"].map((status) => `<option ${filters.status === status ? "selected" : ""}>${status}</option>`).join("")}</select>
         <button class="btn btn-primary" type="submit">${MBI.ui.icon("search")} Filtrar</button>
       </form>
       <section class="panel">
         <div class="panel-header"><div><h3>Carteira de clientes</h3><p>Operar seleciona o cliente para alimentar dados. Editar abre a ficha.</p></div><div class="panel-header-actions">${MBI.ui.pill(`${filtered.length} cliente(s)`)}<button class="btn btn-primary btn-mini" type="button" data-action="open-modal" data-modal="new-client">${MBI.ui.icon("plus")} Novo cliente</button></div></div>
-        ${filtered.length ? MBI.ui.table(["Cliente", "Plano", "Status", "Maturidade", "Ações"], rows) : `<div class="empty-lock">${MBI.ui.icon("users")}<h3>Nenhum cliente encontrado</h3><p>Ajuste os filtros ou cadastre um novo cliente.</p></div>`}
+        ${filtered.length ? MBI.ui.table(["Cliente", "Mensalidade", "Status", "Maturidade", "Ações"], rows) : `<div class="empty-lock">${MBI.ui.icon("users")}<h3>Nenhum cliente encontrado</h3><p>Ajuste os filtros ou cadastre um novo cliente.</p></div>`}
       </section>
     `;
   }
@@ -191,7 +188,6 @@
   function clientFormFields(client) {
     client = client || {};
     const sel = (a, b) => a === b ? "selected" : "";
-    const plans = MBI.services.plans.list();
     return `
       <div class="form-section two">
         <label><span>Razão social</span><input name="name" required value="${MBI.ui.escape(client.name || "")}" placeholder="Razão social"></label>
@@ -200,7 +196,7 @@
         <label><span>Cidade/UF</span><input name="city" value="${MBI.ui.escape(client.city || "")}" placeholder="Cidade/UF"></label>
         <label><span>Segmento</span><input name="segment" value="${MBI.ui.escape(client.segment || "")}" placeholder="Segmento"></label>
         <label><span>Regime</span><select name="taxRegime"><option ${sel(client.taxRegime, "Simples Nacional")}>Simples Nacional</option><option ${sel(client.taxRegime, "Lucro Presumido")}>Lucro Presumido</option></select></label>
-        <label><span>Plano contratado</span><select name="planId">${plans.map((plan) => `<option value="${plan.id}" ${plan.id === client.planId ? "selected" : ""}>${plan.name}</option>`).join("")}</select></label>
+        ${MBI.ui.moneyField("Mensalidade (R$/mês)", "monthlyFee", client.monthlyFee || 0)}
         <label><span>Status</span><select name="status">${["Onboarding", "Ativo", "Pausado", "Risco"].map((s) => `<option ${sel(client.status || "Onboarding", s)}>${s}</option>`).join("")}</select></label>
         <label><span>Maturidade</span><select name="maturity">${["Onboarding", "Fiscal basico", "Financeiro integrado", "CFO validado"].map((s) => `<option ${sel(client.maturity || "Onboarding", s)}>${s}</option>`).join("")}</select></label>
         <label><span>Confiança</span><select name="confidence">${["Baixa", "Media", "Alta"].map((s) => `<option ${sel(client.confidence || "Media", s)}>${s}</option>`).join("")}</select></label>
@@ -289,8 +285,7 @@
     return null;
   }
 
-  function plans() {
-    const plans = MBI.services.plans.list();
+  function settings() {
     const contactNumber = String(MBI.storage.getDatabase().config?.whatsapp || "").replace(/\D/g, "");
     return `
       <form class="panel" data-form="update-contact" style="margin-bottom:14px">
@@ -299,10 +294,6 @@
           <label><span>WhatsApp (com DDI 55, só números)</span><input name="whatsapp" value="${MBI.ui.escape(contactNumber)}" placeholder="5585999990000" inputmode="numeric" autocomplete="off"></label>
           <div class="metric-analysis" style="align-self:end"><strong>Link gerado:</strong> wa.me/${MBI.ui.escape(contactNumber || "—")}</div>
         </div>
-      </form>
-      <form class="grid" data-form="update-plan-prices">
-        <article class="panel"><div class="panel-header"><div><h3>Valores dos planos</h3><p>Preços editáveis pela equipe MB.</p></div><button class="btn btn-primary" type="submit">${MBI.ui.icon("save")} Salvar preços</button></div><div class="plan-admin-grid">${plans.map((plan) => `<div class="plan-admin-card"><span class="status-pill ${plan.color}">${plan.name}</span><h3 style="margin-top:12px">${plan.tagline}</h3>${MBI.ui.moneyField("Valor mensal", `price_${plan.id}`, plan.price)}<div class="module-chips">${plan.modules.map((module) => `<span class="chip is-on">${module}</span>`).join("")}</div></div>`).join("")}</div></article>
-        <article class="panel"><div class="panel-header"><div><h3>Matriz de permissões</h3><p>Regra de liberação por plano.</p></div></div>${MBI.ui.table(["Módulo", "Básico", "Gestão", "Regra"], MBI.services.plans.matrix())}</article>
       </form>
     `;
   }

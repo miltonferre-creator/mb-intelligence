@@ -13,7 +13,7 @@
 
   function menu(active, client) {
     const items = [["#/cliente/inicio", "home", "Início"]];
-    if (client && tabAllowed(client, "finance")) items.push(["#/cliente/inteligencia", "layout-dashboard", "Dashboard"]);
+    if (client) items.push(["#/cliente/inteligencia", "layout-dashboard", "Dashboard"]);
     items.push(
       ["#/cliente/documentos", "folder-open", "Documentos"],
       ["#/cliente/comunicacao", "messages-square", "Comunicação"],
@@ -42,17 +42,16 @@
 
   function shell(route, content) {
     const client = MBI.services.clients.current();
-    const plan = MBI.services.plans.get(client.planId);
     let topbarExtra = "";
-    if (route === "#/cliente/inteligencia" && tabAllowed(client, "finance")) {
+    if (route === "#/cliente/inteligencia") {
       topbarExtra = competenceTopbar(client, MBI.services.finance.get(client.id));
     }
     return MBI.ui.shell({
       title: routeTitles[route] || "Portal do Cliente",
-      subtitle: `${MBI.ui.escape(client.name)} · ${MBI.ui.escape(plan.name)} · Confiança ${MBI.ui.escape(client.confidence)}`,
+      subtitle: `${MBI.ui.escape(client.name)} · Confiança ${MBI.ui.escape(client.confidence)}`,
       menu: menu(route, client),
       content,
-      sessionLabel: plan.name,
+      sessionLabel: "Cliente",
       sessionName: client.owner,
       topbarExtra
     });
@@ -98,9 +97,6 @@
 
   // Leitura executiva: responde em 5s quanto faturou, lucrou, tem em caixa e o que exige atencao.
   function executiveBrief(client, data) {
-    if (client.planId !== "gestao") {
-      return `<div class="brief-copy"><strong>Leitura financeira disponível no Plano Gestão</strong><span>Seu plano Básico acompanha documentos, guias e obrigações fiscais. Para ver faturamento, resultado, margem e caixa com leitura executiva automática, evolua para o Plano Gestão.</span></div>`;
-    }
     if (!(Number(data.revenue || 0) > 0)) {
       return `<div class="brief-copy"><strong>Aguardando sua base financeira</strong><span>A MB ainda não carregou os dados de ${data.competenceLabel}. Assim que entrarem, sua leitura executiva — quanto faturou, lucrou e tem em caixa — aparece aqui automaticamente.</span></div>`;
     }
@@ -118,10 +114,9 @@
     `;
   }
 
-  function tabAllowed(client, tab) {
-    if (tab === "overview") return true;
-    // 2 planos: so o Gestao libera financeiro/dashboard; Basico = downloads.
-    return client.planId === "gestao";
+  function tabAllowed() {
+    // Plano unico: todo cliente tem acesso completo (dashboard, financeiro, etc.).
+    return true;
   }
 
   function periodsAsc(client) {
@@ -156,17 +151,6 @@
         ${MBI.ui.kpi("Impostos / DAS", MBI.ui.money(data.taxes), "Fiscal", "Acompanhamento fiscal da MB por competência.", "amber", delta(current, previous, "taxes"), spark(rows, "taxes"), true, "receipt")}
         ${MBI.ui.kpi("Score MB", `${data.score || 0}/100`, "Financeiro", "Score financeiro calculado pela MB.", "brand", delta(current, previous, "score"), spark(rows, "score"), false, "shield")}
       </section>
-    `;
-  }
-
-  function lockedUpgrade(title, plan, text) {
-    return `
-      <article class="panel locked-upgrade">
-        <div>${MBI.ui.icon("lock")}</div>
-        <h3>${title}</h3>
-        <p>${text}</p>
-        <span class="status-pill status-warning">Disponível no ${plan}</span>
-      </article>
     `;
   }
 
@@ -251,12 +235,10 @@
       <section class="home-actions">
         <button class="btn btn-primary" type="button" data-route="#/cliente/documentos">${MBI.ui.icon("folder-open")} Meus documentos</button>
         <button class="btn btn-soft" type="button" data-route="#/cliente/comunicacao">${MBI.ui.icon("messages-square")} Falar com a MB</button>
-        ${tabAllowed(client, "finance") ? `<button class="btn btn-soft" type="button" data-route="#/cliente/inteligencia">${MBI.ui.icon("layout-dashboard")} Ver dashboard</button>` : ""}
+        <button class="btn btn-soft" type="button" data-route="#/cliente/inteligencia">${MBI.ui.icon("layout-dashboard")} Ver dashboard</button>
       </section>`;
 
-    const financeBlock = tabAllowed(client, "finance")
-      ? `<article class="panel"><div class="panel-header"><div><h3>Resumo financeiro · ${MBI.ui.escape(data.competenceLabel || "competência atual")}</h3><p>Leitura rápida. Detalhes completos em Financeiro.</p></div></div>${executiveBrief(client, data)}</article>`
-      : `<article class="panel home-invite"><div class="home-invite-icon">${MBI.ui.icon("trending-up")}</div><div class="home-invite-text"><h3>Quer enxergar o financeiro da sua empresa?</h3><p>O Plano Gestão libera faturamento, lucro, margem, indicadores e alertas automáticos — além de tudo que você já tem no Contabilidade.</p></div><a class="btn btn-primary" href="${MBI.ui.whatsappUrl("Quero conhecer o Plano Gestão da MB.")}" target="_blank" rel="noopener">${MBI.ui.icon("message-circle")} Conhecer o Plano Gestão</a></article>`;
+    const financeBlock = `<article class="panel"><div class="panel-header"><div><h3>Resumo financeiro · ${MBI.ui.escape(data.competenceLabel || "competência atual")}</h3><p>Leitura rápida. Detalhes completos em Financeiro.</p></div></div>${executiveBrief(client, data)}</article>`;
 
     return `
       <section class="home-hero ${statusTone}">
@@ -273,9 +255,6 @@
   // leitura MB e score. DRE/fluxo ficam recolhidos. Menos e mais.
   function intelligence(client) {
     const data = MBI.services.finance.get(client.id);
-    if (!tabAllowed(client, "finance")) {
-      return lockedUpgrade("Dashboard financeiro", "Gestao", "Faturamento, lucro, margem, evolução e indicadores ficam disponíveis no Plano Gestão.");
-    }
     const scoreWord = (s) => (s >= 80 ? "Excelente" : s >= 65 ? "Bom" : s >= 50 ? "Regular" : "Atenção");
     const scorePanel = `<article class="panel score-panel"><div class="panel-header"><div><h3>Saúde financeira</h3><p>Score consolidado MB · ${(data.scoreBreakdown || []).length} dimensões</p></div></div>${MBI.ui.scoreGauge(data.score, `${scoreWord(Number(data.score || 0))} · meta 80`)}${MBI.ui.scoreBars(data.scoreBreakdown)}</article>`;
     const [alertTone, alertTxt] = executiveAlert(data);
@@ -345,7 +324,7 @@
       ["Documentos base", MBI.services.documents.listByClient(client.id).length ? "Concluído" : "Pendente", "Contrato social, guias e documentos fiscais."],
       ["Dados financeiros", data.revenue ? "Em andamento" : "Pendente", "Planilhas, OFX, XML ou integrações."],
       ["Validação MB", client.confidence === "Alta" ? "Concluído" : "Em revisão", "Equipe MB revisa antes de publicar."],
-      ["Cockpit liberado", client.planId === "gestao" ? "Completo" : "Parcial", "Módulos liberados conforme plano."]
+      ["Cockpit liberado", "Completo", "Todos os módulos disponíveis."]
     ];
     const done = steps.filter((step) => ["Concluído", "Completo"].includes(step[1])).length;
     const progress = Math.round((done / steps.length) * 100);
@@ -419,7 +398,6 @@
   }
 
   function profile(client) {
-    const plan = MBI.services.plans.get(client.planId);
     const empresa = fieldList([
       ["Razão social", client.name],
       ["Nome fantasia", client.tradeName],
@@ -432,7 +410,7 @@
       ["Responsável", client.owner],
       ["E-mail de acesso", client.email],
       ["WhatsApp", client.phone],
-      ["Plano contratado", `${plan.name} · ${MBI.ui.money(plan.price)}/mês`]
+      ["Mensalidade", client.monthlyFee != null ? `${MBI.ui.money(client.monthlyFee)}/mês` : "A definir"]
     ]);
     return `
       <section class="grid grid-2">

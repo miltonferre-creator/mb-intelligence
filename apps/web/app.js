@@ -480,21 +480,6 @@
         return;
       }
 
-      if (form.dataset.form === "update-plan-prices") {
-        await remoteOrLocal(
-          async () => {
-            for (const plan of MBI.services.plans.list()) {
-              await MBI.api.request(`/plans/${plan.id}`, {
-                method: "PATCH",
-                body: { price: data[`price_${plan.id}`] }
-              });
-            }
-          },
-          () => MBI.services.plans.list().forEach((plan) => MBI.services.plans.updatePrice(plan.id, data[`price_${plan.id}`]))
-        );
-        showToast("Valores dos planos atualizados.");
-        return;
-      }
 
       if (form.dataset.form === "update-finance") {
         await remoteOrLocal(

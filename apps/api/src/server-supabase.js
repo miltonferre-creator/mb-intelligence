@@ -390,6 +390,7 @@ function clientToApi(row) {
     segment: row.segment,
     taxRegime: row.tax_regime,
     planId: row.plan_id,
+    monthlyFee: row.monthly_fee != null ? Number(row.monthly_fee) : null,
     maturity: row.maturity,
     status: row.status,
     owner: row.owner_name,
@@ -411,7 +412,10 @@ function clientToDb(body, partial = false) {
     city: body.city,
     segment: body.segment || (partial ? undefined : "A definir"),
     tax_regime: body.taxRegime || (partial ? undefined : "Simples Nacional"),
-    plan_id: body.planId || (partial ? undefined : "contabilidade"),
+    // Plano unico: novos clientes ficam com 'gestao' (acesso completo). Campo
+    // vestigial mantido por compatibilidade da coluna; a mensalidade real e
+    // por cliente (monthly_fee).
+    plan_id: body.planId || (partial ? undefined : "gestao"),
     maturity: body.maturity || (partial ? undefined : "Onboarding"),
     status: body.status || (partial ? undefined : "Onboarding"),
     owner_name: body.owner || body.ownerName || (partial ? undefined : "A definir"),
@@ -422,6 +426,7 @@ function clientToDb(body, partial = false) {
     confidence: body.confidence || (partial ? undefined : "Baixa")
   };
   if (body.nextReview || body.nextReviewDate) payload.next_review_date = body.nextReview || body.nextReviewDate;
+  if (body.monthlyFee !== undefined) payload.monthly_fee = (body.monthlyFee === null || body.monthlyFee === "") ? null : Number(body.monthlyFee) || 0;
   Object.keys(payload).forEach((key) => payload[key] === undefined && delete payload[key]);
   return payload;
 }

@@ -31,7 +31,6 @@
   }
 
   function register() {
-    const plans = MBI.services.plans.list().filter((plan) => !plan.comingSoon);
     return `
       <main class="login-page">
         <section class="login-brand">
@@ -45,12 +44,12 @@
           </div>
           <div class="proof-grid">
             <div>
-              <strong>Plano Contabilidade — R$&nbsp;500/mes</strong>
-              <span>Contabilidade, DAS, guias, documentos e repositorio digital.</span>
+              <strong>Contabilidade + gestão</strong>
+              <span>DAS, guias, folha, documentos e dashboard financeiro num só portal.</span>
             </div>
             <div>
-              <strong>Plano Gestao — R$&nbsp;770/mes</strong>
-              <span>Tudo do Contabilidade + folha ate 5 funcionarios, dashboard e indicadores.</span>
+              <strong>Dashboard incluso</strong>
+              <span>Faturamento, resultado, margem, fluxo de caixa e score da sua empresa.</span>
             </div>
             <div>
               <strong>Sem fidelidade minima</strong>
@@ -61,13 +60,13 @@
               <span>Se voce ja tem contador, a MB cuida de toda a migracao sem custo adicional.</span>
             </div>
           </div>
-          <a class="btn btn-whatsapp" href="${MBI.ui.whatsappUrl("Olá, tenho dúvidas sobre os planos da MB.")}" target="_blank" rel="noopener">
+          <a class="btn btn-whatsapp" href="${MBI.ui.whatsappUrl("Olá, tenho dúvidas sobre o serviço da MB.")}" target="_blank" rel="noopener">
             ${MBI.ui.icon("message-circle")} Tirar duvidas no WhatsApp
           </a>
         </section>
         <section class="login-workspace">
           <div class="login-card">
-            <div class="section-title"><h2>Novo cadastro</h2><p>Apos o envio, a MB confirma o plano, ativa o acesso e orienta os proximos passos.</p></div>
+            <div class="section-title"><h2>Novo cadastro</h2><p>Apos o envio, a MB confirma o cadastro, ativa o acesso e orienta os proximos passos.</p></div>
             <form class="login-form" data-form="register-client">
               <div class="form-grid">
                 <label><span>Razao social</span><input name="companyName" required placeholder="Razao social da empresa"></label>
@@ -75,7 +74,6 @@
                 <label><span>CNPJ</span><input name="cnpj" required placeholder="00.000.000/0001-00"></label>
                 <label><span>Cidade/UF</span><input name="city" placeholder="Ex.: Fortaleza/CE"></label>
                 <label><span>Segmento</span><input name="segment" placeholder="Ex.: comercio, saude, servicos"></label>
-                <label><span>Plano desejado</span><select name="planId">${plans.map((plan) => `<option value="${plan.id}">${plan.name} — ${MBI.ui.money(plan.price)}/mes</option>`).join("")}</select></label>
                 <label><span>Responsavel</span><input name="ownerName" required placeholder="Nome do responsavel"></label>
                 <label><span>WhatsApp</span><input name="phone" placeholder="(00) 00000-0000"></label>
                 <label><span>E-mail de acesso</span><input name="email" type="email" required placeholder="email@empresa.com.br"></label>
