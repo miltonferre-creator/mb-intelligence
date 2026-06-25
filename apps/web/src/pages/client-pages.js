@@ -45,7 +45,7 @@
   function shell(route, content) {
     const client = MBI.services.clients.current();
     let topbarExtra = "";
-    if (route === "#/cliente/inteligencia") {
+    if (route === "#/cliente/inteligencia" || route === "#/cliente/integracoes") {
       topbarExtra = competenceTopbar(client, MBI.services.finance.get(client.id));
     }
     return MBI.ui.shell({
@@ -406,6 +406,7 @@
   function clientIntegrations(client) {
     const data = MBI.services.finance.get(client.id);
     const comp = data.competence || new Date().toISOString().slice(0, 7);
+    const periods = MBI.services.finance.listPeriods(client.id);
     const card = (icon, title, desc) => `
       <article class="panel">
         <div class="panel-header">
@@ -414,6 +415,16 @@
         </div>
         <div class="brief-actions" style="margin-top:10px"><button class="btn btn-primary" type="button" disabled>${MBI.ui.icon("plug")} Conectar — em breve</button></div>
       </article>`;
+    const historyTable = periods.length
+      ? MBI.ui.table(["Competência", "Despesas", "Caixa", "Resultado", "Margem", "Ações"], periods.map((row) => [
+          MBI.ui.escape(row.label),
+          MBI.ui.money(row.expenses),
+          MBI.ui.money(row.cash),
+          MBI.ui.money(row.result),
+          `${row.margin}%`,
+          `<button class="btn btn-soft btn-mini" type="button" data-action="client-edit-period" data-client-id="${MBI.ui.escape(client.id)}" data-competence="${MBI.ui.escape(row.competence)}">${MBI.ui.icon("pencil")} Editar</button>`
+        ]))
+      : `<div class="empty-lock">${MBI.ui.icon("calendar")}<h3>Nenhum lançamento ainda</h3><p>Preencha o mês abaixo para começar o seu histórico.</p></div>`;
     return `
       <section class="panel" style="margin-bottom:14px">
         <div class="panel-header"><div><h3>Suas integrações e lançamentos</h3><p>Conecte seu banco (em breve) ou lance manualmente enquanto a integração não está ativa.</p></div>${MBI.ui.pill("Sua parte")}</div>
@@ -423,9 +434,13 @@
         ${card("landmark", "Open Finance — banco automático", "Conecte sua conta para puxar extrato, recebimentos, pagamentos e saldo automaticamente.")}
         ${card("plug-zap", "Importar extrato (OFX)", "Suba o arquivo do banco e o sistema concilia para você.")}
       </section>
+      <section class="panel" style="margin-bottom:14px">
+        <div class="panel-header"><div><h3>Seus lançamentos</h3><p>Histórico do que você já informou. Use a competência no topo para trocar de mês.</p></div>${MBI.ui.pill(`${periods.length} mês(es)`)}</div>
+        ${historyTable}
+      </section>
       <form class="panel" data-form="client-finance">
         <input type="hidden" name="clientId" value="${MBI.ui.escape(client.id)}">
-        <div class="panel-header"><div><h3>Lançar manualmente</h3><p>Informe os números do mês. Faturamento, impostos e folha são lançados pela MB.</p></div><button class="btn btn-primary" type="submit">${MBI.ui.icon("save")} Salvar lançamento</button></div>
+        <div class="panel-header"><div><h3>Lançar / editar &middot; ${MBI.ui.escape(MBI.services.finance.monthLabel(comp))}</h3><p>Informe os números do mês. Faturamento, impostos e folha são lançados pela MB.</p></div><button class="btn btn-primary" type="submit">${MBI.ui.icon("save")} Salvar lançamento</button></div>
         <div class="form-section two" style="margin-bottom:6px">
           <label><span>Competência</span><input type="month" name="competence" value="${comp}"></label>
         </div>

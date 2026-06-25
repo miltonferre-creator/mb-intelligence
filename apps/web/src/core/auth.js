@@ -73,8 +73,10 @@
       await MBI.sync.refreshIfPossible();
       return MBI.storage.getSession();
     } catch (error) {
-      if (!error.apiUnavailable) throw error;
-      return localLogin(payload);
+      // Producao e SO Supabase: sem fallback de login local (que criaria sessao
+      // sem token). Se a API estiver fora, falha com mensagem clara.
+      if (error.apiUnavailable) throw new Error("Sem conexão com o servidor. Tente novamente em instantes.");
+      throw error;
     }
   }
 

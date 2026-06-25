@@ -40,7 +40,8 @@
   }
 
   function defaultRouteForSession(session) {
-    return session?.type === "mb" ? "#/admin/operacao" : "#/cliente/inicio";
+    // Cliente entra direto no dashboard ao logar (decisao do dono).
+    return session?.type === "mb" ? "#/admin/operacao" : "#/cliente/inteligencia";
   }
 
   function showToast(message) {
@@ -57,7 +58,10 @@
     const currentRoute = route();
     const session = MBI.auth.currentSession();
 
-    if (!session) {
+    // Autenticacao exige TOKEN do Supabase. Uma sessao sem token (local/obsoleta)
+    // NAO autentica — e limpa para que F5 na tela de login nao "logue sozinho".
+    if (!session || !session.token) {
+      if (session && !session.token) MBI.storage.clearSession();
       if (currentRoute === "#/contratar") root.innerHTML = MBI.pages.auth.register();
       else if (currentRoute === "#/recuperar-senha") root.innerHTML = MBI.pages.auth.resetPassword();
       else if (currentRoute === "#/privacidade") root.innerHTML = MBI.pages.auth.privacy();
@@ -615,6 +619,26 @@
         }
       }
       openModal(MBI.pages.admin.buildModal("finance", { competence }));
+      return;
+    }
+
+    // CLIENTE edita um mes ja lancado: seleciona a competencia, carrega os dados
+    // dela e re-renderiza a tela de Integracoes com o formulario preenchido.
+    if (action.dataset.action === "client-edit-period") {
+      const clientId = action.dataset.clientId;
+      const competence = action.dataset.competence;
+      MBI.services.finance.setSelectedCompetence(clientId, competence);
+      if (MBI.auth.currentSession()?.token) {
+        try {
+          const finance = await MBI.api.request(`/finance/${clientId}?competence=${encodeURIComponent(competence)}`);
+          MBI.storage.updateDatabase((db) => {
+            db.financials[clientId] = { ...(db.financials[clientId] || {}), ...(finance.data || {}) };
+          });
+        } catch (error) {
+          MBI.observability?.capture("client-edit-period:load", error, { clientId, competence });
+        }
+      }
+      render();
       return;
     }
 
