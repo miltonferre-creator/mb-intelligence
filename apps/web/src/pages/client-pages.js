@@ -415,7 +415,7 @@
     return `
       <section class="grid grid-2">
         <article class="panel"><div class="panel-header"><div><h3>Dados da empresa</h3><p>Cadastro principal mantido pela MB.</p></div>${MBI.ui.icon("building-2")}</div>${empresa}</article>
-        <article class="panel"><div class="panel-header"><div><h3>Responsável e plano</h3><p>Contato e plano contratado.</p></div>${MBI.ui.icon("user-round")}</div>${responsavel}<div class="module-chips" style="margin-top:14px">${plan.modules.map((module) => `<span class="chip is-on">${MBI.ui.escape(module)}</span>`).join("")}</div></article>
+        <article class="panel"><div class="panel-header"><div><h3>Responsável e contato</h3><p>Dados de contato e mensalidade.</p></div>${MBI.ui.icon("user-round")}</div>${responsavel}</article>
         <form class="panel profile-security" data-form="change-password"><div class="panel-header"><div><h3>Segurança e senha</h3><p>Atualize seu acesso sem acionar a equipe MB.</p></div><button class="btn btn-primary" type="submit">${MBI.ui.icon("key-round")} Salvar senha</button></div><div class="form-section"><label><span>Senha atual</span><input type="password" name="currentPassword" autocomplete="current-password" required></label><label><span>Nova senha</span><input type="password" name="newPassword" autocomplete="new-password" required minlength="6"></label><label><span>Confirmar nova senha</span><input type="password" name="confirmPassword" autocomplete="new-password" required minlength="6"></label></div><p class="doc-hint" style="margin-top:4px">${MBI.ui.icon("shield-check")} Precisa corrigir algum dado cadastral? <button class="btn-link" type="button" data-route="#/cliente/comunicacao">Fale com a MB</button>.</p></form>
       </section>
     `;

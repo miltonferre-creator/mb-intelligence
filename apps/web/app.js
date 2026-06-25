@@ -953,7 +953,7 @@
   // Por seguranca, encerra a sessao apos um periodo sem interacao do usuario.
   // Marcamos a ultima atividade (barato) e checamos 1x por minuto; assim evitamos
   // recriar timers a cada mousemove. So vale para sessao ativa.
-  const IDLE_LIMIT_MS = 30 * 60 * 1000; // 30 minutos sem interacao -> encerra a sessao
+  const IDLE_LIMIT_MS = 10 * 60 * 1000; // 10 minutos sem interacao -> encerra a sessao
   const IDLE_KEY = "mbi.lastActivity";
   let lastActivityAt = Date.now();
   let lastPersistAt = 0;
@@ -970,8 +970,14 @@
       try { localStorage.setItem(IDLE_KEY, String(lastActivityAt)); } catch (error) {}
     }
   }
-  ["click", "keydown", "mousemove", "scroll", "touchstart", "visibilitychange"].forEach((evt) => {
+  // Interacao REAL conta como atividade. NAO incluir visibilitychange aqui: trocar
+  // de aba/minimizar nao pode "resetar" o relogio — o tempo ausente deve contar.
+  ["click", "keydown", "mousemove", "scroll", "touchstart"].forEach((evt) => {
     document.addEventListener(evt, markActivity, { passive: true });
+  });
+  // Ao VOLTAR para a aba, checa na hora se passou do limite enquanto esteve fora.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") checkIdle();
   });
   async function endSessionByIdle() {
     idleLoggingOut = true;
