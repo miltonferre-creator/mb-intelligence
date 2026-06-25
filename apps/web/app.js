@@ -188,64 +188,6 @@
     return base || fallback;
   }
 
-  function openLocalFileDb() {
-    return new Promise((resolve, reject) => {
-      if (!window.indexedDB) return resolve(null);
-      const request = indexedDB.open("mbi.document.files.v1", 1);
-      request.onupgradeneeded = () => {
-        const db = request.result;
-        if (!db.objectStoreNames.contains("files")) db.createObjectStore("files", { keyPath: "id" });
-      };
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  async function putLocalDocumentFile(documentId, file) {
-    if (!file) return;
-    const db = await openLocalFileDb();
-    if (!db) return;
-    await new Promise((resolve, reject) => {
-      const tx = db.transaction("files", "readwrite");
-      tx.objectStore("files").put({
-        id: String(documentId),
-        file,
-        fileName: file.name,
-        mimeType: file.type || "application/octet-stream",
-        size: file.size,
-        updatedAt: new Date().toISOString()
-      });
-      tx.oncomplete = resolve;
-      tx.onerror = () => reject(tx.error);
-    });
-    db.close();
-  }
-
-  async function getLocalDocumentFile(documentId) {
-    const db = await openLocalFileDb();
-    if (!db) return null;
-    const record = await new Promise((resolve, reject) => {
-      const tx = db.transaction("files", "readonly");
-      const request = tx.objectStore("files").get(String(documentId));
-      request.onsuccess = () => resolve(request.result || null);
-      request.onerror = () => reject(request.error);
-    });
-    db.close();
-    return record;
-  }
-
-  async function deleteLocalDocumentFile(documentId) {
-    const db = await openLocalFileDb();
-    if (!db) return;
-    await new Promise((resolve, reject) => {
-      const tx = db.transaction("files", "readwrite");
-      tx.objectStore("files").delete(String(documentId));
-      tx.oncomplete = resolve;
-      tx.onerror = () => reject(tx.error);
-    });
-    db.close();
-  }
-
   function triggerBlobDownload(fileName, blob) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -260,34 +202,6 @@
   function triggerTextDownload(fileName, content) {
     const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
     triggerBlobDownload(fileName, blob);
-  }
-
-  async function publishDocumentLocal(form, data) {
-    const file = form.querySelector("input[type='file'][name='file']")?.files?.[0] || null;
-    const document = MBI.services.documents.create({
-      ...data,
-      file,
-      fileName: file?.name || data.name,
-      originalFileName: file?.name || data.name,
-      mimeType: file?.type,
-      size: file?.size
-    });
-    await putLocalDocumentFile(document.id, file);
-    return document;
-  }
-
-  // Baixa o arquivo real guardado localmente no navegador (modo local/offline).
-  // Retorna true se baixou; false se nao ha arquivo (sem gerar .txt).
-  async function localDocumentDownload(documentId) {
-    const db = MBI.storage.getDatabase();
-    const doc = (db.documents || []).find((item) => String(item.id) === String(documentId));
-    const stored = await getLocalDocumentFile(documentId);
-    if (stored?.file) {
-      triggerBlobDownload(stored.fileName || doc?.fileName || doc?.name || "Documento_MB", stored.file);
-      showToast("Download iniciado.");
-      return true;
-    }
-    return false;
   }
 
   // Baixa direto pela URL assinada (forca Content-Disposition: attachment).
@@ -332,13 +246,9 @@
           showToast("Sessao expirada. Entre novamente para baixar documentos.");
           return;
         }
-        // segue para tentar a copia local guardada no navegador
       }
     }
-    const gotLocal = await localDocumentDownload(documentId);
-    if (!gotLocal) {
-      showToast("Este documento ainda nao tem arquivo disponivel para download.");
-    }
+    showToast("Este documento ainda nao tem arquivo disponivel para download.");
   }
 
   function normalizeCnpj(value) {
@@ -552,7 +462,7 @@
               await MBI.api.request("/documents", { method: "POST", body: new FormData(form) });
             }
           },
-          () => publishDocumentLocal(form, data)
+          () => { throw new Error("Sem conexão com o servidor. Tente novamente para publicar o documento."); }
         );
         if (inModal) dismissModal();
         showToast("Documento publicado no portal do cliente.");
@@ -765,12 +675,8 @@
         action.innerHTML = `<span class="spinner" aria-hidden="true"></span>Excluindo...`;
         await remoteOrLocal(
           async () => MBI.api.request(`/documents/${action.dataset.documentId}`, { method: "DELETE" }),
-          async () => {
-            MBI.services.documents.remove(action.dataset.documentId);
-            await deleteLocalDocumentFile(action.dataset.documentId);
-          }
+          async () => { MBI.services.documents.remove(action.dataset.documentId); }
         );
-        await deleteLocalDocumentFile(action.dataset.documentId);
         showToast("Documento excluido do portal.");
       } catch (error) {
         showToast(error.message || "Nao foi possivel excluir o documento.");
