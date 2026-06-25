@@ -7,6 +7,7 @@
     "#/admin/clientes": "Gestao de clientes",
     "#/admin/novo-cliente": "Gestao de clientes",
     "#/admin/configuracao": "Configuração",
+    "#/admin/integracoes": "Integrações",
     "#/admin/alimentar-portal": "Alimentar portal",
     "#/admin/documentos": "Documentos",
     "#/admin/usuarios": "Usuários e perfis",
@@ -23,6 +24,7 @@
       ["#/admin/documentos", "folder-up", "Documentos"],
       [null, null, "Configuração"],
       ["#/admin/configuracao", "settings", "Configuração"],
+      ["#/admin/integracoes", "plug", "Integrações"],
       ["#/admin/usuarios", "users-round", "Usuários"],
       [null, null, "Registros"],
       ["#/admin/auditoria", "history", "Auditoria"]
@@ -78,6 +80,7 @@
     // de carteira vazia e clicar no menu parece nao fazer nada.
     if (route === "#/admin/clientes" || route === "#/admin/novo-cliente") return shell("#/admin/clientes", clients());
     if (route === "#/admin/configuracao") return shell(route, settings());
+    if (route === "#/admin/integracoes") return shell(route, integrations());
     if (route === "#/admin/usuarios") return shell(route, users());
     if (route === "#/admin/auditoria") return shell(route, audit());
     // Rotas que dependem de um cliente em operacao
@@ -243,6 +246,48 @@
           <button class="btn btn-primary" type="submit">${MBI.ui.icon(editing ? "save" : "user-plus")} ${editing ? "Salvar" : "Criar usuário"}</button>
         </div>
       </form>
+    `;
+  }
+
+  // Tela placeholder de Integrações — sera configurada depois (Open Finance / MCP
+  // direto com o banco). Os campos ficam desativados ("em breve"); quando ligarmos,
+  // os dados puxados gravam no Supabase (banco unico).
+  function integrations() {
+    const card = (icon, title, desc, status, tone) => `
+      <article class="panel">
+        <div class="panel-header">
+          <div style="display:flex;align-items:center;gap:12px">
+            <span class="doc-icon is-fin">${MBI.ui.icon(icon)}</span>
+            <div><h3>${title}</h3><p>${desc}</p></div>
+          </div>
+          <span class="status-pill ${tone}">${status}</span>
+        </div>
+        <div class="form-section two" style="margin-top:6px">
+          <label><span>Provedor / Conector</span><input placeholder="A definir" disabled></label>
+          <label><span>Credencial / Token</span><input placeholder="Configuraremos aqui" disabled></label>
+        </div>
+        <div class="brief-actions" style="margin-top:12px">
+          <button class="btn btn-primary" type="button" disabled>${MBI.ui.icon("plug")} Conectar — em breve</button>
+        </div>
+      </article>`;
+    return `
+      <section class="panel" style="margin-bottom:14px">
+        <div class="panel-header"><div><h3>Integrações</h3><p>Conexões automáticas de dados. Configuração será feita aqui em breve.</p></div>${MBI.ui.pill("Em construção")}</div>
+        <div class="metric-analysis"><strong>Banco único:</strong> tudo que as integrações puxarem é gravado no <strong>Supabase</strong> — não criamos outra base. O <em>localStorage</em> do portal é apenas espelho de leitura.</div>
+      </section>
+      <section class="grid grid-2">
+        ${card("landmark", "Open Finance — conciliação bancária", "Conectar a conta do cliente para puxar extrato, recebimentos, pagamentos e saldo automaticamente — direto do banco.", "Não configurado", "status-warning")}
+        ${card("plug-zap", "MCP — integração direta", "Conector MCP para alimentar dados financeiros/fiscais direto na base, sem digitação.", "Não configurado", "status-warning")}
+      </section>
+      <section class="panel" style="margin-top:14px">
+        <div class="panel-header"><div><h3>Como vai funcionar</h3><p>Fluxo previsto quando ligarmos a integração.</p></div></div>
+        <div class="flow-map">
+          <div><strong>1. Conectar</strong><span>O cliente autoriza o acesso (Open Finance) ou a MB configura o conector MCP.</span></div>
+          <div><strong>2. Puxar</strong><span>Extrato/saldo entram automaticamente — conciliação bancária sem digitar.</span></div>
+          <div><strong>3. Gravar no Supabase</strong><span>Os dados viram snapshots/fluxo de caixa do cliente (banco único).</span></div>
+          <div><strong>4. Publicar</strong><span>A MB valida e o dashboard do cliente atualiza.</span></div>
+        </div>
+      </section>
     `;
   }
 
