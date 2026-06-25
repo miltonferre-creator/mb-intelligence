@@ -401,6 +401,17 @@
         return;
       }
 
+      // Lancamento do CLIENTE (despesas + conciliacao). O backend forca o proprio
+      // client_id e grava so os campos do cliente (faturamento/impostos/folha sao da MB).
+      if (form.dataset.form === "client-finance") {
+        await remoteOrLocal(
+          async () => MBI.api.request(`/finance/${data.clientId}`, { method: "PATCH", body: data }),
+          () => MBI.services.finance.update(data.clientId, data)
+        );
+        showToast("Lançamento salvo. Seu dashboard foi atualizado.");
+        return;
+      }
+
       if (form.dataset.form === "create-task") {
         await remoteOrLocal(
           async () => MBI.api.request("/tasks", { method: "POST", body: data }),

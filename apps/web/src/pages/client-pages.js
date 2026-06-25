@@ -7,6 +7,7 @@
     "#/cliente/inteligencia": "Dashboard",
     "#/cliente/onboarding": "Onboarding",
     "#/cliente/documentos": "Documentos e guias",
+    "#/cliente/integracoes": "Integrações e lançamentos",
     "#/cliente/comunicacao": "Comunicação MB",
     "#/cliente/perfil": "Perfil e acessos"
   };
@@ -16,6 +17,7 @@
     if (client) items.push(["#/cliente/inteligencia", "layout-dashboard", "Dashboard"]);
     items.push(
       ["#/cliente/documentos", "folder-open", "Documentos"],
+      ["#/cliente/integracoes", "plug", "Integrações"],
       ["#/cliente/comunicacao", "messages-square", "Comunicação"],
       ["#/cliente/perfil", "user-round", "Perfil"]
     );
@@ -62,6 +64,7 @@
     if (route === "#/cliente/inicio") return shell(route, home(client));
     if (route === "#/cliente/onboarding") return shell(route, onboarding(client));
     if (route === "#/cliente/documentos") return shell(route, documents(client));
+    if (route === "#/cliente/integracoes") return shell(route, clientIntegrations(client));
     if (route === "#/cliente/importacoes") return shell("#/cliente/documentos", documents(client));
     if (route === "#/cliente/comunicacao") return shell(route, communication(client));
     if (route === "#/cliente/perfil") return shell(route, profile(client));
@@ -395,6 +398,52 @@
     const visible = rows.filter(([, value]) => String(value || "").trim() && !/^a definir$/i.test(String(value).trim()));
     if (!visible.length) return `<p class="comm-hint">${MBI.ui.icon("info")} Dados ainda não preenchidos pela MB.</p>`;
     return `<dl class="profile-fields">${visible.map(([label, value]) => `<div><dt>${MBI.ui.escape(label)}</dt><dd>${MBI.ui.escape(value)}</dd></div>`).join("")}</dl>`;
+  }
+
+  // Tela do CLIENTE: conexao bancaria (em breve) + lancamento MANUAL da parte dele
+  // (despesas + conciliacao). Grava via PATCH /finance (o backend forca o proprio
+  // client_id e so os campos do cliente; faturamento/impostos/folha sao da MB).
+  function clientIntegrations(client) {
+    const data = MBI.services.finance.get(client.id);
+    const comp = data.competence || new Date().toISOString().slice(0, 7);
+    const card = (icon, title, desc) => `
+      <article class="panel">
+        <div class="panel-header">
+          <div style="display:flex;align-items:center;gap:12px"><span class="doc-icon is-fin">${MBI.ui.icon(icon)}</span><div><h3>${title}</h3><p>${desc}</p></div></div>
+          ${MBI.ui.pill("Em breve")}
+        </div>
+        <div class="brief-actions" style="margin-top:10px"><button class="btn btn-primary" type="button" disabled>${MBI.ui.icon("plug")} Conectar — em breve</button></div>
+      </article>`;
+    return `
+      <section class="panel" style="margin-bottom:14px">
+        <div class="panel-header"><div><h3>Suas integrações e lançamentos</h3><p>Conecte seu banco (em breve) ou lance manualmente enquanto a integração não está ativa.</p></div>${MBI.ui.pill("Sua parte")}</div>
+        <div class="metric-analysis"><strong>Como funciona:</strong> a MB cuida de <strong>faturamento, impostos e folha</strong>. Você informa as <strong>despesas</strong> e a <strong>conciliação bancária</strong> — e o seu dashboard atualiza na hora.</div>
+      </section>
+      <section class="grid grid-2" style="margin-bottom:14px">
+        ${card("landmark", "Open Finance — banco automático", "Conecte sua conta para puxar extrato, recebimentos, pagamentos e saldo automaticamente.")}
+        ${card("plug-zap", "Importar extrato (OFX)", "Suba o arquivo do banco e o sistema concilia para você.")}
+      </section>
+      <form class="panel" data-form="client-finance">
+        <input type="hidden" name="clientId" value="${MBI.ui.escape(client.id)}">
+        <div class="panel-header"><div><h3>Lançar manualmente</h3><p>Informe os números do mês. Faturamento, impostos e folha são lançados pela MB.</p></div><button class="btn btn-primary" type="submit">${MBI.ui.icon("save")} Salvar lançamento</button></div>
+        <div class="form-section two" style="margin-bottom:6px">
+          <label><span>Competência</span><input type="month" name="competence" value="${comp}"></label>
+        </div>
+        <div class="panel-subtitle" style="margin-top:8px"><strong>Despesas</strong></div>
+        <div class="form-section">
+          ${MBI.ui.moneyField("Despesas totais do mês", "expenses", data.expenses)}
+          ${MBI.ui.moneyField("Caixa atual", "cash", data.cash)}
+        </div>
+        <div class="panel-subtitle" style="margin-top:14px"><strong>Conciliação bancária</strong></div>
+        <div class="form-section">
+          ${MBI.ui.moneyField("Saldo inicial", "openingBalance", data.openingBalance)}
+          ${MBI.ui.moneyField("Recebimentos", "receipts", data.receipts)}
+          ${MBI.ui.moneyField("Pagamentos", "payments", data.payments)}
+          ${MBI.ui.moneyField("Saldo final", "closingBalance", data.closingBalance || data.cash)}
+        </div>
+        <p class="doc-hint" style="margin-top:10px">${MBI.ui.icon("shield-check")} Seus números atualizam o dashboard na hora. A MB valida no acompanhamento mensal.</p>
+      </form>
+    `;
   }
 
   function profile(client) {

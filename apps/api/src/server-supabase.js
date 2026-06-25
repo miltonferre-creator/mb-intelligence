@@ -1251,54 +1251,76 @@ async function handleFinance(req, res, segments) {
     return ok(res, { data: financeToApi(rows[0], dreLines, cashRows[0], historyRows) });
   }
   if (req.method === "PATCH") {
-    if (ctx.profile.type !== "mb") return error(res, 403, "Acesso restrito à equipe MB.");
+    const isMb = ctx.profile.type === "mb";
+    // Modelo colaborativo: a MB lanca faturamento/impostos/folha; o CLIENTE lanca
+    // a parte dele (despesas + conciliacao bancaria/caixa). O cliente so grava o
+    // PROPRIO client_id e so os campos dele — cada lado preserva o do outro.
+    const targetId = isMb ? clientId : ctx.profile.client_id;
+    if (!targetId) return error(res, 400, "Cliente não identificado.");
+    if (!canAccessClient(ctx.profile, targetId)) return error(res, 403, "Cliente fora do escopo do usuário.");
     const body = await readBody(req);
     const competence = maybeCompetence(body.competence) || currentCompetence();
-    if (body.nextReview) {
+    if (isMb && body.nextReview) {
       try {
-        await rest(`/clients?id=eq.${clientId}`, { method: "PATCH", body: { next_review_date: body.nextReview } });
+        await rest(`/clients?id=eq.${targetId}`, { method: "PATCH", body: { next_review_date: body.nextReview } });
       } catch (err) {
         if (!String(err.message || "").includes("next_review_date")) throw err;
       }
     }
-    const existing = await rest(`/financial_snapshots?client_id=eq.${clientId}&competence=eq.${competence}&select=id&limit=1`);
-    const payload = {
-      revenue: body.revenue,
-      expenses: body.expenses,
-      taxes: body.taxes,
-      payroll: body.payroll,
-      cash: body.cash,
-      financial_score: body.score,
-      operational_score: body.operationalScore,
-      runway_days: body.runway,
-      investment_capacity: body.investmentCapacity,
-      margin_target: body.marginTarget,
-      working_capital_days: body.workingCapitalDays,
-      confidence: body.confidence || "Media"
+    const existing = (await rest(`/financial_snapshots?client_id=eq.${targetId}&competence=eq.${competence}&select=*&limit=1`))[0];
+    const num = (v) => Number(v || 0);
+    // Foto COMBINADA (faturamento do MB + despesas do cliente) so para recalcular o score.
+    const merged = {
+      revenue: isMb && body.revenue !== undefined ? num(body.revenue) : num(existing?.revenue),
+      expenses: !isMb && body.expenses !== undefined ? num(body.expenses) : num(existing?.expenses),
+      taxes: isMb && body.taxes !== undefined ? num(body.taxes) : num(existing?.taxes),
+      payroll: isMb && body.payroll !== undefined ? num(body.payroll) : num(existing?.payroll),
+      cash: !isMb && body.cash !== undefined ? num(body.cash) : num(existing?.cash),
+      runway_days: isMb && body.runway !== undefined ? num(body.runway) : num(existing?.runway_days),
+      margin_target: isMb && body.marginTarget !== undefined ? num(body.marginTarget) : existing?.margin_target,
+      working_capital_days: isMb && body.workingCapitalDays !== undefined ? num(body.workingCapitalDays) : existing?.working_capital_days
     };
-    const computedScore = calculateFinancialScore({ ...payload, result: Number(payload.revenue || 0) - Number(payload.expenses || 0) });
+    merged.result = merged.revenue - merged.expenses;
+    const computedScore = calculateFinancialScore(merged);
+    // payload: SOMENTE os campos do ator atual (os do outro lado ficam intactos no banco).
+    const payload = isMb
+      ? {
+          revenue: body.revenue,
+          taxes: body.taxes,
+          payroll: body.payroll,
+          operational_score: body.operationalScore,
+          runway_days: body.runway,
+          investment_capacity: body.investmentCapacity,
+          margin_target: body.marginTarget,
+          working_capital_days: body.workingCapitalDays,
+          confidence: body.confidence || existing?.confidence || "Media"
+        }
+      : {
+          expenses: body.expenses,
+          cash: body.cash
+        };
     payload.financial_score = computedScore.total;
     payload.score_breakdown = computedScore.dimensions;
     Object.keys(payload).forEach((key) => payload[key] === undefined && delete payload[key]);
     let rows;
     try {
-      rows = existing[0]
-        ? await rest(`/financial_snapshots?id=eq.${existing[0].id}`, { method: "PATCH", body: payload })
-        : await rest("/financial_snapshots", { method: "POST", body: [{ client_id: clientId, competence, ...payload }] });
+      rows = existing
+        ? await rest(`/financial_snapshots?id=eq.${existing.id}`, { method: "PATCH", body: payload })
+        : await rest("/financial_snapshots", { method: "POST", body: [{ client_id: targetId, competence, ...payload }] });
     } catch (err) {
       if (!String(err.message || "").includes("margin_target") && !String(err.message || "").includes("working_capital_days") && !String(err.message || "").includes("score_breakdown")) throw err;
       delete payload.margin_target;
       delete payload.working_capital_days;
       delete payload.score_breakdown;
-      rows = existing[0]
-        ? await rest(`/financial_snapshots?id=eq.${existing[0].id}`, { method: "PATCH", body: payload })
-        : await rest("/financial_snapshots", { method: "POST", body: [{ client_id: clientId, competence, ...payload }] });
+      rows = existing
+        ? await rest(`/financial_snapshots?id=eq.${existing.id}`, { method: "PATCH", body: payload })
+        : await rest("/financial_snapshots", { method: "POST", body: [{ client_id: targetId, competence, ...payload }] });
     }
-    await saveFinancialReportsFromForm(ctx.profile, clientId, competence, body);
-    const historyRows = await rest(`/financial_snapshots?client_id=eq.${clientId}&select=*&order=competence.desc&limit=12`);
-    const dreReports = await rest(reportQuery("dre_reports", clientId, competence, "id"));
+    await saveFinancialReportsFromForm(ctx.profile, targetId, competence, body);
+    const historyRows = await rest(`/financial_snapshots?client_id=eq.${targetId}&select=*&order=competence.desc&limit=12`);
+    const dreReports = await rest(reportQuery("dre_reports", targetId, competence, "id"));
     const dreLines = dreReports[0] ? await rest(`/dre_report_lines?report_id=eq.${dreReports[0].id}&select=*&order=sort_order.asc`) : [];
-    const cashRows = await rest(reportQuery("cash_flow_reports", clientId, competence));
+    const cashRows = await rest(reportQuery("cash_flow_reports", targetId, competence));
     return ok(res, { data: financeToApi(rows[0], dreLines, cashRows[0], historyRows) });
   }
   return error(res, 404, "Rota financeira não encontrada.");

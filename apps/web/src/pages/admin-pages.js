@@ -7,7 +7,6 @@
     "#/admin/clientes": "Gestao de clientes",
     "#/admin/novo-cliente": "Gestao de clientes",
     "#/admin/configuracao": "Configuração",
-    "#/admin/integracoes": "Integrações",
     "#/admin/alimentar-portal": "Alimentar portal",
     "#/admin/documentos": "Documentos",
     "#/admin/usuarios": "Usuários e perfis",
@@ -24,7 +23,6 @@
       ["#/admin/documentos", "folder-up", "Documentos"],
       [null, null, "Configuração"],
       ["#/admin/configuracao", "settings", "Configuração"],
-      ["#/admin/integracoes", "plug", "Integrações"],
       ["#/admin/usuarios", "users-round", "Usuários"],
       [null, null, "Registros"],
       ["#/admin/auditoria", "history", "Auditoria"]
@@ -80,7 +78,6 @@
     // de carteira vazia e clicar no menu parece nao fazer nada.
     if (route === "#/admin/clientes" || route === "#/admin/novo-cliente") return shell("#/admin/clientes", clients());
     if (route === "#/admin/configuracao") return shell(route, settings());
-    if (route === "#/admin/integracoes") return shell(route, integrations());
     if (route === "#/admin/usuarios") return shell(route, users());
     if (route === "#/admin/auditoria") return shell(route, audit());
     // Rotas que dependem de um cliente em operacao
@@ -249,48 +246,6 @@
     `;
   }
 
-  // Tela placeholder de Integrações — sera configurada depois (Open Finance / MCP
-  // direto com o banco). Os campos ficam desativados ("em breve"); quando ligarmos,
-  // os dados puxados gravam no Supabase (banco unico).
-  function integrations() {
-    const card = (icon, title, desc, status, tone) => `
-      <article class="panel">
-        <div class="panel-header">
-          <div style="display:flex;align-items:center;gap:12px">
-            <span class="doc-icon is-fin">${MBI.ui.icon(icon)}</span>
-            <div><h3>${title}</h3><p>${desc}</p></div>
-          </div>
-          <span class="status-pill ${tone}">${status}</span>
-        </div>
-        <div class="form-section two" style="margin-top:6px">
-          <label><span>Provedor / Conector</span><input placeholder="A definir" disabled></label>
-          <label><span>Credencial / Token</span><input placeholder="Configuraremos aqui" disabled></label>
-        </div>
-        <div class="brief-actions" style="margin-top:12px">
-          <button class="btn btn-primary" type="button" disabled>${MBI.ui.icon("plug")} Conectar — em breve</button>
-        </div>
-      </article>`;
-    return `
-      <section class="panel" style="margin-bottom:14px">
-        <div class="panel-header"><div><h3>Integrações</h3><p>Conexões automáticas de dados. Configuração será feita aqui em breve.</p></div>${MBI.ui.pill("Em construção")}</div>
-        <div class="metric-analysis"><strong>Banco único:</strong> tudo que as integrações puxarem é gravado no <strong>Supabase</strong> — não criamos outra base. O <em>localStorage</em> do portal é apenas espelho de leitura.</div>
-      </section>
-      <section class="grid grid-2">
-        ${card("landmark", "Open Finance — conciliação bancária", "Conectar a conta do cliente para puxar extrato, recebimentos, pagamentos e saldo automaticamente — direto do banco.", "Não configurado", "status-warning")}
-        ${card("plug-zap", "MCP — integração direta", "Conector MCP para alimentar dados financeiros/fiscais direto na base, sem digitação.", "Não configurado", "status-warning")}
-      </section>
-      <section class="panel" style="margin-top:14px">
-        <div class="panel-header"><div><h3>Como vai funcionar</h3><p>Fluxo previsto quando ligarmos a integração.</p></div></div>
-        <div class="flow-map">
-          <div><strong>1. Conectar</strong><span>O cliente autoriza o acesso (Open Finance) ou a MB configura o conector MCP.</span></div>
-          <div><strong>2. Puxar</strong><span>Extrato/saldo entram automaticamente — conciliação bancária sem digitar.</span></div>
-          <div><strong>3. Gravar no Supabase</strong><span>Os dados viram snapshots/fluxo de caixa do cliente (banco único).</span></div>
-          <div><strong>4. Publicar</strong><span>A MB valida e o dashboard do cliente atualiza.</span></div>
-        </div>
-      </section>
-    `;
-  }
-
   function buildModal(kind, ds) {
     ds = ds || {};
     if (kind === "new-client") {
@@ -354,12 +309,11 @@
           <label><span>Competência dos dados</span><input type="month" name="competence" value="${comp}"></label>
           <label><span>Próxima revisão MB</span><input type="date" name="nextReview" value="${client.nextReview || currentDateValue()}"></label>
         </div>
+        <p class="doc-hint" style="margin-bottom:10px">${MBI.ui.icon("info")} Despesas e conciliação bancária agora são lançadas pelo <strong>cliente</strong> (menu Integrações). Aqui a MB lança faturamento, impostos e folha.</p>
         <div class="form-section">
           ${MBI.ui.moneyField("Faturamento", "revenue", data.revenue)}
-          ${MBI.ui.moneyField("Despesas", "expenses", data.expenses)}
           ${MBI.ui.moneyField("Impostos / DAS", "taxes", data.taxes)}
           ${MBI.ui.moneyField("Folha", "payroll", data.payroll)}
-          ${MBI.ui.moneyField("Caixa atual", "cash", data.cash)}
           <label><span>Confiança dos dados</span><select name="confidence"><option ${conf("Baixa")}>Baixa</option><option ${conf("Media")}>Media</option><option ${conf("Alta")}>Alta</option></select></label>
         </div>
         <div class="op-stats" style="margin-top:14px">
@@ -370,24 +324,8 @@
         </div>
         <label style="display:block;margin-top:14px"><span>Análise MB para o dashboard</span><textarea name="insight" placeholder="Leitura executiva do mês (opcional).">${MBI.ui.escape(data.insights?.[0] || "")}</textarea></label>
         <details class="report-detail" style="margin-top:14px">
-          <summary>Detalhamento opcional &mdash; DRE, fluxo de caixa e metas</summary>
-          <div class="panel-subtitle" style="margin-top:14px"><strong>DRE gerencial</strong></div>
-          <div class="form-section">
-            ${MBI.ui.moneyField("Custos diretos / CMV", "directCosts", data.directCosts)}
-            ${MBI.ui.moneyField("Despesas administrativas", "adminExpenses", data.adminExpenses)}
-            ${MBI.ui.moneyField("Despesas comerciais", "salesExpenses", data.salesExpenses)}
-            ${MBI.ui.moneyField("Despesas financeiras", "financialExpenses", data.financialExpenses)}
-          </div>
-          <div class="panel-subtitle" style="margin-top:14px"><strong>Fluxo de caixa</strong></div>
-          <div class="form-section">
-            ${MBI.ui.moneyField("Saldo inicial", "openingBalance", data.openingBalance)}
-            ${MBI.ui.moneyField("Recebimentos", "receipts", data.receipts || data.revenue)}
-            ${MBI.ui.moneyField("Pagamentos", "payments", data.payments || Math.max((data.expenses || 0) - (data.taxes || 0), 0))}
-            ${MBI.ui.moneyField("Impostos pagos", "cashTaxes", data.cashTaxes || data.taxes)}
-            ${MBI.ui.moneyField("Saldo final", "closingBalance", data.closingBalance || data.cash)}
-          </div>
-          <div class="panel-subtitle" style="margin-top:14px"><strong>Parâmetros MB</strong></div>
-          <div class="form-section two">
+          <summary>Parâmetros MB &mdash; metas</summary>
+          <div class="form-section two" style="margin-top:14px">
             <label><span>Meta de margem (%)</span><input name="marginTarget" type="number" value="${data.marginTarget || 20}"></label>
             <label><span>NCG / capital de giro (dias)</span><input name="workingCapitalDays" type="number" value="${data.workingCapitalDays || 45}"></label>
           </div>
