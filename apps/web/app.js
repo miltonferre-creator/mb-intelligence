@@ -402,6 +402,7 @@
     try {
       if (form.dataset.form === "login") {
         const session = await MBI.auth.login(data);
+        markActivity(); // inicia o relogio de inatividade limpo neste login
         navigate(defaultRouteForSession(session));
         return;
       }
@@ -967,23 +968,40 @@
   // Por seguranca, encerra a sessao apos um periodo sem interacao do usuario.
   // Marcamos a ultima atividade (barato) e checamos 1x por minuto; assim evitamos
   // recriar timers a cada mousemove. So vale para sessao ativa.
-  const IDLE_LIMIT_MS = 30 * 60 * 1000; // 30 minutos
+  const IDLE_LIMIT_MS = 30 * 60 * 1000; // 30 minutos sem interacao -> encerra a sessao
+  const IDLE_KEY = "mbi.lastActivity";
   let lastActivityAt = Date.now();
+  let lastPersistAt = 0;
   let idleLoggingOut = false;
-  function markActivity() { lastActivityAt = Date.now(); }
+  function readPersistedActivity() {
+    try { const v = Number(localStorage.getItem(IDLE_KEY)); return Number.isFinite(v) && v > 0 ? v : 0; } catch (error) { return 0; }
+  }
+  function markActivity() {
+    lastActivityAt = Date.now();
+    // Persiste no localStorage (throttle 30s) para a inatividade SOBREVIVER a
+    // fechar/reabrir o navegador — senao o contador zerava a cada carga.
+    if (lastActivityAt - lastPersistAt > 30000) {
+      lastPersistAt = lastActivityAt;
+      try { localStorage.setItem(IDLE_KEY, String(lastActivityAt)); } catch (error) {}
+    }
+  }
   ["click", "keydown", "mousemove", "scroll", "touchstart", "visibilitychange"].forEach((evt) => {
     document.addEventListener(evt, markActivity, { passive: true });
   });
-  async function checkIdle() {
-    if (idleLoggingOut) return;
-    if (!MBI.auth.currentSession()) return;
-    if (Date.now() - lastActivityAt < IDLE_LIMIT_MS) return;
+  async function endSessionByIdle() {
     idleLoggingOut = true;
+    try { localStorage.removeItem(IDLE_KEY); } catch (error) {}
     try { await MBI.auth.logout(); } catch (error) {}
     navigate("#/login");
     render();
     showToast("Sessão encerrada por inatividade. Entre novamente.");
     idleLoggingOut = false;
+  }
+  async function checkIdle() {
+    if (idleLoggingOut) return;
+    if (!MBI.auth.currentSession()) return;
+    if (Date.now() - lastActivityAt < IDLE_LIMIT_MS) return;
+    await endSessionByIdle();
   }
   window.setInterval(checkIdle, 60 * 1000);
 
@@ -1001,6 +1019,18 @@
       .catch(() => {});
     const session = MBI.auth.currentSession();
     if (session?.token) {
+      // Inatividade que SOBREVIVE a fechar/reabrir o navegador: se a ultima
+      // atividade registrada foi ha mais que o limite, encerra a sessao ANTES de
+      // renovar token/sincronizar. Resolve "abriu dias depois e entrou direto".
+      const persistedIdle = readPersistedActivity();
+      if (persistedIdle && (Date.now() - persistedIdle > IDLE_LIMIT_MS)) {
+        try { localStorage.removeItem(IDLE_KEY); } catch (error) {}
+        try { await MBI.auth.logout(); } catch (error) {}
+        render();
+        return;
+      }
+      // Marca atividade agora (inicia/renova o relogio de inatividade nesta sessao).
+      markActivity();
       // Renova o token PROATIVAMENTE se expirou / esta perto de expirar, ANTES de
       // sincronizar. Evita o caso "reload mostra dado velho porque o token venceu
       // e o sync falhou em silencio" — sem depender de re-login.
